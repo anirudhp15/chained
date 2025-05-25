@@ -112,7 +112,6 @@ export function ChatArea({
     return groups;
   }, [agentSteps, columnStates.length]);
 
-  const totalAgents = agentGroups.length;
 
   // Get focused agent data
   const focusedAgent =
@@ -133,20 +132,6 @@ export function ChatArea({
   );
 
   // Handle resize start
-  const handleResizeStart = useCallback(
-    (e: React.MouseEvent, columnIndex: number) => {
-      e.preventDefault();
-      setIsResizing(true);
-      setResizeStartX(e.clientX);
-      setResizeColumnIndex(columnIndex);
-
-      // Disable transitions during drag for smoother performance
-      if (containerRef.current) {
-        containerRef.current.style.setProperty("--disable-transitions", "1");
-      }
-    },
-    []
-  );
 
   // Handle resize move with throttling and RAF optimization
   const handleResizeMove = useCallback(
@@ -315,9 +300,6 @@ export function ChatArea({
     setExpandedReasoning(expandedReasoning === stepId ? null : stepId);
   };
 
-  const getSlideInDelay = (agentIndex: number) => {
-    return agentIndex * 300; // 300ms delay between each agent
-  };
 
   // Focus Mode View
   if (focusedAgent !== null) {
@@ -544,7 +526,7 @@ export function ChatArea({
     <div
       ref={containerRef}
       className="flex-1 flex overflow-hidden bg-black w-full relative"
-      style={{ "--disable-transitions": isResizing ? "1" : "0" } as any}
+      style={{ "--disable-transitions": isResizing ? "1" : "0" } as React.CSSProperties}
     >
       {focusedAgent ? (
         // Focused agent view

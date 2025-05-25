@@ -292,30 +292,6 @@ export default function ChatPage() {
     }
   };
 
-  // Get focused agent data
-  const focusedAgent =
-    focusedAgentIndex !== null && agentSteps
-      ? (() => {
-          const step = agentSteps.find(
-            (step) => step.index === focusedAgentIndex
-          );
-          if (!step) return null;
-
-          return {
-            id: step._id,
-            model: step.model,
-            prompt: step.prompt,
-            connection: step.connectionType
-              ? {
-                  type: step.connectionType,
-                  condition: step.connectionCondition,
-                  sourceAgentId: step.sourceAgentIndex?.toString(),
-                }
-              : undefined,
-          } as Agent;
-        })()
-      : null;
-
   return (
     <main className="flex h-screen w-screen overflow-hidden bg-black">
       <Sidebar

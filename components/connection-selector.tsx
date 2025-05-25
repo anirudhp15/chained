@@ -8,7 +8,6 @@ import {
   IoArrowForwardCircleSharp,
 } from "react-icons/io5";
 import type { Agent } from "./agent-input";
-import { ModelAvatar } from "./model-avatar";
 
 interface ConnectionSelectorProps {
   connection: Agent["connection"];

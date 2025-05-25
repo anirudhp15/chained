@@ -513,7 +513,7 @@ export function AgentInput({
 
                       {filteredProviders.length === 0 && (
                         <div className="p-4 text-center text-gray-400 text-sm">
-                          No models found matching "{searchQuery}"
+                          No models found matching &quot;{searchQuery}&quot;
                         </div>
                       )}
                     </div>
