@@ -13,6 +13,7 @@ interface InputAreaProps {
   focusedAgentIndex?: number | null;
   focusedAgent?: Agent | null;
   onSendFocusedAgent?: (agent: Agent) => void;
+  onLoadPreset?: (agents: Agent[]) => void;
 }
 
 export function InputArea({
@@ -23,11 +24,12 @@ export function InputArea({
   focusedAgentIndex,
   focusedAgent,
   onSendFocusedAgent,
+  onLoadPreset,
 }: InputAreaProps) {
   const [agents, setAgents] = useState<Agent[]>([
     {
       id: uuidv4(),
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       prompt: "",
     },
   ]);
@@ -35,6 +37,14 @@ export function InputArea({
   const [focusedAgentState, setFocusedAgentState] = useState<Agent | null>(
     null
   );
+
+  // Handle preset loading
+  const handleLoadPreset = (agents: Agent[]) => {
+    setAgents(agents);
+    if (onLoadPreset) {
+      onLoadPreset(agents);
+    }
+  };
 
   // Initialize focused agent state when focus mode is activated
   useEffect(() => {
@@ -54,7 +64,7 @@ export function InputArea({
         ...agents,
         {
           id: uuidv4(),
-          model: "gpt-4o",
+          model: "gpt-4o-mini",
           prompt: "",
         },
       ]);
@@ -77,6 +87,14 @@ export function InputArea({
     const validAgents = agents.filter((agent) => agent.prompt.trim() !== "");
     if (validAgents.length > 0) {
       onSendChain(validAgents);
+      // Clear all prompts and reset to single agent after sending
+      setAgents([
+        {
+          id: uuidv4(),
+          model: "gpt-4o-mini",
+          prompt: "",
+        },
+      ]);
     }
   };
 
@@ -87,6 +105,11 @@ export function InputArea({
       onSendFocusedAgent
     ) {
       onSendFocusedAgent(focusedAgentState);
+      // Clear the focused agent prompt after sending
+      setFocusedAgentState({
+        ...focusedAgentState,
+        prompt: "",
+      });
     }
   };
 
@@ -100,7 +123,7 @@ export function InputArea({
   // Focus Mode Input
   if (focusedAgentIndex !== null && focusedAgentState) {
     return (
-      <div className="absolute bottom-0 left-0 right-0 bg-gray-950/95 backdrop-blur-sm border-t border-gray-700/50">
+      <div className="absolute bottom-0 right-0 left-[240px] bg-gray-950/95 backdrop-blur-sm border-t border-gray-700/50">
         <div className="max-w-4xl mx-auto p-6">
           <div className="space-y-4">
             {/* Focus Mode Header */}
@@ -167,7 +190,7 @@ export function InputArea({
 
   // Regular Chain Mode Input
   return (
-    <div className="fixed bottom-0 left-0 right-0 ">
+    <div className="fixed bottom-0 right-0 left-[240px]">
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex flex-col gap-6 items-stretch justify-center">
           {agents.map((agent, index) => (

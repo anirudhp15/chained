@@ -280,13 +280,21 @@ export function AgentInput({
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"compact" | "detailed">("compact");
 
-  const providerKey = agent.model.split("-")[0] as keyof ModelProviders;
+  // Get provider key from model, handling gpt-4o-mini case
+  const getProviderKey = (modelValue: string): keyof ModelProviders => {
+    if (modelValue.startsWith("gpt-")) return "openai";
+    if (modelValue.startsWith("claude-")) return "anthropic";
+    if (modelValue.startsWith("grok-")) return "xai";
+    return "openai"; // default fallback
+  };
+
+  const providerKey = getProviderKey(agent.model);
   const selectedModel = MODEL_PROVIDERS[providerKey]?.models.find(
     (m: { value: string; label: string }) => m.value === agent.model
   );
 
   // Get the provider for the current model
-  const currentProvider = MODEL_PROVIDERS[providerKey as keyof ModelProviders];
+  const currentProvider = MODEL_PROVIDERS[providerKey];
 
   // Filter models based on search query
   const filteredProviders = Object.entries(MODEL_PROVIDERS)
@@ -347,7 +355,7 @@ export function AgentInput({
                   />
                 )}
                 <span className="font-medium truncate max-w-20">
-                  {selectedModel?.label || "Select Model"}
+                  {selectedModel?.label}
                 </span>
                 <ChevronDown
                   size={12}

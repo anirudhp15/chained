@@ -189,6 +189,63 @@
     }
   }
 
+  /* Welcome Screen Animations */
+  .welcome-fade-in {
+    animation: welcomeFadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+
+  .welcome-slide-up {
+    animation: welcomeSlideUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+
+  .preset-card-hover {
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .preset-card-hover:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(147, 112, 219, 0.15);
+  }
+
+  @keyframes welcomeFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes welcomeSlideUp {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Sparkle animation for welcome text */
+  .sparkle-pulse {
+    animation: sparklePulse 2s ease-in-out infinite;
+  }
+
+  @keyframes sparklePulse {
+    0%,
+    100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+  }
+
   /* Agent width transitions */
   .agent-width-transition {
     transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);

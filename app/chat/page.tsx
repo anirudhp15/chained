@@ -36,13 +36,9 @@ export default function ChatPage() {
   const isStreaming = agentSteps?.some((step) => step.isStreaming) || false;
 
   const handleNewChat = async () => {
-    try {
-      const sessionId = await createSession({ title: "New Chat" });
-      setCurrentSessionId(sessionId);
-      setFocusedAgentIndex(null); // Reset focus when creating new chat
-    } catch (error) {
-      console.error("Failed to create new chat:", error);
-    }
+    // Don't create session immediately - let welcome screen show
+    setCurrentSessionId(null);
+    setFocusedAgentIndex(null); // Reset focus when creating new chat
   };
 
   const handleSelectChat = (sessionId: string) => {
@@ -52,6 +48,20 @@ export default function ChatPage() {
 
   const handleFocusAgent = (agentIndex: number | null) => {
     setFocusedAgentIndex(agentIndex);
+  };
+
+  const handleLoadPreset = async (agents: Agent[]) => {
+    try {
+      // Create a new session for the preset
+      const sessionId = await createSession({
+        title: `${agents.length > 0 ? agents[0].prompt.split(" ").slice(0, 3).join(" ") : "Preset"} Chain`,
+      });
+      setCurrentSessionId(sessionId);
+      setFocusedAgentIndex(null); // Reset focus when loading preset
+      console.log("Loaded preset with agents:", agents);
+    } catch (error) {
+      console.error("Failed to create session for preset:", error);
+    }
   };
 
   const handleSendFocusedAgent = async (agent: Agent) => {
@@ -304,6 +314,7 @@ export default function ChatPage() {
           sessionId={currentSessionId}
           focusedAgentIndex={focusedAgentIndex}
           onFocusAgent={handleFocusAgent}
+          onLoadPreset={handleLoadPreset}
         />
         <InputArea
           onSendChain={handleSendChain}
@@ -312,6 +323,7 @@ export default function ChatPage() {
           focusedAgentIndex={focusedAgentIndex}
           onSendFocusedAgent={handleSendFocusedAgent}
           isStreaming={isStreaming}
+          onLoadPreset={handleLoadPreset}
         />
       </div>
     </main>

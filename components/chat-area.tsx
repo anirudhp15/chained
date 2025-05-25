@@ -16,13 +16,14 @@ import {
 import { useState, useMemo, useRef, useCallback } from "react";
 import { ModelAvatar } from "./model-avatar";
 import { MarkdownRenderer } from "./markdown-renderer";
-import { MarkdownDemo } from "./markdown-demo";
+import { WelcomeScreen } from "./welcome-screen";
 import { ConnectionBadge } from "./connection-selector";
 
 interface ChatAreaProps {
   sessionId: Id<"chatSessions"> | null;
   focusedAgentIndex?: number | null;
   onFocusAgent?: (agentIndex: number | null) => void;
+  onLoadPreset?: (agents: any[]) => void;
 }
 
 interface ColumnState {
@@ -34,6 +35,7 @@ export function ChatArea({
   sessionId,
   focusedAgentIndex,
   onFocusAgent,
+  onLoadPreset,
 }: ChatAreaProps) {
   const agentSteps = useQuery(
     api.queries.getAgentSteps,
@@ -111,7 +113,6 @@ export function ChatArea({
 
     return groups;
   }, [agentSteps, columnStates.length]);
-
 
   // Get focused agent data
   const focusedAgent =
@@ -279,18 +280,9 @@ export function ChatArea({
 
   if (!sessionId) {
     return (
-      <div className="h-full overflow-y-auto px-4 pb-[calc(theme(spacing.24)+theme(spacing.48))] pt-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Welcome to ChainChat
-            </h2>
-            <p className="text-gray-400">
-              Chain up to 3 AI agents and run them sequentially with one click.
-            </p>
-          </div>
-
-          <MarkdownDemo />
+      <div className="h-full overflow-y-auto px-4 flex items-center">
+        <div className="max-w-6xl w-full mx-auto">
+          <WelcomeScreen onLoadPreset={onLoadPreset || (() => {})} />
         </div>
       </div>
     );
@@ -299,7 +291,6 @@ export function ChatArea({
   const toggleReasoning = (stepId: string) => {
     setExpandedReasoning(expandedReasoning === stepId ? null : stepId);
   };
-
 
   // Focus Mode View
   if (focusedAgent !== null) {
@@ -526,7 +517,11 @@ export function ChatArea({
     <div
       ref={containerRef}
       className="flex-1 flex overflow-hidden bg-black w-full relative"
-      style={{ "--disable-transitions": isResizing ? "1" : "0" } as React.CSSProperties}
+      style={
+        {
+          "--disable-transitions": isResizing ? "1" : "0",
+        } as React.CSSProperties
+      }
     >
       {focusedAgent ? (
         // Focused agent view
