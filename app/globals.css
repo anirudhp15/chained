@@ -1,0 +1,447 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .lavender-glow {
+    box-shadow: 0 0 20px rgba(147, 112, 219, 0.3);
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  /* Ensure black background everywhere */
+  :root {
+    background-color: #000;
+  }
+
+  html {
+    background-color: #000;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    min-height: 100%;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    min-height: 100vh;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    max-width: 100vw; /* Prevent horizontal overflow */
+  }
+}
+
+/* Markdown Rendering Enhancements */
+@layer components {
+  .markdown-content {
+    @apply leading-relaxed;
+  }
+
+  .markdown-content p {
+    @apply mb-4 last:mb-0;
+  }
+
+  .markdown-content h1,
+  .markdown-content h2,
+  .markdown-content h3,
+  .markdown-content h4,
+  .markdown-content h5,
+  .markdown-content h6 {
+    @apply font-semibold leading-tight;
+  }
+
+  .markdown-content pre {
+    @apply overflow-x-auto;
+  }
+
+  .markdown-content code {
+    @apply font-mono text-sm;
+  }
+
+  .markdown-content blockquote {
+    @apply border-l-4 border-gray-500 pl-4 italic;
+  }
+
+  .markdown-content table {
+    @apply w-full border-collapse;
+  }
+
+  .markdown-content th,
+  .markdown-content td {
+    @apply border border-gray-600 px-3 py-2 text-left;
+  }
+
+  .markdown-content th {
+    @apply bg-gray-700 font-semibold;
+  }
+
+  .markdown-content td {
+    @apply bg-gray-800/30;
+  }
+
+  /* Smooth streaming animations */
+  .streaming-content {
+    @apply animate-in fade-in duration-150;
+  }
+
+  /* Fast, professional streaming cursor */
+  .streaming-cursor {
+    animation: blink 1s infinite;
+    background: linear-gradient(90deg, #a855f7, #8b5cf6);
+    border-radius: 2px;
+  }
+
+  @keyframes blink {
+    0%,
+    50% {
+      opacity: 1;
+    }
+    51%,
+    100% {
+      opacity: 0.3;
+    }
+  }
+
+  /* Multi-Agent Layout Animations */
+  .agent-container {
+    transform: translateX(0);
+    opacity: 1;
+    transition: all 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: width;
+    contain: layout style;
+  }
+
+  .agent-slide-in {
+    animation: slideInFromRight 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)
+      forwards;
+  }
+
+  @keyframes slideInFromRight {
+    0% {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  /* Agent width transitions */
+  .agent-width-transition {
+    transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Disable transitions during resize drag for smoother performance */
+  [style*="--disable-transitions"] .agent-width-transition,
+  [style*="--disable-transitions"] .agent-container {
+    transition: none !important;
+  }
+
+  /* Resize handle styling */
+  .resize-handle {
+    position: relative;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(147, 112, 219, 0.1) 30%,
+      rgba(147, 112, 219, 0.3) 50%,
+      rgba(147, 112, 219, 0.1) 70%,
+      transparent 100%
+    );
+
+    transition: all 0.2s ease-in-out;
+    will-change: background;
+    contain: layout style;
+  }
+
+  .resize-handle:hover {
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(147, 112, 219, 0.2) 20%,
+      rgba(147, 112, 219, 0.5) 50%,
+      rgba(147, 112, 219, 0.2) 80%,
+      transparent 100%
+    );
+  }
+
+  .resize-handle.resizing {
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(147, 112, 219, 0.3) 10%,
+      rgba(147, 112, 219, 0.7) 50%,
+      rgba(147, 112, 219, 0.3) 90%,
+      transparent 100%
+    );
+    cursor: col-resize;
+  }
+
+  /* Collapsed column styling */
+  .collapsed-column {
+    min-width: 48px;
+    max-width: 48px;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .collapsed-indicator {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .collapsed-indicator:hover {
+    transform: scale(1.1);
+  }
+
+  /* Vertical text for collapsed state */
+  .writing-mode-vertical {
+    writing-mode: vertical-rl;
+  }
+
+  .text-orientation-mixed {
+    text-orientation: mixed;
+  }
+
+  /* Collapse/expand button animations */
+  .collapse-button {
+    transition: all 0.2s ease-in-out;
+  }
+
+  .collapse-button:hover {
+    transform: scale(1.05);
+    background-color: rgba(147, 112, 219, 0.1);
+  }
+
+  /* Agent border animations */
+  .agent-border {
+    position: relative;
+  }
+
+  .agent-border::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(147, 112, 219, 0.2) 10%,
+      rgba(147, 112, 219, 0.4) 50%,
+      rgba(147, 112, 219, 0.2) 90%,
+      transparent 100%
+    );
+    opacity: 0;
+    animation: borderFadeIn 0.5s ease-in-out 0.3s forwards;
+  }
+
+  @keyframes borderFadeIn {
+    0% {
+      opacity: 0;
+      transform: scaleY(0);
+    }
+    100% {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+  }
+
+  /* Agent header animations */
+  .agent-header {
+    animation: headerSlideDown 0.4s ease-out 0.2s backwards;
+  }
+
+  @keyframes headerSlideDown {
+    0% {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Staggered content animations */
+  .agent-content > * {
+    animation: contentFadeIn 0.4s ease-out backwards;
+  }
+
+  .agent-content > *:nth-child(1) {
+    animation-delay: 0.3s;
+  }
+
+  .agent-content > *:nth-child(2) {
+    animation-delay: 0.4s;
+  }
+
+  .agent-content > *:nth-child(3) {
+    animation-delay: 0.5s;
+  }
+
+  @keyframes contentFadeIn {
+    0% {
+      transform: translateY(5px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Responsive behavior for multi-agent layout */
+  @media (max-width: 1024px) {
+    .agent-container {
+      min-width: 280px;
+    }
+
+    .collapsed-column {
+      min-width: 40px;
+      max-width: 40px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .agent-container {
+      min-width: 240px;
+    }
+
+    .agent-content .text-sm {
+      font-size: 0.75rem;
+    }
+
+    .collapsed-column {
+      min-width: 36px;
+      max-width: 36px;
+    }
+  }
+
+  /* Remove horizontal scroll styles - no longer needed */
+  .agent-layout-container {
+    /* Removed scrollbar styles */
+  }
+
+  /* Optimize rendering performance */
+  .markdown-content {
+    contain: layout style;
+    will-change: contents;
+  }
+
+  .streaming-content .markdown-content {
+    transform: translateZ(0); /* Force GPU acceleration */
+  }
+
+  /* MathJax Math Styling for Dark Theme */
+  .MathJax {
+    color: #f9fafb !important;
+    font-size: 1.1em !important;
+  }
+
+  /* Display math styling */
+  .MathJax[display="true"] {
+    margin: 1.5rem 0 !important;
+    padding: 1.5rem !important;
+    background: rgba(31, 41, 55, 0.6) !important;
+    border-radius: 0.75rem !important;
+    border: 1px solid rgba(75, 85, 99, 0.4) !important;
+    overflow-x: auto !important;
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    text-align: center !important;
+  }
+
+  /* Inline math styling */
+  .MathJax[display="false"] {
+    background: rgba(55, 65, 81, 0.6) !important;
+    padding: 0.2rem 0.4rem !important;
+    border-radius: 0.375rem !important;
+    border: 1px solid rgba(75, 85, 99, 0.3) !important;
+    font-size: 1.05em !important;
+    vertical-align: middle !important;
+  }
+
+  /* MathJax container styling */
+  .markdown-content .MathJax_Display {
+    text-align: center !important;
+    margin: 1.5rem 0 !important;
+  }
+
+  /* Error styling for malformed math */
+  .MathJax_Error {
+    color: #fca5a5 !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    border-radius: 0.375rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  /* Ensure math text doesn't get overridden by prose styles */
+  .markdown-content .MathJax * {
+    color: inherit !important;
+  }
+}
