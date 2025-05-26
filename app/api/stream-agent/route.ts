@@ -23,7 +23,14 @@ interface TokenUsage {
 
 export async function POST(request: NextRequest) {
   try {
-    const { stepId, model, prompt } = await request.json();
+    const {
+      stepId,
+      model,
+      prompt,
+      images,
+      audioTranscription,
+      webSearchResults,
+    } = await request.json();
 
     // Create a readable stream
     const stream = new ReadableStream({
@@ -35,6 +42,14 @@ export async function POST(request: NextRequest) {
             isStreaming: true,
           });
 
+          // Build enhanced prompt with multimodal context
+          const enhancedPrompt = buildEnhancedPrompt({
+            prompt,
+            images,
+            audioTranscription,
+            webSearchResults,
+          });
+
           const fullResponse = "";
           const tokenUsage: TokenUsage | null = null;
 
@@ -42,7 +57,8 @@ export async function POST(request: NextRequest) {
           if (model.startsWith("gpt-") || model.includes("openai")) {
             await streamOpenAI(
               model,
-              prompt,
+              enhancedPrompt,
+              images,
               controller,
               stepId as Id<"agentSteps">,
               fullResponse,
@@ -51,7 +67,18 @@ export async function POST(request: NextRequest) {
           } else if (model.includes("claude")) {
             await streamAnthropic(
               model,
-              prompt,
+              enhancedPrompt,
+              images,
+              controller,
+              stepId as Id<"agentSteps">,
+              fullResponse,
+              tokenUsage
+            );
+          } else if (model.startsWith("grok-") || model.includes("xai")) {
+            await streamXAI(
+              model,
+              enhancedPrompt,
+              images,
               controller,
               stepId as Id<"agentSteps">,
               fullResponse,
@@ -105,18 +132,81 @@ export async function POST(request: NextRequest) {
   }
 }
 
+function buildEnhancedPrompt(input: {
+  prompt: string;
+  images?: Array<{ url: string; description?: string }>;
+  audioTranscription?: string;
+  webSearchResults?: Array<{
+    title: string;
+    snippet: string;
+    url: string;
+    source?: string;
+  }>;
+}): string {
+  let enhancedPrompt = input.prompt;
+
+  // Add audio transcription context
+  if (input.audioTranscription) {
+    enhancedPrompt = `[Audio Transcription]: "${input.audioTranscription}"\n\n${enhancedPrompt}`;
+  }
+
+  // Add web search context
+  if (input.webSearchResults && input.webSearchResults.length > 0) {
+    const searchContext = input.webSearchResults
+      .map(
+        (result, index) =>
+          `${index + 1}. ${result.title}\n   ${result.snippet}\n   Source: ${result.source || new URL(result.url).hostname}`
+      )
+      .join("\n\n");
+
+    enhancedPrompt = `[Web Search Results]:\n${searchContext}\n\n[User Query]: ${enhancedPrompt}`;
+  }
+
+  return enhancedPrompt;
+}
+
 async function streamOpenAI(
   model: string,
   prompt: string,
+  images: Array<{ url: string; description?: string }> | undefined,
   controller: ReadableStreamDefaultController,
   stepId: Id<"agentSteps">,
   fullResponse: string,
   tokenUsage: TokenUsage | null
 ) {
   try {
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+
+    if (images && images.length > 0) {
+      // For vision-capable models, include images
+      const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
+        { type: "text", text: prompt },
+      ];
+
+      images.forEach((image) => {
+        content.push({
+          type: "image_url",
+          image_url: {
+            url: image.url,
+            detail: "high",
+          },
+        });
+      });
+
+      messages.push({
+        role: "user",
+        content: content,
+      });
+    } else {
+      messages.push({
+        role: "user",
+        content: prompt,
+      });
+    }
+
     const stream = await openai.chat.completions.create({
       model: model.replace("openai-", ""),
-      messages: [{ role: "user", content: prompt }],
+      messages,
       stream: true,
       max_tokens: 4000,
     });
@@ -193,16 +283,54 @@ async function streamOpenAI(
 async function streamAnthropic(
   model: string,
   prompt: string,
+  images: Array<{ url: string; description?: string }> | undefined,
   controller: ReadableStreamDefaultController,
   stepId: Id<"agentSteps">,
   fullResponse: string,
   tokenUsage: TokenUsage | null
 ) {
   try {
+    const content: Anthropic.MessageParam["content"] = [];
+
+    // Add text content
+    content.push({
+      type: "text",
+      text: prompt,
+    });
+
+    // Add images if provided and model supports vision
+    if (images && images.length > 0) {
+      for (const image of images) {
+        // For Anthropic, we need to fetch the image and convert to base64
+        try {
+          const response = await fetch(image.url);
+          const arrayBuffer = await response.arrayBuffer();
+          const base64 = Buffer.from(arrayBuffer).toString("base64");
+          const mimeType = response.headers.get("content-type") || "image/jpeg";
+
+          content.push({
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: mimeType as
+                | "image/jpeg"
+                | "image/png"
+                | "image/gif"
+                | "image/webp",
+              data: base64,
+            },
+          });
+        } catch (error) {
+          console.error("Failed to process image for Anthropic:", error);
+          // Continue without this image
+        }
+      }
+    }
+
     const stream = await anthropic.messages.create({
       model: model,
       max_tokens: 4000,
-      messages: [{ role: "user", content: prompt }],
+      messages: [{ role: "user", content }],
       stream: true,
     });
 
@@ -238,6 +366,7 @@ async function streamAnthropic(
         }
       }
 
+      // Handle usage information
       if (chunk.type === "message_delta" && chunk.usage) {
         tokenUsage = {
           promptTokens: chunk.usage.input_tokens || 0,
@@ -272,6 +401,127 @@ async function streamAnthropic(
   } catch (error) {
     throw new Error(
       `Anthropic streaming failed: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  }
+}
+
+async function streamXAI(
+  model: string,
+  prompt: string,
+  images: Array<{ url: string; description?: string }> | undefined,
+  controller: ReadableStreamDefaultController,
+  stepId: Id<"agentSteps">,
+  fullResponse: string,
+  tokenUsage: TokenUsage | null
+) {
+  try {
+    // xAI client setup
+    const xai = new OpenAI({
+      apiKey: process.env.XAI_API_KEY,
+      baseURL: "https://api.x.ai/v1",
+    });
+
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+
+    if (images && images.length > 0) {
+      // For vision-capable Grok models, include images
+      const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
+        { type: "text", text: prompt },
+      ];
+
+      images.forEach((image) => {
+        content.push({
+          type: "image_url",
+          image_url: {
+            url: image.url,
+            detail: "high",
+          },
+        });
+      });
+
+      messages.push({
+        role: "user",
+        content: content,
+      });
+    } else {
+      messages.push({
+        role: "user",
+        content: prompt,
+      });
+    }
+
+    const stream = await xai.chat.completions.create({
+      model: model,
+      messages,
+      stream: true,
+      max_tokens: 4000,
+    });
+
+    let chunkCount = 0;
+    const updateFrequency = 5; // Update database every 5 chunks for better performance
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta;
+
+      if (delta?.content) {
+        const content = delta.content;
+        fullResponse += content;
+        chunkCount++;
+
+        // Send chunk to client immediately for fast streaming
+        controller.enqueue(
+          new TextEncoder().encode(
+            `data: ${JSON.stringify({
+              type: "chunk",
+              content: content,
+              fullContent: fullResponse,
+            })}\n\n`
+          )
+        );
+
+        // Update database less frequently to improve performance
+        if (chunkCount % updateFrequency === 0) {
+          await convex.mutation(api.mutations.updateStreamedContent, {
+            stepId,
+            content: fullResponse,
+          });
+        }
+      }
+
+      // Handle usage information
+      if (chunk.usage) {
+        tokenUsage = {
+          promptTokens: chunk.usage.prompt_tokens || 0,
+          completionTokens: chunk.usage.completion_tokens || 0,
+          totalTokens: chunk.usage.total_tokens || 0,
+        };
+      }
+    }
+
+    // Final update to database
+    await convex.mutation(api.mutations.updateAgentResponse, {
+      stepId,
+      response: fullResponse,
+      tokenUsage: tokenUsage || undefined,
+      isComplete: true,
+      isStreaming: false,
+    });
+
+    // Send completion signal
+    controller.enqueue(
+      new TextEncoder().encode(
+        `data: ${JSON.stringify({
+          type: "complete",
+          response: fullResponse,
+          tokenUsage: tokenUsage || undefined,
+        })}\n\n`
+      )
+    );
+
+    controller.close();
+  } catch (error) {
+    throw new Error(
+      `xAI streaming failed: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 }

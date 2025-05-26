@@ -1,40 +1,284 @@
-import OpenAI from "openai"
-import Anthropic from "@anthropic-ai/sdk"
+import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-})
+});
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
-})
+});
 
-export async function callLLM({ model, prompt }: { model: string; prompt: string }): Promise<string> {
+// xAI client setup
+const xai = new OpenAI({
+  apiKey: process.env.XAI_API_KEY,
+  baseURL: "https://api.x.ai/v1",
+});
+
+interface MultimodalInput {
+  prompt: string;
+  images?: Array<{
+    url: string;
+    description?: string;
+  }>;
+  audioTranscription?: string;
+  webSearchResults?: Array<{
+    title: string;
+    snippet: string;
+    url: string;
+    source?: string;
+  }>;
+}
+
+interface LLMResponse {
+  content: string;
+  tokenUsage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+
+export async function callLLM({
+  model,
+  prompt,
+  images,
+  audioTranscription,
+  webSearchResults,
+}: {
+  model: string;
+  prompt: string;
+  images?: Array<{ url: string; description?: string }>;
+  audioTranscription?: string;
+  webSearchResults?: Array<{
+    title: string;
+    snippet: string;
+    url: string;
+    source?: string;
+  }>;
+}): Promise<LLMResponse> {
   try {
-    if (model.startsWith("gpt-") || model.includes("openai")) {
-      const completion = await openai.chat.completions.create({
-        model: model.replace("openai-", ""),
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 1000,
-      })
+    // Build enhanced prompt with multimodal context
+    const enhancedPrompt = buildEnhancedPrompt({
+      prompt,
+      images,
+      audioTranscription,
+      webSearchResults,
+    });
 
-      return completion.choices[0]?.message?.content || "No response generated"
+    if (model.startsWith("gpt-") || model.includes("openai")) {
+      return await callOpenAI(model, enhancedPrompt, images);
     }
 
     if (model.includes("claude")) {
-      const message = await anthropic.messages.create({
-        model: model,
-        max_tokens: 1000,
-        messages: [{ role: "user", content: prompt }],
-      })
-
-      const content = message.content[0]
-      return content.type === "text" ? content.text : "No response generated"
+      return await callAnthropic(model, enhancedPrompt, images);
     }
 
-    throw new Error(`Unsupported model: ${model}`)
+    if (model.startsWith("grok-") || model.includes("xai")) {
+      return await callXAI(model, enhancedPrompt, images);
+    }
+
+    throw new Error(`Unsupported model: ${model}`);
   } catch (error) {
-    console.error("LLM call failed:", error)
-    return `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+    console.error("LLM call failed:", error);
+    return {
+      content: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+    };
   }
+}
+
+function buildEnhancedPrompt(input: MultimodalInput): string {
+  let enhancedPrompt = input.prompt;
+
+  // Add audio transcription context
+  if (input.audioTranscription) {
+    enhancedPrompt = `[Audio Transcription]: "${input.audioTranscription}"\n\n${enhancedPrompt}`;
+  }
+
+  // Add web search context
+  if (input.webSearchResults && input.webSearchResults.length > 0) {
+    const searchContext = input.webSearchResults
+      .map(
+        (result, index) =>
+          `${index + 1}. ${result.title}\n   ${result.snippet}\n   Source: ${result.source || new URL(result.url).hostname}`
+      )
+      .join("\n\n");
+
+    enhancedPrompt = `[Web Search Results]:\n${searchContext}\n\n[User Query]: ${enhancedPrompt}`;
+  }
+
+  return enhancedPrompt;
+}
+
+async function callOpenAI(
+  model: string,
+  prompt: string,
+  images?: Array<{ url: string; description?: string }>
+): Promise<LLMResponse> {
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+
+  if (images && images.length > 0) {
+    // For vision-capable models, include images
+    const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
+      { type: "text", text: prompt },
+    ];
+
+    images.forEach((image) => {
+      content.push({
+        type: "image_url",
+        image_url: {
+          url: image.url,
+          detail: "high",
+        },
+      });
+    });
+
+    messages.push({
+      role: "user",
+      content: content,
+    });
+  } else {
+    messages.push({
+      role: "user",
+      content: prompt,
+    });
+  }
+
+  const completion = await openai.chat.completions.create({
+    model: model.replace("openai-", ""),
+    messages,
+    max_tokens: 4000,
+  });
+
+  const choice = completion.choices[0];
+  const usage = completion.usage;
+
+  return {
+    content: choice?.message?.content || "No response generated",
+    tokenUsage: usage
+      ? {
+          promptTokens: usage.prompt_tokens,
+          completionTokens: usage.completion_tokens,
+          totalTokens: usage.total_tokens,
+        }
+      : undefined,
+  };
+}
+
+async function callAnthropic(
+  model: string,
+  prompt: string,
+  images?: Array<{ url: string; description?: string }>
+): Promise<LLMResponse> {
+  const content: Anthropic.MessageParam["content"] = [];
+
+  // Add text content
+  content.push({
+    type: "text",
+    text: prompt,
+  });
+
+  // Add images if provided and model supports vision
+  if (images && images.length > 0) {
+    for (const image of images) {
+      // For Anthropic, we need to fetch the image and convert to base64
+      try {
+        const response = await fetch(image.url);
+        const arrayBuffer = await response.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString("base64");
+        const mimeType = response.headers.get("content-type") || "image/jpeg";
+
+        content.push({
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: mimeType as
+              | "image/jpeg"
+              | "image/png"
+              | "image/gif"
+              | "image/webp",
+            data: base64,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to process image for Anthropic:", error);
+        // Continue without this image
+      }
+    }
+  }
+
+  const message = await anthropic.messages.create({
+    model: model,
+    max_tokens: 4000,
+    messages: [{ role: "user", content }],
+  });
+
+  const textContent = message.content.find((c) => c.type === "text");
+  const usage = message.usage;
+
+  return {
+    content: textContent?.text || "No response generated",
+    tokenUsage: usage
+      ? {
+          promptTokens: usage.input_tokens,
+          completionTokens: usage.output_tokens,
+          totalTokens: usage.input_tokens + usage.output_tokens,
+        }
+      : undefined,
+  };
+}
+
+async function callXAI(
+  model: string,
+  prompt: string,
+  images?: Array<{ url: string; description?: string }>
+): Promise<LLMResponse> {
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+
+  if (images && images.length > 0) {
+    // For vision-capable Grok models, include images
+    const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
+      { type: "text", text: prompt },
+    ];
+
+    images.forEach((image) => {
+      content.push({
+        type: "image_url",
+        image_url: {
+          url: image.url,
+          detail: "high",
+        },
+      });
+    });
+
+    messages.push({
+      role: "user",
+      content: content,
+    });
+  } else {
+    messages.push({
+      role: "user",
+      content: prompt,
+    });
+  }
+
+  const completion = await xai.chat.completions.create({
+    model: model,
+    messages,
+    max_tokens: 4000,
+  });
+
+  const choice = completion.choices[0];
+  const usage = completion.usage;
+
+  return {
+    content: choice?.message?.content || "No response generated",
+    tokenUsage: usage
+      ? {
+          promptTokens: usage.prompt_tokens,
+          completionTokens: usage.completion_tokens,
+          totalTokens: usage.total_tokens,
+        }
+      : undefined,
+  };
 }

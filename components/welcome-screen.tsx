@@ -33,7 +33,7 @@ const PRESET_CHAINS: PresetChain[] = [
     description: "Research a topic, analyze findings, and create a summary",
     icon: Brain,
     iconColor: "text-blue-400",
-    bgGradient: "from-blue-500/10 to-purple-500/10",
+    bgGradient: "from-lavender-500/10 to-purple-500/10",
     agents: [
       {
         model: "gpt-4o",
@@ -61,7 +61,7 @@ const PRESET_CHAINS: PresetChain[] = [
     description: "Brainstorm ideas, develop a story, and refine the narrative",
     icon: Lightbulb,
     iconColor: "text-yellow-400",
-    bgGradient: "from-yellow-500/10 to-orange-500/10",
+    bgGradient: "from-lavender-500/10 to-purple-500/10",
     agents: [
       {
         model: "gpt-4o",
@@ -89,7 +89,7 @@ const PRESET_CHAINS: PresetChain[] = [
     description: "Plan a feature, write code, and review for improvements",
     icon: Code,
     iconColor: "text-green-400",
-    bgGradient: "from-green-500/10 to-teal-500/10",
+    bgGradient: "from-lavender-500/10 to-purple-500/10",
     agents: [
       {
         model: "claude-3-5-sonnet-20241022",
@@ -137,11 +137,11 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
       <div className="max-w-5xl mx-auto text-center space-y-12">
         {/* Welcome Message */}
         <div className="space-y-4 h-full welcome-fade-in">
-          <div className="flex items-center justify-center gap-3 mb-6">
+          <div className="flex items-center justify-center gap-3 ">
             <h1 className="text-4xl lg:text-5xl font-bold text-white">
-              Hi, what tasks are you{" "}
+              Hi, what tasks would you like to{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-lavender-400 to-purple-400">
-                chaining
+                chain
               </span>{" "}
               today?
             </h1>

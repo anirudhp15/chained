@@ -18,6 +18,8 @@ import { ModelAvatar } from "./model-avatar";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { WelcomeScreen } from "./welcome-screen";
 import { ConnectionBadge } from "./connection-selector";
+import { AttachmentDisplay } from "./ui/AttachmentDisplay";
+import { CopyButton } from "./ui/CopyButton";
 
 interface ChatAreaProps {
   sessionId: Id<"chatSessions"> | null;
@@ -280,7 +282,7 @@ export function ChatArea({
 
   if (!sessionId) {
     return (
-      <div className="h-full overflow-y-auto px-4 flex items-center">
+      <div className="h-full overflow-y-auto px-4 flex items-center bg-gray-950">
         <div className="max-w-6xl w-full mx-auto">
           <WelcomeScreen onLoadPreset={onLoadPreset || (() => {})} />
         </div>
@@ -347,6 +349,15 @@ export function ChatArea({
               </div>
             </div>
 
+            {/* Multimodal Attachments */}
+            <AttachmentDisplay
+              images={focusedAgent.images}
+              audioBlob={focusedAgent.audioBlob}
+              audioDuration={focusedAgent.audioDuration}
+              webSearchData={focusedAgent.webSearchData}
+              className="mt-3"
+            />
+
             {/* Skipped Agent State */}
             {focusedAgent.wasSkipped && (
               <div className="flex gap-4">
@@ -386,6 +397,14 @@ export function ChatArea({
                       <div className="text-sm text-lavender-400/80 mb-3 flex items-center justify-between">
                         <span>Response</span>
                         <div className="flex items-center gap-3">
+                          <CopyButton
+                            text={
+                              focusedAgent.response ||
+                              focusedAgent.streamedContent ||
+                              ""
+                            }
+                            size="sm"
+                          />
                           {focusedAgent.isStreaming && (
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
@@ -559,8 +578,8 @@ export function ChatArea({
               {/* User Prompt */}
               <div className="w-full">
                 <div className="bg-gray-800/90 border border-gray-700/50 rounded-xl px-6 py-4">
-                  <div className="flex flex-row gap-3">
-                    <span className="text-sm text-lavender-400/80 font-medium">
+                  <div className="flex flex-row items-center gap-2">
+                    <span className="text-xs text-lavender-400/80 font-medium">
                       Prompt
                     </span>
                     {focusedAgent.connectionType && focusedAgent.index > 0 && (
@@ -568,14 +587,27 @@ export function ChatArea({
                         type={focusedAgent.connectionType}
                         sourceAgentIndex={focusedAgent.index - 1}
                         condition={focusedAgent.connectionCondition}
+                        size="sm"
                       />
                     )}
+                    <div className="ml-auto">
+                      <CopyButton text={focusedAgent.prompt} size="sm" />
+                    </div>
                   </div>
                   <p className="text-white text-base leading-relaxed">
                     {focusedAgent.prompt}
                   </p>
                 </div>
               </div>
+
+              {/* Multimodal Attachments */}
+              <AttachmentDisplay
+                images={focusedAgent.images}
+                audioBlob={focusedAgent.audioBlob}
+                audioDuration={focusedAgent.audioDuration}
+                webSearchData={focusedAgent.webSearchData}
+                className="mt-3"
+              />
 
               {/* Skipped Agent State */}
               {focusedAgent.wasSkipped && (
@@ -616,6 +648,14 @@ export function ChatArea({
                         <div className="text-sm text-lavender-400/80 mb-3 flex items-center justify-between">
                           <span>Response</span>
                           <div className="flex items-center gap-3">
+                            <CopyButton
+                              text={
+                                focusedAgent.response ||
+                                focusedAgent.streamedContent ||
+                                ""
+                              }
+                              size="sm"
+                            />
                             {focusedAgent.isStreaming && (
                               <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
@@ -866,12 +906,24 @@ export function ChatArea({
                                 size="sm"
                               />
                             )}
+                            <div className="ml-auto">
+                              <CopyButton text={agent.prompt} size="sm" />
+                            </div>
                           </div>
                           <p className="text-white text-sm leading-relaxed">
                             {agent.prompt}
                           </p>
                         </div>
                       </div>
+
+                      {/* Multimodal Attachments */}
+                      <AttachmentDisplay
+                        images={agent.images}
+                        audioBlob={agent.audioBlob}
+                        audioDuration={agent.audioDuration}
+                        webSearchData={agent.webSearchData}
+                        className="mt-3"
+                      />
 
                       {/* Skipped Agent State */}
                       {agent.wasSkipped && (
@@ -912,6 +964,14 @@ export function ChatArea({
                                 <div className="text-xs text-lavender-400/80 mb-1 flex items-center justify-between">
                                   <span>Response</span>
                                   <div className="flex items-center gap-2">
+                                    <CopyButton
+                                      text={
+                                        agent.response ||
+                                        agent.streamedContent ||
+                                        ""
+                                      }
+                                      size="sm"
+                                    />
                                     {agent.isStreaming && (
                                       <div className="flex items-center gap-1">
                                         <div className="w-1.5 h-1.5 bg-lavender-400 rounded-full animate-pulse"></div>

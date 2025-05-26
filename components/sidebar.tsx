@@ -107,7 +107,6 @@ export function Sidebar({
           <div className="p-4 w-full flex items-center justify-between">
             <Link href="/">
               <h1 className="text-xl font-bold text-white flex items-center">
-                Chained
                 <span
                   className="mx-1 text-lavender-400"
                   onMouseEnter={() => setIsLinkHovered(true)}
@@ -115,6 +114,7 @@ export function Sidebar({
                 >
                   {isLinkHovered ? <Link2Off size={24} /> : <Link2 size={24} />}
                 </span>
+                Chained
               </h1>
             </Link>
             <button
@@ -145,7 +145,7 @@ export function Sidebar({
         <div className="px-4 pb-4">
           <input
             type="text"
-            placeholder="Search your threads..."
+            placeholder="Search your chains..."
             className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-lavender-400"
           />
         </div>

@@ -14,8 +14,15 @@ import {
   Zap,
   Brain,
   Globe,
+  ChevronUp,
+  GitCommitHorizontal,
+  GitFork,
 } from "lucide-react";
 import { SiOpenai, SiClaude } from "react-icons/si";
+import { IoGitBranchOutline } from "react-icons/io5";
+import { UploadedImage } from "./modality/ImageUpload";
+import { WebSearchData } from "./modality/WebSearch";
+import { ModalityIcons } from "./modality/ModalityIcons";
 
 export interface Agent {
   id: string;
@@ -26,6 +33,11 @@ export interface Agent {
     condition?: string;
     sourceAgentId?: string;
   };
+  images?: UploadedImage[];
+  audioBlob?: Blob;
+  audioDuration?: number;
+  audioTranscription?: string;
+  webSearchData?: WebSearchData;
 }
 
 interface AgentInputProps {
@@ -114,6 +126,77 @@ type ModelProviders = {
   anthropic: ModelProvider;
   xai: ModelProvider;
 };
+
+// Connection types configuration
+type EnabledConnectionType = "direct" | "conditional" | "parallel";
+
+const CONNECTION_TYPES = [
+  {
+    type: "direct" as const,
+    label: "Direct",
+    Icon: GitCommitHorizontal,
+    description: "Pass previous agent's output directly",
+    color: "text-blue-400",
+  },
+  {
+    type: "conditional" as const,
+    label: "Conditional",
+    Icon: IoGitBranchOutline,
+    description: "Run only if condition is met",
+    color: "text-amber-400",
+    iconRotate: "rotate-90",
+  },
+  {
+    type: "parallel" as const,
+    label: "Parallel",
+    Icon: GitFork,
+    description: "Run simultaneously (coming soon)",
+    color: "text-purple-400",
+    disabled: true,
+    iconRotate: "rotate-90",
+  },
+] satisfies Array<{
+  type: EnabledConnectionType;
+  label: string;
+  Icon: React.ComponentType<any>;
+  description: string;
+  disabled?: boolean;
+  color: string;
+  iconRotate?: string;
+}>;
+
+const CONDITION_PRESETS = [
+  {
+    label: "Contains keyword",
+    condition: "contains('keyword')",
+    placeholder: "contains('error')",
+  },
+  {
+    label: "Starts with",
+    condition: "starts_with('text')",
+    placeholder: "starts_with('SUCCESS')",
+  },
+  {
+    label: "Ends with",
+    condition: "ends_with('text')",
+    placeholder: "ends_with('.')",
+  },
+  {
+    label: "Length greater than",
+    condition: "length > 100",
+    placeholder: "length > 50",
+  },
+  {
+    label: "Length less than",
+    condition: "length < 100",
+    placeholder: "length < 200",
+  },
+  {
+    label: "Not empty",
+    condition: "length > 0",
+    placeholder: "length > 0",
+  },
+];
 
 const MODEL_PROVIDERS: ModelProviders = {
   openai: {
@@ -279,6 +362,9 @@ export function AgentInput({
   const [isModelOpen, setIsModelOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"compact" | "detailed">("compact");
+  const [isConnectionOpen, setIsConnectionOpen] = useState(false);
+  const [showConditionInput, setShowConditionInput] = useState(false);
+  const [isAddingAgent, setIsAddingAgent] = useState(false);
 
   // Get provider key from model, handling gpt-4o-mini case
   const getProviderKey = (modelValue: string): keyof ModelProviders => {
@@ -312,13 +398,405 @@ export function AgentInput({
     }))
     .filter((provider) => provider.models.length > 0);
 
+  // Connection handling functions
+  const handleConnectionTypeChange = (type: EnabledConnectionType) => {
+    if (type === "conditional") {
+      onUpdate({
+        ...agent,
+        connection: {
+          type,
+          condition: agent.connection?.condition || "",
+          sourceAgentId: agent.connection?.sourceAgentId,
+        },
+      });
+      setShowConditionInput(true);
+    } else {
+      onUpdate({
+        ...agent,
+        connection: {
+          type,
+          sourceAgentId: agent.connection?.sourceAgentId,
+        },
+      });
+      setShowConditionInput(false);
+    }
+    setIsConnectionOpen(false);
+  };
+
+  const handleConditionChange = (condition: string) => {
+    onUpdate({
+      ...agent,
+      connection: {
+        ...agent.connection,
+        type: "conditional",
+        condition,
+      },
+    });
+  };
+
+  const handlePresetSelect = (preset: (typeof CONDITION_PRESETS)[0]) => {
+    handleConditionChange(preset.condition);
+    setShowConditionInput(false);
+  };
+
+  // Current connection info
+  const currentConnectionType = agent.connection?.type || "direct";
+  const currentConnection = CONNECTION_TYPES.find(
+    (c) => c.type === currentConnectionType
+  );
+  const CurrentConnectionIcon = currentConnection?.Icon;
+
+  const handleAddAgent = () => {
+    if (onAddAgent) {
+      setIsAddingAgent(true);
+      onAddAgent();
+
+      // Reset animation state after animation
+      setTimeout(() => {
+        setIsAddingAgent(false);
+      }, 200);
+    }
+  };
+
   return (
-    <div className="shadow-xl space-y-3">
+    <div className="shadow-xl space-y-3 w-full">
       {/* Header with Agent title and remove button */}
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-lavender-400">
-          Agent {index + 1}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-medium text-lavender-400">
+            Agent {index + 1}
+          </span>
+          {/* Model Selection */}
+          <div className="relative">
+            <button
+              onClick={() => setIsModelOpen(!isModelOpen)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-md text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 transition-all text-xs backdrop-blur-sm group"
+            >
+              {currentProvider && (
+                <currentProvider.icon
+                  size={14}
+                  className={`${currentProvider.iconColor} flex-shrink-0`}
+                />
+              )}
+              <span className="font-medium truncate max-w-20">
+                {selectedModel?.label}
+              </span>
+              <ChevronDown
+                size={12}
+                className={`text-gray-400 flex-shrink-0 transition-transform duration-200 ${
+                  isModelOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {/* Model Selection Modal */}
+            {isModelOpen && (
+              <>
+                {/* Backdrop */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsModelOpen(false)}
+                />
+
+                {/* Modal */}
+                <div className="absolute bottom-full left-0 mb-2 w-96 bg-gray-800/95 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 max-h-[80vh] flex flex-col">
+                  {/* Header with Search */}
+                  <div className="p-3 border-b border-gray-700/50 bg-gray-800/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-sm font-medium text-white">
+                        Select Model
+                      </h3>
+                      <div className="flex gap-1 ml-auto">
+                        <button
+                          onClick={() =>
+                            setViewMode(
+                              viewMode === "compact" ? "detailed" : "compact"
+                            )
+                          }
+                          className="p-1 text-gray-400 hover:text-white transition-colors rounded"
+                          title={
+                            viewMode === "compact"
+                              ? "Detailed view"
+                              : "Compact view"
+                          }
+                        >
+                          {viewMode === "compact" ? (
+                            <Eye size={12} />
+                          ) : (
+                            <MessageSquare size={12} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <Search
+                        size={14}
+                        className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Search models..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 bg-gray-700/50 border border-gray-600/50 rounded text-white placeholder-gray-400 text-xs focus:outline-none focus:ring-1 focus:ring-lavender-400/50"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Models List */}
+                  <div className="flex-1 overflow-y-auto">
+                    {filteredProviders.map((provider) => (
+                      <div
+                        key={provider.key}
+                        className="border-b border-gray-700/50 last:border-0"
+                      >
+                        {/* Provider Header */}
+                        <div className="flex items-center gap-2 px-3 py-2 text-gray-400 bg-gray-800/30 sticky top-0">
+                          <provider.icon
+                            size={14}
+                            className={provider.iconColor}
+                          />
+                          <span className="text-xs font-medium">
+                            {provider.name}
+                          </span>
+                        </div>
+
+                        {/* Models List */}
+                        <div className="py-1">
+                          {provider.models.map((model) => (
+                            <div key={model.value} className="group">
+                              <button
+                                onClick={() => {
+                                  onUpdate({ ...agent, model: model.value });
+                                  setIsModelOpen(false);
+                                }}
+                                className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-700/50 ${
+                                  agent.model === model.value
+                                    ? "bg-lavender-500/10 text-lavender-400"
+                                    : "text-white"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium truncate">
+                                        {model.label}
+                                      </span>
+                                      {agent.model === model.value && (
+                                        <span className="text-lavender-400 text-xs">
+                                          Selected
+                                        </span>
+                                      )}
+                                    </div>
+                                    {viewMode === "detailed" &&
+                                      model.description && (
+                                        <p className="text-xs text-gray-400 mt-0.5 truncate">
+                                          {model.description}
+                                        </p>
+                                      )}
+                                  </div>
+
+                                  {/* Modality Icons */}
+                                  <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                                    {model.modalities.map((modality) => (
+                                      <div
+                                        key={modality}
+                                        className="relative group/tooltip"
+                                        title={
+                                          modality.charAt(0).toUpperCase() +
+                                          modality.slice(1)
+                                        }
+                                      >
+                                        <ModalityIcon
+                                          type={modality}
+                                          className="text-gray-400 hover:text-white transition-colors"
+                                        />
+                                        {/* Tooltip */}
+                                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-60">
+                                          {modality.charAt(0).toUpperCase() +
+                                            modality.slice(1)}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {viewMode === "detailed" &&
+                                  model.capabilities && (
+                                    <div className="mt-1 flex flex-wrap gap-1">
+                                      {model.capabilities
+                                        .slice(0, 3)
+                                        .map((capability, idx) => (
+                                          <span
+                                            key={idx}
+                                            className="text-xs px-1.5 py-0.5 bg-gray-700/50 text-gray-300 rounded"
+                                          >
+                                            {capability}
+                                          </span>
+                                        ))}
+                                    </div>
+                                  )}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+
+                    {filteredProviders.length === 0 && (
+                      <div className="p-4 text-center text-gray-400 text-sm">
+                        No models found matching &quot;{searchQuery}&quot;
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Connection Selection - only for agents after the first */}
+          {index > 0 && (
+            <div className="relative z-50">
+              <button
+                onClick={() => setIsConnectionOpen(!isConnectionOpen)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-md text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 transition-all text-xs backdrop-blur-sm group"
+              >
+                {CurrentConnectionIcon && (
+                  <span
+                    className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""}`}
+                  >
+                    <CurrentConnectionIcon size={14} />
+                  </span>
+                )}
+                <span className="font-medium text-xs">
+                  {currentConnection?.label}
+                </span>
+                <ChevronUp
+                  size={10}
+                  className={`text-gray-400 group-hover:text-lavender-400 transition-all ${
+                    isConnectionOpen ? "rotate-0" : "rotate-90"
+                  }`}
+                />
+              </button>
+
+              {/* Connection Selection Modal */}
+              {isConnectionOpen && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsConnectionOpen(false)}
+                  />
+
+                  {/* Modal */}
+                  <div className="absolute bottom-full left-0 mb-2 min-w-48 w-max bg-gray-800/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-[9999] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    {CONNECTION_TYPES.map((type) => {
+                      const TypeIcon = type.Icon;
+                      const isSelected = currentConnectionType === type.type;
+                      return (
+                        <button
+                          key={type.type}
+                          onClick={() =>
+                            !type.disabled &&
+                            handleConnectionTypeChange(type.type)
+                          }
+                          disabled={type.disabled}
+                          className={`w-full px-3 py-2 text-left hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed first:rounded-t-lg last:rounded-b-lg flex items-center gap-3 transition-colors text-xs ${
+                            isSelected
+                              ? "bg-lavender-500/10 text-lavender-400"
+                              : "text-white"
+                          }`}
+                        >
+                          <span
+                            className={`${type.color} ${type.iconRotate || ""}`}
+                          >
+                            <TypeIcon size={14} />
+                          </span>
+                          <div className="flex-1">
+                            <div
+                              className={`font-medium ${isSelected ? "text-lavender-400" : ""}`}
+                            >
+                              {type.label}
+                              {isSelected && (
+                                <span className="ml-2 text-xs opacity-60">
+                                  Selected
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-gray-400 text-xs">
+                              {type.description}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Conditional logic input - inline with other selectors */}
+          {index > 0 && currentConnectionType === "conditional" && (
+            <div className="flex items-center gap-2 relative z-40">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={agent.connection?.condition || ""}
+                  onChange={(e) => handleConditionChange(e.target.value)}
+                  placeholder="Enter condition..."
+                  className="w-40 px-2 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 text-xs"
+                  onFocus={() => setShowConditionInput(true)}
+                  onBlur={() => {
+                    // Delay hiding to allow preset clicks
+                    setTimeout(() => setShowConditionInput(false), 150);
+                  }}
+                />
+
+                {/* Quick presets dropdown - positioned above */}
+                {showConditionInput && (
+                  <div className="absolute bottom-full left-0 mb-2 w-64 bg-gray-800/98 border border-gray-600/50 rounded-lg shadow-xl z-[9999] p-2 backdrop-blur-xl">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-gray-300">
+                        Quick presets:
+                      </span>
+                      <button
+                        onClick={() => setShowConditionInput(false)}
+                        className="text-gray-400 hover:text-white text-xs hover:bg-gray-700/50 w-5 h-5 rounded flex items-center justify-center"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {CONDITION_PRESETS.map((preset, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handlePresetSelect(preset)}
+                          className="w-full px-2 py-1.5 text-left text-white hover:bg-gray-600/70 rounded text-xs transition-colors"
+                        >
+                          <div className="font-medium text-lavender-400">
+                            {preset.label}
+                          </div>
+                          <div className="text-gray-400 font-mono text-[10px]">
+                            {preset.placeholder}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setShowConditionInput(!showConditionInput)}
+                className="p-1 text-gray-400 hover:text-lavender-400 transition-colors hover:bg-gray-700/50 rounded"
+                title="Show condition presets"
+              >
+                <Zap size={12} />
+              </button>
+            </div>
+          )}
+        </div>
         {canRemove && (
           <button
             onClick={onRemove}
@@ -342,204 +820,38 @@ export function AgentInput({
         <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
           {/* Left side controls */}
           <div className="flex items-center gap-2">
-            {/* Model Selection */}
-            <div className="relative">
-              <button
-                onClick={() => setIsModelOpen(!isModelOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-md text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 transition-all text-xs backdrop-blur-sm group"
-              >
-                {currentProvider && (
-                  <currentProvider.icon
-                    size={14}
-                    className={`${currentProvider.iconColor} flex-shrink-0`}
-                  />
-                )}
-                <span className="font-medium truncate max-w-20">
-                  {selectedModel?.label}
-                </span>
-                <ChevronDown
-                  size={12}
-                  className={`text-gray-400 flex-shrink-0 transition-transform duration-200 ${
-                    isModelOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {/* Model Selection Modal */}
-              {isModelOpen && (
-                <>
-                  {/* Backdrop */}
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setIsModelOpen(false)}
-                  />
-
-                  {/* Modal */}
-                  <div className="absolute bottom-full left-0 mb-2 w-96 bg-gray-800/95 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 max-h-[80vh] flex flex-col">
-                    {/* Header with Search */}
-                    <div className="p-3 border-b border-gray-700/50 bg-gray-800/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-sm font-medium text-white">
-                          Select Model
-                        </h3>
-                        <div className="flex gap-1 ml-auto">
-                          <button
-                            onClick={() =>
-                              setViewMode(
-                                viewMode === "compact" ? "detailed" : "compact"
-                              )
-                            }
-                            className="p-1 text-gray-400 hover:text-white transition-colors rounded"
-                            title={
-                              viewMode === "compact"
-                                ? "Detailed view"
-                                : "Compact view"
-                            }
-                          >
-                            {viewMode === "compact" ? (
-                              <Eye size={12} />
-                            ) : (
-                              <MessageSquare size={12} />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="relative">
-                        <Search
-                          size={14}
-                          className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Search models..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full pl-8 pr-3 py-1.5 bg-gray-700/50 border border-gray-600/50 rounded text-white placeholder-gray-400 text-xs focus:outline-none focus:ring-1 focus:ring-lavender-400/50"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Models List */}
-                    <div className="flex-1 overflow-y-auto">
-                      {filteredProviders.map((provider) => (
-                        <div
-                          key={provider.key}
-                          className="border-b border-gray-700/50 last:border-0"
-                        >
-                          {/* Provider Header */}
-                          <div className="flex items-center gap-2 px-3 py-2 text-gray-400 bg-gray-800/30 sticky top-0">
-                            <provider.icon
-                              size={14}
-                              className={provider.iconColor}
-                            />
-                            <span className="text-xs font-medium">
-                              {provider.name}
-                            </span>
-                          </div>
-
-                          {/* Models List */}
-                          <div className="py-1">
-                            {provider.models.map((model) => (
-                              <div key={model.value} className="group">
-                                <button
-                                  onClick={() => {
-                                    onUpdate({ ...agent, model: model.value });
-                                    setIsModelOpen(false);
-                                  }}
-                                  className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-700/50 ${
-                                    agent.model === model.value
-                                      ? "bg-lavender-500/10 text-lavender-400"
-                                      : "text-white"
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-medium truncate">
-                                          {model.label}
-                                        </span>
-                                        {agent.model === model.value && (
-                                          <span className="text-lavender-400 text-xs">
-                                            Selected
-                                          </span>
-                                        )}
-                                      </div>
-                                      {viewMode === "detailed" &&
-                                        model.description && (
-                                          <p className="text-xs text-gray-400 mt-0.5 truncate">
-                                            {model.description}
-                                          </p>
-                                        )}
-                                    </div>
-
-                                    {/* Modality Icons */}
-                                    <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                                      {model.modalities.map((modality) => (
-                                        <div
-                                          key={modality}
-                                          className="relative group/tooltip"
-                                          title={
-                                            modality.charAt(0).toUpperCase() +
-                                            modality.slice(1)
-                                          }
-                                        >
-                                          <ModalityIcon
-                                            type={modality}
-                                            className="text-gray-400 hover:text-white transition-colors"
-                                          />
-                                          {/* Tooltip */}
-                                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-60">
-                                            {modality.charAt(0).toUpperCase() +
-                                              modality.slice(1)}
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-
-                                  {viewMode === "detailed" &&
-                                    model.capabilities && (
-                                      <div className="mt-1 flex flex-wrap gap-1">
-                                        {model.capabilities
-                                          .slice(0, 3)
-                                          .map((capability, idx) => (
-                                            <span
-                                              key={idx}
-                                              className="text-xs px-1.5 py-0.5 bg-gray-700/50 text-gray-300 rounded"
-                                            >
-                                              {capability}
-                                            </span>
-                                          ))}
-                                      </div>
-                                    )}
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-
-                      {filteredProviders.length === 0 && (
-                        <div className="p-4 text-center text-gray-400 text-sm">
-                          No models found matching &quot;{searchQuery}&quot;
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            {/* Modality Icons */}
+            <ModalityIcons
+              selectedModel={agent.model}
+              onImagesChange={(images) => onUpdate({ ...agent, images })}
+              onAudioRecording={(audioBlob, duration, transcription) =>
+                onUpdate({
+                  ...agent,
+                  audioBlob,
+                  audioDuration: duration,
+                  audioTranscription: transcription,
+                })
+              }
+              onWebSearch={(webSearchData) =>
+                onUpdate({ ...agent, webSearchData })
+              }
+              images={agent.images || []}
+            />
 
             {/* Add Agent Button */}
             {isLastAgent && canAddAgent && (
               <button
-                onClick={onAddAgent}
-                className="flex items-center justify-center px-3 py-1.5 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-md text-lavender-400 hover:text-lavender-300 transition-all group backdrop-blur-sm"
+                onClick={handleAddAgent}
+                className={`flex items-center justify-center px-3 py-1.5 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-md text-lavender-400 hover:text-lavender-300 transition-all group backdrop-blur-sm ${
+                  isAddingAgent ? "scale-95 bg-lavender-500/40" : ""
+                }`}
                 title="Add Agent"
               >
                 <Plus
                   size={14}
-                  className="group-hover:scale-110 transition-transform"
+                  className={`group-hover:scale-110 transition-transform ${
+                    isAddingAgent ? "rotate-90 scale-110" : ""
+                  }`}
                 />
               </button>
             )}

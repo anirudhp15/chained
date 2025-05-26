@@ -202,3 +202,150 @@ export const updateAgentSkipped = mutation({
     });
   },
 });
+
+// NEW: File and attachment mutations
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+export const createAttachment = mutation({
+  args: {
+    sessionId: v.id("chatSessions"),
+    agentStepId: v.optional(v.id("agentSteps")),
+    type: v.union(
+      v.literal("image"),
+      v.literal("audio"),
+      v.literal("document")
+    ),
+    fileName: v.string(),
+    fileSize: v.number(),
+    mimeType: v.string(),
+    storageId: v.id("_storage"),
+    metadata: v.optional(
+      v.object({
+        width: v.optional(v.number()),
+        height: v.optional(v.number()),
+        duration: v.optional(v.number()),
+        transcription: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const attachmentId = await ctx.db.insert("attachments", {
+      sessionId: args.sessionId,
+      agentStepId: args.agentStepId,
+      type: args.type,
+      fileName: args.fileName,
+      fileSize: args.fileSize,
+      mimeType: args.mimeType,
+      storageId: args.storageId,
+      uploadedAt: Date.now(),
+      metadata: args.metadata,
+    });
+    return attachmentId;
+  },
+});
+
+export const addAttachmentToAgentStep = mutation({
+  args: {
+    stepId: v.id("agentSteps"),
+    attachmentId: v.id("attachments"),
+  },
+  handler: async (ctx, args) => {
+    const step = await ctx.db.get(args.stepId);
+    if (!step) throw new Error("Agent step not found");
+
+    const currentAttachments = step.attachmentIds || [];
+    await ctx.db.patch(args.stepId, {
+      attachmentIds: [...currentAttachments, args.attachmentId],
+    });
+
+    // Also update the attachment with the agent step ID
+    await ctx.db.patch(args.attachmentId, {
+      agentStepId: args.stepId,
+    });
+  },
+});
+
+export const addWebSearchResults = mutation({
+  args: {
+    stepId: v.id("agentSteps"),
+    query: v.string(),
+    results: v.array(
+      v.object({
+        title: v.string(),
+        url: v.string(),
+        snippet: v.string(),
+        publishedDate: v.optional(v.string()),
+        source: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const step = await ctx.db.get(args.stepId);
+    if (!step) throw new Error("Agent step not found");
+
+    const currentSearchResults = step.webSearchResults || [];
+    const newSearchResult = {
+      query: args.query,
+      results: args.results,
+      searchedAt: Date.now(),
+    };
+
+    await ctx.db.patch(args.stepId, {
+      webSearchResults: [...currentSearchResults, newSearchResult],
+    });
+  },
+});
+
+export const addAudioTranscription = mutation({
+  args: {
+    stepId: v.id("agentSteps"),
+    originalText: v.string(),
+    confidence: v.optional(v.number()),
+    language: v.optional(v.string()),
+    duration: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.stepId, {
+      audioTranscription: {
+        originalText: args.originalText,
+        confidence: args.confidence,
+        language: args.language,
+        duration: args.duration,
+      },
+    });
+  },
+});
+
+export const deleteAttachment = mutation({
+  args: {
+    attachmentId: v.id("attachments"),
+  },
+  handler: async (ctx, args) => {
+    const attachment = await ctx.db.get(args.attachmentId);
+    if (!attachment) throw new Error("Attachment not found");
+
+    // Delete the file from storage
+    await ctx.storage.delete(attachment.storageId);
+
+    // Remove from agent step if associated
+    if (attachment.agentStepId) {
+      const step = await ctx.db.get(attachment.agentStepId);
+      if (step && step.attachmentIds) {
+        const updatedAttachments = step.attachmentIds.filter(
+          (id) => id !== args.attachmentId
+        );
+        await ctx.db.patch(attachment.agentStepId, {
+          attachmentIds: updatedAttachments,
+        });
+      }
+    }
+
+    // Delete the attachment record
+    await ctx.db.delete(args.attachmentId);
+  },
+});

@@ -309,7 +309,7 @@ export default function ChatPage() {
         onNewChat={handleNewChat}
         onSelectChat={handleSelectChat}
       />
-      <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full w-full overflow-hidden relative">
         <ChatArea
           sessionId={currentSessionId}
           focusedAgentIndex={focusedAgentIndex}
