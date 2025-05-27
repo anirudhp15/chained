@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   ChevronDown,
@@ -17,6 +18,7 @@ import {
   ChevronUp,
   GitCommitHorizontal,
   GitFork,
+  Pencil,
 } from "lucide-react";
 import { SiOpenai, SiClaude } from "react-icons/si";
 import { IoGitBranchOutline } from "react-icons/io5";
@@ -28,6 +30,7 @@ export interface Agent {
   id: string;
   model: string;
   prompt: string;
+  name?: string;
   connection?: {
     type: "direct" | "conditional" | "parallel";
     condition?: string;
@@ -359,12 +362,22 @@ export function AgentInput({
   canSend,
   isLoading,
 }: AgentInputProps) {
-  const [isModelOpen, setIsModelOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(agent.name || "");
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [isConnectionDropdownOpen, setIsConnectionDropdownOpen] =
+    useState(false);
+  const [isConditionDropdownOpen, setIsConditionDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"compact" | "detailed">("compact");
-  const [isConnectionOpen, setIsConnectionOpen] = useState(false);
   const [showConditionInput, setShowConditionInput] = useState(false);
   const [isAddingAgent, setIsAddingAgent] = useState(false);
+  const [buttonPositions, setButtonPositions] = useState<{
+    model?: DOMRect;
+    connection?: DOMRect;
+    condition?: DOMRect;
+  }>({});
 
   // Get provider key from model, handling gpt-4o-mini case
   const getProviderKey = (modelValue: string): keyof ModelProviders => {
@@ -420,7 +433,7 @@ export function AgentInput({
       });
       setShowConditionInput(false);
     }
-    setIsConnectionOpen(false);
+    setIsConnectionDropdownOpen(false);
   };
 
   const handleConditionChange = (condition: string) => {
@@ -459,352 +472,449 @@ export function AgentInput({
   };
 
   return (
-    <div className="shadow-xl space-y-3 w-full">
-      {/* Header with Agent title and remove button */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-medium text-lavender-400">
-            Agent {index + 1}
-          </span>
-          {/* Model Selection */}
-          <div className="relative">
-            <button
-              onClick={() => setIsModelOpen(!isModelOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-md text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 transition-all text-xs backdrop-blur-sm group"
+    <div className="relative">
+      <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center gap-2">
+            {/* <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-gray-400 hover:text-white transition-colors"
+              aria-label={isExpanded ? "Collapse step" : "Expand step"}
             >
-              {currentProvider && (
-                <currentProvider.icon
-                  size={14}
-                  className={`${currentProvider.iconColor} flex-shrink-0`}
+              {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </button> */}
+
+            <div className="flex items-center gap-2">
+              {isEditingName ? (
+                <input
+                  type="text"
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  onBlur={() => {
+                    setIsEditingName(false);
+                    if (tempName.trim()) {
+                      onUpdate({ ...agent, name: tempName.trim() });
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setIsEditingName(false);
+                      if (tempName.trim()) {
+                        onUpdate({ ...agent, name: tempName.trim() });
+                      }
+                    }
+                  }}
+                  className="w-32 px-2 py-0.5 bg-gray-800/90 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-lavender-400/50"
+                  placeholder={`Step ${index + 1}`}
+                  autoFocus
                 />
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsEditingName(true);
+                    setTempName(agent.name || "");
+                  }}
+                  className="flex items-center gap-2 text-xs font-medium text-lavender-400 hover:text-lavender-300 transition-colors group"
+                >
+                  <span>{agent.name || `Step ${index + 1}`}</span>
+                  <Pencil
+                    size={12}
+                    className="opacity-0 group-hover:opacity-100"
+                  />
+                </button>
               )}
-              <span className="font-medium truncate max-w-20">
-                {selectedModel?.label}
-              </span>
-              <ChevronDown
-                size={12}
-                className={`text-gray-400 flex-shrink-0 transition-transform duration-200 ${
-                  isModelOpen ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            {/* Model Selection Modal */}
-            {isModelOpen && (
-              <>
-                {/* Backdrop */}
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setIsModelOpen(false)}
-                />
-
-                {/* Modal */}
-                <div className="absolute bottom-full left-0 mb-2 w-96 bg-gray-800/95 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200 max-h-[80vh] flex flex-col">
-                  {/* Header with Search */}
-                  <div className="p-3 border-b border-gray-700/50 bg-gray-800/50">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-sm font-medium text-white">
-                        Select Model
-                      </h3>
-                      <div className="flex gap-1 ml-auto">
-                        <button
-                          onClick={() =>
-                            setViewMode(
-                              viewMode === "compact" ? "detailed" : "compact"
-                            )
-                          }
-                          className="p-1 text-gray-400 hover:text-white transition-colors rounded"
-                          title={
-                            viewMode === "compact"
-                              ? "Detailed view"
-                              : "Compact view"
-                          }
-                        >
-                          {viewMode === "compact" ? (
-                            <Eye size={12} />
-                          ) : (
-                            <MessageSquare size={12} />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <Search
-                        size={14}
-                        className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Search models..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-8 pr-3 py-1.5 bg-gray-700/50 border border-gray-600/50 rounded text-white placeholder-gray-400 text-xs focus:outline-none focus:ring-1 focus:ring-lavender-400/50"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Models List */}
-                  <div className="flex-1 overflow-y-auto">
-                    {filteredProviders.map((provider) => (
-                      <div
-                        key={provider.key}
-                        className="border-b border-gray-700/50 last:border-0"
-                      >
-                        {/* Provider Header */}
-                        <div className="flex items-center gap-2 px-3 py-2 text-gray-400 bg-gray-800/30 sticky top-0">
-                          <provider.icon
-                            size={14}
-                            className={provider.iconColor}
-                          />
-                          <span className="text-xs font-medium">
-                            {provider.name}
-                          </span>
-                        </div>
-
-                        {/* Models List */}
-                        <div className="py-1">
-                          {provider.models.map((model) => (
-                            <div key={model.value} className="group">
-                              <button
-                                onClick={() => {
-                                  onUpdate({ ...agent, model: model.value });
-                                  setIsModelOpen(false);
-                                }}
-                                className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-700/50 ${
-                                  agent.model === model.value
-                                    ? "bg-lavender-500/10 text-lavender-400"
-                                    : "text-white"
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium truncate">
-                                        {model.label}
-                                      </span>
-                                      {agent.model === model.value && (
-                                        <span className="text-lavender-400 text-xs">
-                                          Selected
-                                        </span>
-                                      )}
-                                    </div>
-                                    {viewMode === "detailed" &&
-                                      model.description && (
-                                        <p className="text-xs text-gray-400 mt-0.5 truncate">
-                                          {model.description}
-                                        </p>
-                                      )}
-                                  </div>
-
-                                  {/* Modality Icons */}
-                                  <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                                    {model.modalities.map((modality) => (
-                                      <div
-                                        key={modality}
-                                        className="relative group/tooltip"
-                                        title={
-                                          modality.charAt(0).toUpperCase() +
-                                          modality.slice(1)
-                                        }
-                                      >
-                                        <ModalityIcon
-                                          type={modality}
-                                          className="text-gray-400 hover:text-white transition-colors"
-                                        />
-                                        {/* Tooltip */}
-                                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-60">
-                                          {modality.charAt(0).toUpperCase() +
-                                            modality.slice(1)}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                {viewMode === "detailed" &&
-                                  model.capabilities && (
-                                    <div className="mt-1 flex flex-wrap gap-1">
-                                      {model.capabilities
-                                        .slice(0, 3)
-                                        .map((capability, idx) => (
-                                          <span
-                                            key={idx}
-                                            className="text-xs px-1.5 py-0.5 bg-gray-700/50 text-gray-300 rounded"
-                                          >
-                                            {capability}
-                                          </span>
-                                        ))}
-                                    </div>
-                                  )}
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-
-                    {filteredProviders.length === 0 && (
-                      <div className="p-4 text-center text-gray-400 text-sm">
-                        No models found matching &quot;{searchQuery}&quot;
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Connection Selection - only for agents after the first */}
-          {index > 0 && (
-            <div className="relative z-50">
+            </div>
+            {/* Model Selection */}
+            <div className="relative">
               <button
-                onClick={() => setIsConnectionOpen(!isConnectionOpen)}
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setButtonPositions((prev) => ({ ...prev, model: rect }));
+                  setIsModelDropdownOpen(!isModelDropdownOpen);
+                }}
                 className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-md text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 transition-all text-xs backdrop-blur-sm group"
               >
-                {CurrentConnectionIcon && (
-                  <span
-                    className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""}`}
-                  >
-                    <CurrentConnectionIcon size={14} />
-                  </span>
+                {currentProvider && (
+                  <currentProvider.icon
+                    size={14}
+                    className={`${currentProvider.iconColor} flex-shrink-0`}
+                  />
                 )}
-                <span className="font-medium text-xs">
-                  {currentConnection?.label}
+                <span className="font-medium truncate max-w-20">
+                  {selectedModel?.label}
                 </span>
-                <ChevronUp
-                  size={10}
-                  className={`text-gray-400 group-hover:text-lavender-400 transition-all ${
-                    isConnectionOpen ? "rotate-0" : "rotate-90"
+                <ChevronDown
+                  size={12}
+                  className={`text-gray-400 flex-shrink-0 transition-transform duration-200 ${
+                    isModelDropdownOpen ? "rotate-180" : ""
                   }`}
                 />
               </button>
 
-              {/* Connection Selection Modal */}
-              {isConnectionOpen && (
-                <>
-                  {/* Backdrop */}
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setIsConnectionOpen(false)}
+              {/* Model Selection Modal */}
+              {isModelDropdownOpen &&
+                createPortal(
+                  <>
+                    {/* Backdrop */}
+                    <div
+                      className="fixed inset-0 z-[999999] bg-black/20"
+                      onClick={() => setIsModelDropdownOpen(false)}
+                    />
+
+                    {/* Modal */}
+                    <div
+                      className="fixed w-96 bg-gray-800/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-[999999] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-[80vh] flex flex-col"
+                      style={{
+                        top: `${(buttonPositions.model?.top || 0) + window.scrollY - 8}px`,
+                        left: `${Math.max(16, Math.min((buttonPositions.model?.left || 0) - 100, window.innerWidth - 400))}px`,
+                        transform: "translateY(-100%)",
+                      }}
+                    >
+                      {/* Header with Search */}
+                      <div className="p-3 border-b border-gray-700/50 bg-gray-800/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-sm font-medium text-white">
+                            Select Model
+                          </h3>
+                          <div className="flex gap-1 ml-auto">
+                            <button
+                              onClick={() =>
+                                setViewMode(
+                                  viewMode === "compact"
+                                    ? "detailed"
+                                    : "compact"
+                                )
+                              }
+                              className="p-1 text-gray-400 hover:text-white transition-colors rounded"
+                              title={
+                                viewMode === "compact"
+                                  ? "Detailed view"
+                                  : "Compact view"
+                              }
+                            >
+                              {viewMode === "compact" ? (
+                                <Eye size={12} />
+                              ) : (
+                                <MessageSquare size={12} />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <Search
+                            size={14}
+                            className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Search models..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-8 pr-3 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded text-white placeholder-gray-400 text-xs focus:outline-none focus:ring-1 focus:ring-lavender-400/50"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Models List */}
+                      <div className="flex-1 overflow-y-auto">
+                        {filteredProviders.map((provider) => (
+                          <div
+                            key={provider.key}
+                            className="border-b border-gray-700/50 last:border-0"
+                          >
+                            {/* Provider Header */}
+                            <div className="flex items-center gap-2 px-3 py-2 text-gray-400 bg-gray-800/30 sticky top-0">
+                              <provider.icon
+                                size={14}
+                                className={provider.iconColor}
+                              />
+                              <span className="text-xs font-medium">
+                                {provider.name}
+                              </span>
+                            </div>
+
+                            {/* Models List */}
+                            <div className="py-1">
+                              {provider.models.map((model) => (
+                                <div key={model.value} className="group">
+                                  <button
+                                    onClick={() => {
+                                      onUpdate({
+                                        ...agent,
+                                        model: model.value,
+                                      });
+                                      setIsModelDropdownOpen(false);
+                                    }}
+                                    className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-700/50 ${
+                                      agent.model === model.value
+                                        ? "bg-lavender-500/10 text-lavender-400"
+                                        : "text-white"
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium truncate">
+                                            {model.label}
+                                          </span>
+                                          {agent.model === model.value && (
+                                            <span className="text-lavender-400 text-xs">
+                                              Selected
+                                            </span>
+                                          )}
+                                        </div>
+                                        {viewMode === "detailed" &&
+                                          model.description && (
+                                            <p className="text-xs text-gray-400 mt-0.5 truncate">
+                                              {model.description}
+                                            </p>
+                                          )}
+                                      </div>
+
+                                      {/* Modality Icons */}
+                                      <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                                        {model.modalities.map((modality) => (
+                                          <div
+                                            key={modality}
+                                            className="relative group/tooltip"
+                                            title={
+                                              modality.charAt(0).toUpperCase() +
+                                              modality.slice(1)
+                                            }
+                                          >
+                                            <ModalityIcon
+                                              type={modality}
+                                              className="text-gray-400 hover:text-white transition-colors"
+                                            />
+                                            {/* Tooltip */}
+                                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-60">
+                                              {modality
+                                                .charAt(0)
+                                                .toUpperCase() +
+                                                modality.slice(1)}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {viewMode === "detailed" &&
+                                      model.capabilities && (
+                                        <div className="mt-1 flex flex-wrap gap-1">
+                                          {model.capabilities
+                                            .slice(0, 3)
+                                            .map((capability, idx) => (
+                                              <span
+                                                key={idx}
+                                                className="text-xs px-1.5 py-0.5 bg-gray-700/50 text-gray-300 rounded"
+                                              >
+                                                {capability}
+                                              </span>
+                                            ))}
+                                        </div>
+                                      )}
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+
+                        {filteredProviders.length === 0 && (
+                          <div className="p-4 text-center text-gray-400 text-sm">
+                            No models found matching &quot;{searchQuery}&quot;
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>,
+                  document.body
+                )}
+            </div>
+            {/* Connection Selection - only for agents after the first */}
+            {index > 0 && (
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setButtonPositions((prev) => ({
+                      ...prev,
+                      connection: rect,
+                    }));
+                    setIsConnectionDropdownOpen(!isConnectionDropdownOpen);
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-md text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 transition-all text-xs backdrop-blur-sm group"
+                >
+                  {CurrentConnectionIcon && (
+                    <span
+                      className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""}`}
+                    >
+                      <CurrentConnectionIcon size={14} />
+                    </span>
+                  )}
+                  <span className="font-medium text-xs">
+                    {currentConnection?.label}
+                  </span>
+                  <ChevronUp
+                    size={10}
+                    className={`text-gray-400 group-hover:text-lavender-400 transition-all ${
+                      isConnectionDropdownOpen ? "rotate-0" : "rotate-90"
+                    }`}
+                  />
+                </button>
+
+                {/* Connection Selection Modal */}
+                {isConnectionDropdownOpen &&
+                  createPortal(
+                    <>
+                      {/* Backdrop */}
+                      <div
+                        className="fixed inset-0 z-[999999] bg-black/20"
+                        onClick={() => setIsConnectionDropdownOpen(false)}
+                      />
+
+                      {/* Modal */}
+                      <div
+                        className="fixed min-w-48 w-max bg-gray-800/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-[999999] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+                        style={{
+                          top: `${(buttonPositions.connection?.top || 0) + window.scrollY - 8}px`,
+                          left: `${Math.max(16, Math.min(buttonPositions.connection?.left || 0, window.innerWidth - 200))}px`,
+                          transform: "translateY(-100%)",
+                        }}
+                      >
+                        {CONNECTION_TYPES.map((type) => {
+                          const TypeIcon = type.Icon;
+                          const isSelected =
+                            currentConnectionType === type.type;
+                          return (
+                            <button
+                              key={type.type}
+                              onClick={() =>
+                                !type.disabled &&
+                                handleConnectionTypeChange(type.type)
+                              }
+                              disabled={type.disabled}
+                              className={`w-full px-3 py-2 text-left hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed first:rounded-t-lg last:rounded-b-lg flex items-center gap-3 transition-colors text-xs ${
+                                isSelected
+                                  ? "bg-lavender-500/10 text-lavender-400"
+                                  : "text-white"
+                              }`}
+                            >
+                              <span
+                                className={`${type.color} ${type.iconRotate || ""}`}
+                              >
+                                <TypeIcon size={14} />
+                              </span>
+                              <div className="flex-1">
+                                <div
+                                  className={`font-medium ${isSelected ? "text-lavender-400" : ""}`}
+                                >
+                                  {type.label}
+                                  {isSelected && (
+                                    <span className="ml-2 text-xs opacity-60">
+                                      Selected
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-gray-400 text-xs">
+                                  {type.description}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>,
+                    document.body
+                  )}
+              </div>
+            )}
+            {/* Conditional logic input - inline with other selectors */}
+            {index > 0 && currentConnectionType === "conditional" && (
+              <div className="flex items-center gap-2 relative">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={agent.connection?.condition || ""}
+                    onChange={(e) => handleConditionChange(e.target.value)}
+                    placeholder="Enter condition..."
+                    className="w-40 px-2 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 text-xs"
+                    onFocus={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setButtonPositions((prev) => ({
+                        ...prev,
+                        condition: rect,
+                      }));
+                      setShowConditionInput(true);
+                    }}
+                    onBlur={() => {
+                      // Delay hiding to allow preset clicks
+                      setTimeout(() => setShowConditionInput(false), 150);
+                    }}
                   />
 
-                  {/* Modal */}
-                  <div className="absolute bottom-full left-0 mb-2 min-w-48 w-max bg-gray-800/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-[9999] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
-                    {CONNECTION_TYPES.map((type) => {
-                      const TypeIcon = type.Icon;
-                      const isSelected = currentConnectionType === type.type;
-                      return (
-                        <button
-                          key={type.type}
-                          onClick={() =>
-                            !type.disabled &&
-                            handleConnectionTypeChange(type.type)
-                          }
-                          disabled={type.disabled}
-                          className={`w-full px-3 py-2 text-left hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed first:rounded-t-lg last:rounded-b-lg flex items-center gap-3 transition-colors text-xs ${
-                            isSelected
-                              ? "bg-lavender-500/10 text-lavender-400"
-                              : "text-white"
-                          }`}
-                        >
-                          <span
-                            className={`${type.color} ${type.iconRotate || ""}`}
-                          >
-                            <TypeIcon size={14} />
-                          </span>
-                          <div className="flex-1">
-                            <div
-                              className={`font-medium ${isSelected ? "text-lavender-400" : ""}`}
-                            >
-                              {type.label}
-                              {isSelected && (
-                                <span className="ml-2 text-xs opacity-60">
-                                  Selected
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-gray-400 text-xs">
-                              {type.description}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Conditional logic input - inline with other selectors */}
-          {index > 0 && currentConnectionType === "conditional" && (
-            <div className="flex items-center gap-2 relative z-40">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={agent.connection?.condition || ""}
-                  onChange={(e) => handleConditionChange(e.target.value)}
-                  placeholder="Enter condition..."
-                  className="w-40 px-2 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 text-xs"
-                  onFocus={() => setShowConditionInput(true)}
-                  onBlur={() => {
-                    // Delay hiding to allow preset clicks
-                    setTimeout(() => setShowConditionInput(false), 150);
-                  }}
-                />
-
-                {/* Quick presets dropdown - positioned above */}
-                {showConditionInput && (
-                  <div className="absolute bottom-full left-0 mb-2 w-64 bg-gray-800/98 border border-gray-600/50 rounded-lg shadow-xl z-[9999] p-2 backdrop-blur-xl">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-gray-300">
-                        Quick presets:
-                      </span>
-                      <button
-                        onClick={() => setShowConditionInput(false)}
-                        className="text-gray-400 hover:text-white text-xs hover:bg-gray-700/50 w-5 h-5 rounded flex items-center justify-center"
+                  {/* Quick presets dropdown - positioned above */}
+                  {showConditionInput &&
+                    createPortal(
+                      <div
+                        className="fixed w-64 bg-gray-800/98 border border-gray-600/50 rounded-lg shadow-xl z-[999999] p-2 backdrop-blur-xl"
+                        style={{
+                          top: `${(buttonPositions.condition?.top || 0) + window.scrollY - 8}px`,
+                          left: `${Math.max(16, Math.min(buttonPositions.condition?.left || 0, window.innerWidth - 272))}px`,
+                          transform: "translateY(-100%)",
+                        }}
                       >
-                        ×
-                      </button>
-                    </div>
-                    <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {CONDITION_PRESETS.map((preset, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handlePresetSelect(preset)}
-                          className="w-full px-2 py-1.5 text-left text-white hover:bg-gray-600/70 rounded text-xs transition-colors"
-                        >
-                          <div className="font-medium text-lavender-400">
-                            {preset.label}
-                          </div>
-                          <div className="text-gray-400 font-mono text-[10px]">
-                            {preset.placeholder}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-gray-300">
+                            Quick presets:
+                          </span>
+                          <button
+                            onClick={() => setShowConditionInput(false)}
+                            className="text-gray-400 hover:text-white text-xs hover:bg-gray-700/50 w-5 h-5 rounded flex items-center justify-center"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {CONDITION_PRESETS.map((preset, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handlePresetSelect(preset)}
+                              className="w-full px-2 py-1.5 text-left text-white hover:bg-gray-600/70 rounded text-xs transition-colors"
+                            >
+                              <div className="font-medium text-lavender-400">
+                                {preset.label}
+                              </div>
+                              <div className="text-gray-400 font-mono text-[10px]">
+                                {preset.placeholder}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>,
+                      document.body
+                    )}
+                </div>
 
-              <button
-                onClick={() => setShowConditionInput(!showConditionInput)}
-                className="p-1 text-gray-400 hover:text-lavender-400 transition-colors hover:bg-gray-700/50 rounded"
-                title="Show condition presets"
-              >
-                <Zap size={12} />
-              </button>
-            </div>
+                <button
+                  onClick={() => setShowConditionInput(!showConditionInput)}
+                  className="p-1 text-gray-400 hover:text-lavender-400 transition-colors hover:bg-gray-700/50 rounded"
+                  title="Show condition presets"
+                >
+                  <Zap size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+          {canRemove && (
+            <button
+              onClick={onRemove}
+              className="text-gray-400 hover:text-red-400 transition-colors p-1 hover:bg-gray-700/50 rounded-md"
+            >
+              <X size={14} />
+            </button>
           )}
         </div>
-        {canRemove && (
-          <button
-            onClick={onRemove}
-            className="text-gray-400 hover:text-red-400 transition-colors p-1 hover:bg-gray-700/50 rounded-md"
-          >
-            <X size={14} />
-          </button>
-        )}
       </div>
 
       {/* Main prompt area with absolutely positioned controls */}
@@ -813,11 +923,11 @@ export function AgentInput({
           value={agent.prompt}
           onChange={(e) => onUpdate({ ...agent, prompt: e.target.value })}
           placeholder="Enter your prompt..."
-          className="w-full h-32 px-3 py-3 pb-14 bg-gray-700/70 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 focus:border-lavender-400/50 resize-none transition-all text-sm"
+          className="w-full h-auto px-3 pt-3 pb-12 min-h-24 bg-gray-600/70 border border-gray-600/50 rounded-lg rounded-t-none text-white placeholder-gray-400 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 focus:border-lavender-400/50 resize-none transition-all text-sm"
         />
 
         {/* Bottom controls overlay */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+        <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between">
           {/* Left side controls */}
           <div className="flex items-center gap-2">
             {/* Modality Icons */}

@@ -4,6 +4,8 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
+import { encode } from "gpt-tokenizer";
+import { calculateCost } from "../../../lib/pricing";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -21,6 +23,17 @@ interface TokenUsage {
   totalTokens: number;
 }
 
+// Token estimation utility for OpenAI models
+function estimateTokens(text: string): number {
+  try {
+    // Use tiktoken-style estimation for OpenAI models
+    return encode(text).length;
+  } catch {
+    // Fallback: rough estimation (1 token ≈ 4 characters for English)
+    return Math.ceil(text.length / 4);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const {
@@ -36,10 +49,9 @@ export async function POST(request: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          // Mark as streaming
-          await convex.mutation(api.mutations.updateAgentStreaming, {
+          // Start performance tracking
+          await convex.mutation(api.mutations.startAgentExecution, {
             stepId: stepId as Id<"agentSteps">,
-            isStreaming: true,
           });
 
           // Build enhanced prompt with multimodal context
@@ -50,9 +62,6 @@ export async function POST(request: NextRequest) {
             webSearchResults,
           });
 
-          const fullResponse = "";
-          const tokenUsage: TokenUsage | null = null;
-
           // Stream the response based on model provider
           if (model.startsWith("gpt-") || model.includes("openai")) {
             await streamOpenAI(
@@ -60,9 +69,7 @@ export async function POST(request: NextRequest) {
               enhancedPrompt,
               images,
               controller,
-              stepId as Id<"agentSteps">,
-              fullResponse,
-              tokenUsage
+              stepId as Id<"agentSteps">
             );
           } else if (model.includes("claude")) {
             await streamAnthropic(
@@ -70,9 +77,7 @@ export async function POST(request: NextRequest) {
               enhancedPrompt,
               images,
               controller,
-              stepId as Id<"agentSteps">,
-              fullResponse,
-              tokenUsage
+              stepId as Id<"agentSteps">
             );
           } else if (model.startsWith("grok-") || model.includes("xai")) {
             await streamXAI(
@@ -80,9 +85,7 @@ export async function POST(request: NextRequest) {
               enhancedPrompt,
               images,
               controller,
-              stepId as Id<"agentSteps">,
-              fullResponse,
-              tokenUsage
+              stepId as Id<"agentSteps">
             );
           } else {
             throw new Error(`Unsupported model: ${model}`);
@@ -170,9 +173,7 @@ async function streamOpenAI(
   prompt: string,
   images: Array<{ url: string; description?: string }> | undefined,
   controller: ReadableStreamDefaultController,
-  stepId: Id<"agentSteps">,
-  fullResponse: string,
-  tokenUsage: TokenUsage | null
+  stepId: Id<"agentSteps">
 ) {
   try {
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
@@ -211,6 +212,8 @@ async function streamOpenAI(
       max_tokens: 4000,
     });
 
+    let fullResponse = "";
+    let tokenUsage: TokenUsage | null = null;
     let chunkCount = 0;
     const updateFrequency = 5; // Update database every 5 chunks for better performance
 
@@ -252,13 +255,35 @@ async function streamOpenAI(
       }
     }
 
-    // Final update to database
-    await convex.mutation(api.mutations.updateAgentResponse, {
+    // Estimate tokens if not provided by API
+    if (!tokenUsage) {
+      const promptTokens = estimateTokens(prompt);
+      const completionTokens = estimateTokens(fullResponse);
+
+      tokenUsage = {
+        promptTokens,
+        completionTokens,
+        totalTokens: promptTokens + completionTokens,
+      };
+
+      console.log(`Estimated tokens for ${model}:`, tokenUsage);
+    }
+
+    // Calculate cost
+    const estimatedCost = tokenUsage
+      ? calculateCost(
+          model,
+          tokenUsage.promptTokens,
+          tokenUsage.completionTokens
+        )
+      : 0;
+
+    // Final update to database with performance metrics
+    await convex.mutation(api.mutations.completeAgentExecution, {
       stepId,
       response: fullResponse,
       tokenUsage: tokenUsage || undefined,
-      isComplete: true,
-      isStreaming: false,
+      estimatedCost,
     });
 
     // Send completion signal
@@ -285,9 +310,7 @@ async function streamAnthropic(
   prompt: string,
   images: Array<{ url: string; description?: string }> | undefined,
   controller: ReadableStreamDefaultController,
-  stepId: Id<"agentSteps">,
-  fullResponse: string,
-  tokenUsage: TokenUsage | null
+  stepId: Id<"agentSteps">
 ) {
   try {
     const content: Anthropic.MessageParam["content"] = [];
@@ -322,18 +345,24 @@ async function streamAnthropic(
           });
         } catch (error) {
           console.error("Failed to process image for Anthropic:", error);
-          // Continue without this image
         }
       }
     }
 
     const stream = await anthropic.messages.create({
-      model: model,
+      model: model.replace("anthropic-", ""),
       max_tokens: 4000,
-      messages: [{ role: "user", content }],
+      messages: [
+        {
+          role: "user",
+          content: content,
+        },
+      ],
       stream: true,
     });
 
+    let fullResponse = "";
+    let tokenUsage: TokenUsage | null = null;
     let chunkCount = 0;
     const updateFrequency = 5; // Update database every 5 chunks for better performance
 
@@ -377,13 +406,35 @@ async function streamAnthropic(
       }
     }
 
-    // Final update to database
-    await convex.mutation(api.mutations.updateAgentResponse, {
+    // Estimate tokens if not provided by API
+    if (!tokenUsage) {
+      const promptTokens = estimateTokens(prompt);
+      const completionTokens = estimateTokens(fullResponse);
+
+      tokenUsage = {
+        promptTokens,
+        completionTokens,
+        totalTokens: promptTokens + completionTokens,
+      };
+
+      console.log(`Estimated tokens for ${model}:`, tokenUsage);
+    }
+
+    // Calculate cost
+    const estimatedCost = tokenUsage
+      ? calculateCost(
+          model,
+          tokenUsage.promptTokens,
+          tokenUsage.completionTokens
+        )
+      : 0;
+
+    // Final update to database with performance metrics
+    await convex.mutation(api.mutations.completeAgentExecution, {
       stepId,
       response: fullResponse,
       tokenUsage: tokenUsage || undefined,
-      isComplete: true,
-      isStreaming: false,
+      estimatedCost,
     });
 
     // Send completion signal
@@ -410,9 +461,7 @@ async function streamXAI(
   prompt: string,
   images: Array<{ url: string; description?: string }> | undefined,
   controller: ReadableStreamDefaultController,
-  stepId: Id<"agentSteps">,
-  fullResponse: string,
-  tokenUsage: TokenUsage | null
+  stepId: Id<"agentSteps">
 ) {
   try {
     // xAI client setup
@@ -424,7 +473,7 @@ async function streamXAI(
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
 
     if (images && images.length > 0) {
-      // For vision-capable Grok models, include images
+      // For vision-capable models, include images
       const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
         { type: "text", text: prompt },
       ];
@@ -451,12 +500,14 @@ async function streamXAI(
     }
 
     const stream = await xai.chat.completions.create({
-      model: model,
+      model: model.replace("xai-", ""),
       messages,
       stream: true,
       max_tokens: 4000,
     });
 
+    let fullResponse = "";
+    let tokenUsage: TokenUsage | null = null;
     let chunkCount = 0;
     const updateFrequency = 5; // Update database every 5 chunks for better performance
 
@@ -498,13 +549,35 @@ async function streamXAI(
       }
     }
 
-    // Final update to database
-    await convex.mutation(api.mutations.updateAgentResponse, {
+    // Estimate tokens if not provided by API
+    if (!tokenUsage) {
+      const promptTokens = estimateTokens(prompt);
+      const completionTokens = estimateTokens(fullResponse);
+
+      tokenUsage = {
+        promptTokens,
+        completionTokens,
+        totalTokens: promptTokens + completionTokens,
+      };
+
+      console.log(`Estimated tokens for ${model}:`, tokenUsage);
+    }
+
+    // Calculate cost
+    const estimatedCost = tokenUsage
+      ? calculateCost(
+          model,
+          tokenUsage.promptTokens,
+          tokenUsage.completionTokens
+        )
+      : 0;
+
+    // Final update to database with performance metrics
+    await convex.mutation(api.mutations.completeAgentExecution, {
       stepId,
       response: fullResponse,
       tokenUsage: tokenUsage || undefined,
-      isComplete: true,
-      isStreaming: false,
+      estimatedCost,
     });
 
     // Send completion signal
@@ -521,7 +594,7 @@ async function streamXAI(
     controller.close();
   } catch (error) {
     throw new Error(
-      `xAI streaming failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      `XAI streaming failed: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 }

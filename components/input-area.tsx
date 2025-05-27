@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ModalityIcons } from "./modality/ModalityIcons";
 import { GitCommitHorizontal, GitFork } from "lucide-react";
 import { IoGitBranchOutline } from "react-icons/io5";
+import { WelcomeScreen } from "./welcome-screen";
 
 // Simple connection icon component
 const ConnectionIcon = ({ connectionType }: { connectionType?: string }) => {
@@ -26,11 +27,9 @@ const ConnectionIcon = ({ connectionType }: { connectionType?: string }) => {
   return (
     <div className="flex items-center justify-center px-2">
       <div className="flex items-center gap-2">
-        <div className="w-1 h-px bg-gray-600"></div>
-        <div className="p-2 bg-gray-800/90 border border-gray-600/50 rounded-full backdrop-blur-sm">
+        <div className="p-2 bg-gray-800/20 border border-gray-600/50 rounded-xl backdrop-blur-sm">
           {getConnectionIcon()}
         </div>
-        <div className="w-1 h-px bg-gray-600"></div>
       </div>
     </div>
   );
@@ -44,7 +43,8 @@ interface InputAreaProps {
   focusedAgentIndex?: number | null;
   focusedAgent?: Agent | null;
   onSendFocusedAgent?: (agent: Agent) => void;
-  onLoadPreset?: (agents: Agent[]) => void;
+  presetAgents?: Agent[] | null;
+  onClearPresetAgents?: () => void;
 }
 
 export function InputArea({
@@ -55,12 +55,15 @@ export function InputArea({
   focusedAgentIndex,
   focusedAgent,
   onSendFocusedAgent,
+  presetAgents,
+  onClearPresetAgents,
 }: InputAreaProps) {
   const [agents, setAgents] = useState<Agent[]>([
     {
       id: uuidv4(),
       model: "gpt-4o-mini",
       prompt: "",
+      name: "", // Initialize with empty name
     },
   ]);
 
@@ -69,6 +72,17 @@ export function InputArea({
   );
 
   const [animatingAgentId, setAnimatingAgentId] = useState<string | null>(null);
+
+  // Handle preset loading
+  useEffect(() => {
+    if (presetAgents && presetAgents.length > 0) {
+      setAgents(presetAgents);
+      // Clear the preset agents state after loading
+      if (onClearPresetAgents) {
+        onClearPresetAgents();
+      }
+    }
+  }, [presetAgents, onClearPresetAgents]);
 
   // Initialize focused agent state when focus mode is activated
   useEffect(() => {
@@ -88,6 +102,7 @@ export function InputArea({
         id: uuidv4(),
         model: "gpt-4o-mini",
         prompt: "",
+        name: "", // Initialize with empty name
       };
 
       setAnimatingAgentId(newAgent.id);
@@ -122,6 +137,7 @@ export function InputArea({
           id: uuidv4(),
           model: "gpt-4o-mini",
           prompt: "",
+          name: "", // Initialize with empty name
         },
       ]);
     }
@@ -256,7 +272,7 @@ export function InputArea({
                       : agents.length === 2
                         ? "w-full max-w-none min-w-[550px] flex-1"
                         : "w-full max-w-none min-w-[450px] flex-1"
-                  } bg-gray-900/75 backdrop-blur-sm rounded-xl border-2 border-gray-800/50 p-4 ${
+                  } backdrop-blur-sm rounded-xl border-2 border-gray-800/50 ${
                     queuedAgents.some((qa) => qa.id === agent.id)
                       ? "border-lavender-400/50"
                       : ""

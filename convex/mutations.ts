@@ -50,6 +50,7 @@ export const addAgentStep = mutation({
     index: v.number(),
     model: v.string(),
     prompt: v.string(),
+    name: v.optional(v.string()),
     connectionType: v.optional(
       v.union(
         v.literal("direct"),
@@ -66,6 +67,7 @@ export const addAgentStep = mutation({
       index: args.index,
       model: args.model,
       prompt: args.prompt,
+      name: args.name,
       timestamp: Date.now(),
       isComplete: false,
       connectionType: args.connectionType,
@@ -149,6 +151,7 @@ export const runAgentChain = mutation({
       v.object({
         model: v.string(),
         prompt: v.string(),
+        name: v.optional(v.string()),
         index: v.number(),
       })
     ),
@@ -162,6 +165,7 @@ export const runAgentChain = mutation({
         index: agent.index,
         model: agent.model,
         prompt: agent.prompt,
+        name: agent.name,
         timestamp: Date.now(),
         isComplete: false,
       });
@@ -347,5 +351,60 @@ export const deleteAttachment = mutation({
 
     // Delete the attachment record
     await ctx.db.delete(args.attachmentId);
+  },
+});
+
+// Performance tracking mutations
+export const startAgentExecution = mutation({
+  args: {
+    stepId: v.id("agentSteps"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.stepId, {
+      executionStartTime: Date.now(),
+      isStreaming: true,
+    });
+  },
+});
+
+export const completeAgentExecution = mutation({
+  args: {
+    stepId: v.id("agentSteps"),
+    response: v.string(),
+    tokenUsage: v.optional(
+      v.object({
+        promptTokens: v.number(),
+        completionTokens: v.number(),
+        totalTokens: v.number(),
+      })
+    ),
+    estimatedCost: v.optional(v.number()),
+    reasoning: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const endTime = Date.now();
+    const step = await ctx.db.get(args.stepId);
+
+    if (!step) throw new Error("Step not found");
+
+    const duration = step.executionStartTime
+      ? endTime - step.executionStartTime
+      : 0;
+    const tokensPerSecond =
+      args.tokenUsage && duration > 0
+        ? args.tokenUsage.totalTokens / (duration / 1000)
+        : 0;
+
+    await ctx.db.patch(args.stepId, {
+      response: args.response,
+      reasoning: args.reasoning,
+      tokenUsage: args.tokenUsage,
+      executionEndTime: endTime,
+      executionDuration: duration,
+      tokensPerSecond: Math.round(tokensPerSecond * 100) / 100,
+      estimatedCost: args.estimatedCost,
+      isComplete: true,
+      isStreaming: false,
+    });
   },
 });

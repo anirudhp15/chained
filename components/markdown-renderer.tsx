@@ -215,13 +215,20 @@ export function MarkdownRenderer({
                       background: "#1f2937",
                       fontSize: "0.875rem",
                       lineHeight: "1.5",
+                      overflowX: "auto",
+                      maxWidth: "100%",
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-all",
                     }}
                     codeTagProps={{
                       style: {
                         fontFamily:
                           'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-all",
                       },
                     }}
+                    wrapLongLines={true}
                   >
                     {code}
                   </SyntaxHighlighter>
@@ -263,6 +270,21 @@ export function MarkdownRenderer({
             td: ({ children }) => (
               <td className="px-4 py-2 text-gray-100 text-sm">{children}</td>
             ),
+
+            // Inline code
+            code: ({ children, className }) => {
+              // If it's a code block (has className), let the pre component handle it
+              if (className) {
+                return <code className={className}>{children}</code>;
+              }
+
+              // Inline code styling with proper wrapping
+              return (
+                <code className="bg-gray-700/50 text-gray-200 px-1.5 py-0.5 rounded text-sm font-mono break-all">
+                  {children}
+                </code>
+              );
+            },
 
             // Horizontal rule
             hr: () => <hr className="border-gray-600 my-6" />,

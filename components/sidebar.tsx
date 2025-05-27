@@ -22,6 +22,73 @@ interface SidebarProps {
   currentSessionId?: string;
 }
 
+interface ChatGroup {
+  title: string;
+  chats: any[];
+}
+
+// Loading animation component
+const LoadingAnimation = () => (
+  <div className="flex items-center justify-center py-8">
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative">
+        <Link2 size={20} className="text-lavender-400 animate-pulse" />
+        <div className="absolute inset-0 animate-ping">
+          <Link2 size={20} className="text-lavender-400/30" />
+        </div>
+      </div>
+      <div className="flex gap-1">
+        <div
+          className="w-1 h-1 bg-lavender-400 rounded-full animate-bounce"
+          style={{ animationDelay: "0ms" }}
+        ></div>
+        <div
+          className="w-1 h-1 bg-lavender-400 rounded-full animate-bounce"
+          style={{ animationDelay: "150ms" }}
+        ></div>
+        <div
+          className="w-1 h-1 bg-lavender-400 rounded-full animate-bounce"
+          style={{ animationDelay: "300ms" }}
+        ></div>
+      </div>
+    </div>
+  </div>
+);
+
+// Helper function to group chats by time periods
+const groupChatsByTime = (chats: any[]): ChatGroup[] => {
+  if (!chats) return [];
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+  const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  const groups: ChatGroup[] = [
+    { title: "Today", chats: [] },
+    { title: "Yesterday", chats: [] },
+    { title: "Last 7 days", chats: [] },
+    { title: "Older", chats: [] },
+  ];
+
+  chats.forEach((chat) => {
+    const chatDate = new Date(chat._creationTime);
+
+    if (chatDate >= today) {
+      groups[0].chats.push(chat);
+    } else if (chatDate >= yesterday) {
+      groups[1].chats.push(chat);
+    } else if (chatDate >= lastWeek) {
+      groups[2].chats.push(chat);
+    } else {
+      groups[3].chats.push(chat);
+    }
+  });
+
+  // Filter out empty groups
+  return groups.filter((group) => group.chats.length > 0);
+};
+
 export function Sidebar({
   onNewChat,
   onSelectChat,
@@ -131,12 +198,14 @@ export function Sidebar({
       <div className="p-4 flex justify-center">
         <button
           onClick={onNewChat}
-          className={`flex items-center gap-2 px-3 py-2 bg-lavender-500 hover:bg-lavender-600 text-white rounded-lg transition-colors lavender-glow ${
+          className={`flex items-center justify-center font-bold gap-2 px-3 py-2 bg-lavender-500 hover:bg-lavender-600 text-white rounded-lg transition-colors lavender-glow ${
             isCollapsed ? "w-8 h-8 justify-center" : "w-full"
           }`}
         >
-          <Plus size={16} />
-          {!isCollapsed && <span>New Chat</span>}
+          <Plus
+            className={isCollapsed ? "text-white block text-4xl" : "hidden"}
+          />
+          {!isCollapsed && <span>New Chain</span>}
         </button>
       </div>
 
@@ -154,86 +223,116 @@ export function Sidebar({
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto">
         <div className="px-2">
-          {!isCollapsed && (
-            <h3 className="px-2 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              Recent
-            </h3>
-          )}
-          {recentChats?.map((chat) => (
-            <div
-              key={chat._id}
-              className={`relative group ${
-                isCollapsed ? "flex justify-center mb-2" : "mb-1"
-              }`}
-            >
-              <button
-                onClick={() => onSelectChat(chat._id)}
-                className={`flex relative z-10 items-center gap-2 rounded-lg text-left transition-colors ${
-                  currentSessionId === chat._id
-                    ? "bg-lavender-500/20 text-lavender-400"
-                    : "text-gray-300 hover:bg-gray-800"
-                } ${
-                  isCollapsed
-                    ? "w-8 h-8 justify-center"
-                    : "w-full px-3 py-2 pr-8"
-                }`}
-              >
-                <MessageSquare size={16} className="flex-shrink-0" />
+          {recentChats === undefined ? (
+            // Loading state
+            <LoadingAnimation />
+          ) : recentChats.length === 0 ? (
+            // Empty state
+            !isCollapsed && (
+              <div className="px-2 py-8 text-center">
+                <MessageSquare
+                  size={32}
+                  className="mx-auto text-gray-600 mb-2"
+                />
+                <p className="text-sm text-gray-500">No chains yet</p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Create your first chain to get started
+                </p>
+              </div>
+            )
+          ) : (
+            // Grouped chats
+            groupChatsByTime(recentChats).map((group, groupIndex) => (
+              <div key={group.title} className={groupIndex > 0 ? "mt-6" : ""}>
                 {!isCollapsed && (
-                  <>
-                    {editingChatId === chat._id ? (
-                      <input
-                        type="text"
-                        value={editingTitle}
-                        onChange={(e) => setEditingTitle(e.target.value)}
-                        onBlur={handleSaveEdit}
-                        onKeyDown={handleKeyPress}
-                        className="flex-1 bg-gray-700 text-white px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-lavender-400"
-                        autoFocus
-                      />
-                    ) : (
-                      <span className="truncate flex-1">{chat.title}</span>
-                    )}
-                  </>
+                  <h3 className="px-2 py-2 text-xs font-semibold text-lavender-500 uppercase tracking-wide border-b border-gray-800/50 mb-2">
+                    {group.title}
+                  </h3>
                 )}
-              </button>
-
-              {/* Three dots menu - only show when expanded */}
-              {!isCollapsed && editingChatId !== chat._id && (
-                <div className="absolute z-50 right-2 top-1/2 transform -translate-y-1/2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenMenuId(openMenuId === chat._id ? null : chat._id);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white transition-all duration-200 p-1"
+                {group.chats.map((chat) => (
+                  <div
+                    key={chat._id}
+                    className={`relative group ${
+                      isCollapsed ? "flex justify-center mb-2" : "mb-1"
+                    }`}
                   >
-                    <MoreVertical size={14} />
-                  </button>
+                    <button
+                      onClick={() => onSelectChat(chat._id)}
+                      className={`flex relative z-10 items-center gap-2 rounded-lg text-left transition-colors ${
+                        currentSessionId === chat._id
+                          ? "bg-lavender-500/20 text-lavender-400"
+                          : "text-gray-300 hover:bg-gray-800"
+                      } ${
+                        isCollapsed
+                          ? "w-8 h-8 justify-center"
+                          : "w-full px-3 py-2 pr-8"
+                      }`}
+                    >
+                      <MessageSquare size={16} className="flex-shrink-0" />
+                      {!isCollapsed && (
+                        <>
+                          {editingChatId === chat._id ? (
+                            <input
+                              type="text"
+                              value={editingTitle}
+                              onChange={(e) => setEditingTitle(e.target.value)}
+                              onBlur={handleSaveEdit}
+                              onKeyDown={handleKeyPress}
+                              className="flex-1 bg-gray-700 text-white px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-lavender-400"
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="truncate flex-1">
+                              {chat.title}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </button>
 
-                  {/* Dropdown menu */}
-                  {openMenuId === chat._id && (
-                    <div className="absolute right-0 top-0 mt-1 bg-gray-800 border-2 border-gray-700 rounded-lg shadow-lg z-50 min-w-[120px]">
-                      <button
-                        onClick={() => handleEditChat(chat._id, chat.title)}
-                        className="w-full relative z-50 flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors rounded-t-lg"
-                      >
-                        <Edit2 size={12} />
-                        Rename
-                      </button>
-                      <button
-                        onClick={() => handleDeleteChat(chat._id)}
-                        className="w-full relative z-50 flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors rounded-b-lg"
-                      >
-                        <Trash2 size={12} />
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+                    {/* Three dots menu - only show when expanded */}
+                    {!isCollapsed && editingChatId !== chat._id && (
+                      <div className="absolute z-50 right-2 top-1/2 transform -translate-y-1/2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(
+                              openMenuId === chat._id ? null : chat._id
+                            );
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white transition-all duration-200 p-1"
+                        >
+                          <MoreVertical size={14} />
+                        </button>
+
+                        {/* Dropdown menu */}
+                        {openMenuId === chat._id && (
+                          <div className="absolute right-0 top-0 mt-1 bg-gray-800 border-2 border-gray-700 rounded-lg shadow-lg z-50 min-w-[120px]">
+                            <button
+                              onClick={() =>
+                                handleEditChat(chat._id, chat.title)
+                              }
+                              className="w-full relative z-50 flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors rounded-t-lg"
+                            >
+                              <Edit2 size={12} />
+                              Rename
+                            </button>
+                            <button
+                              onClick={() => handleDeleteChat(chat._id)}
+                              className="w-full relative z-50 flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors rounded-b-lg"
+                            >
+                              <Trash2 size={12} />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

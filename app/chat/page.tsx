@@ -21,6 +21,7 @@ export default function ChatPage() {
   const [focusedAgentIndex, setFocusedAgentIndex] = useState<number | null>(
     null
   );
+  const [presetAgents, setPresetAgents] = useState<Agent[] | null>(null);
 
   const createSession = useMutation(api.mutations.createSession);
   const addAgentStep = useMutation(api.mutations.addAgentStep);
@@ -52,15 +53,16 @@ export default function ChatPage() {
 
   const handleLoadPreset = async (agents: Agent[]) => {
     try {
-      // Create a new session for the preset
-      const sessionId = await createSession({
-        title: `${agents.length > 0 ? agents[0].prompt.split(" ").slice(0, 3).join(" ") : "Preset"} Chain`,
-      });
-      setCurrentSessionId(sessionId);
+      // Don't create session yet - just store the preset agents
+      setCurrentSessionId(null); // Ensure we're in welcome state
       setFocusedAgentIndex(null); // Reset focus when loading preset
+
+      // Set the preset agents so InputArea can load them
+      setPresetAgents(agents);
+
       console.log("Loaded preset with agents:", agents);
     } catch (error) {
-      console.error("Failed to create session for preset:", error);
+      console.error("Failed to load preset:", error);
     }
   };
 
@@ -74,6 +76,7 @@ export default function ChatPage() {
         index: focusedAgentIndex,
         model: agent.model,
         prompt: agent.prompt,
+        name: agent.name,
         connectionType: "direct", // Focus mode is always direct
         connectionCondition: undefined,
         sourceAgentIndex: undefined,
@@ -90,8 +93,15 @@ export default function ChatPage() {
     if (!currentSessionId) {
       // Create a new session if none exists
       try {
+        // Create a descriptive title based on the first agent's prompt
+        const firstPrompt = agents[0]?.prompt || "";
+        const title =
+          firstPrompt.length > 0
+            ? `${firstPrompt.split(" ").slice(0, 3).join(" ")}...`
+            : `Chat with ${agents.length} agents`;
+
         const sessionId = await createSession({
-          title: `Chat with ${agents.length} agents`,
+          title,
         });
         setCurrentSessionId(sessionId);
         await runChain(sessionId, agents);
@@ -198,6 +208,7 @@ export default function ChatPage() {
           index: i,
           model: agent.model,
           prompt: agent.prompt,
+          name: agent.name,
           connectionType,
           connectionCondition: agent.connection?.condition,
           sourceAgentIndex: i > 0 ? i - 1 : undefined,
@@ -302,6 +313,10 @@ export default function ChatPage() {
     }
   };
 
+  const handleClearPresetAgents = () => {
+    setPresetAgents(null);
+  };
+
   return (
     <main className="flex h-screen w-screen overflow-hidden bg-black">
       <Sidebar
@@ -323,7 +338,8 @@ export default function ChatPage() {
           focusedAgentIndex={focusedAgentIndex}
           onSendFocusedAgent={handleSendFocusedAgent}
           isStreaming={isStreaming}
-          onLoadPreset={handleLoadPreset}
+          presetAgents={presetAgents}
+          onClearPresetAgents={handleClearPresetAgents}
         />
       </div>
     </main>

@@ -20,6 +20,8 @@ import { WelcomeScreen } from "./welcome-screen";
 import { ConnectionBadge } from "./connection-selector";
 import { AttachmentDisplay } from "./ui/AttachmentDisplay";
 import { CopyButton } from "./ui/CopyButton";
+import { PerformanceMetrics } from "./PerformanceMetrics";
+import { ChainPerformanceSummary } from "./ChainPerformanceSummary";
 
 interface ChatAreaProps {
   sessionId: Id<"chatSessions"> | null;
@@ -68,6 +70,7 @@ export function ChatArea({
           index: step.index,
           model: step.model,
           prompt: step.prompt,
+          name: step.name,
           provider: step.provider,
           response: null,
           streamedContent: null,
@@ -81,6 +84,12 @@ export function ChatArea({
           skipReason: null,
           connectionType: null,
           connectionCondition: null,
+          // Performance tracking fields
+          executionStartTime: null,
+          executionEndTime: null,
+          executionDuration: null,
+          tokensPerSecond: null,
+          estimatedCost: null,
         });
       }
 
@@ -96,6 +105,15 @@ export function ChatArea({
       agent.skipReason = step.skipReason;
       agent.connectionType = step.connectionType;
       agent.connectionCondition = step.connectionCondition;
+      // Performance tracking fields
+      agent.executionStartTime = step.executionStartTime;
+      agent.executionEndTime = step.executionEndTime;
+      agent.executionDuration = step.executionDuration;
+      agent.tokensPerSecond = step.tokensPerSecond;
+      agent.estimatedCost = step.estimatedCost;
+      if (step.name) {
+        agent.name = step.name;
+      }
     });
 
     const groups = Array.from(stepsByAgent.values()).sort(
@@ -305,10 +323,10 @@ export function ChatArea({
               <ModelAvatar model={focusedAgent.model} size="sm" />
               <div className="flex flex-col">
                 <span className="text-white font-medium text-sm">
-                  {focusedAgent.model}
+                  {focusedAgent.name || `Step ${focusedAgent.index + 1}`}
                 </span>
                 <span className="text-gray-400 text-xs">
-                  Agent {focusedAgent.index + 1} • Focus
+                  {focusedAgent.model}
                 </span>
               </div>
             </div>
@@ -316,11 +334,11 @@ export function ChatArea({
               onClick={() => handleFocusToggle(focusedAgent.index)}
               className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500/50 rounded-lg text-gray-300 hover:text-white transition-all group"
             >
-              <Grid3X3
+              <Focus
                 size={14}
                 className="group-hover:scale-110 transition-transform"
               />
-              <span className="text-sm">Exit Focus</span>
+              <span className="text-sm">Focus</span>
             </button>
           </div>
         </div>
@@ -411,17 +429,26 @@ export function ChatArea({
                               <span className="text-sm">Streaming...</span>
                             </div>
                           )}
-                          {focusedAgent.tokenUsage && (
-                            <div className="flex items-center gap-2 text-sm text-gray-400">
-                              <Zap size={12} />
-                              <span>{focusedAgent.tokenUsage.totalTokens}</span>
-                            </div>
-                          )}
                         </div>
                       </div>
 
+                      {/* Performance Metrics */}
+                      {(focusedAgent.tokenUsage ||
+                        focusedAgent.executionDuration) && (
+                        <div className="mt-3">
+                          <PerformanceMetrics
+                            tokenUsage={focusedAgent.tokenUsage}
+                            executionDuration={focusedAgent.executionDuration}
+                            tokensPerSecond={focusedAgent.tokensPerSecond}
+                            estimatedCost={focusedAgent.estimatedCost}
+                            model={focusedAgent.model}
+                            size="sm"
+                          />
+                        </div>
+                      )}
+
                       {/* Main Response */}
-                      <div className="text-white text-base">
+                      <div className="text-white text-base break-words overflow-hidden">
                         <MarkdownRenderer
                           content={
                             focusedAgent.response ||
@@ -429,6 +456,7 @@ export function ChatArea({
                             ""
                           }
                           isStreaming={focusedAgent.isStreaming}
+                          className="break-words overflow-wrap-anywhere"
                         />
                         {focusedAgent.isStreaming && (
                           <span className="inline-block w-2 h-4 bg-lavender-400 ml-1 streaming-cursor"></span>
@@ -455,34 +483,16 @@ export function ChatArea({
                               <div className="text-sm text-gray-400 mb-3">
                                 Model Reasoning:
                               </div>
-                              <div className="text-base text-gray-300">
+                              <div className="text-base text-gray-300 break-words overflow-hidden">
                                 <MarkdownRenderer
                                   content={focusedAgent.reasoning}
+                                  className="break-words overflow-wrap-anywhere"
                                 />
                               </div>
                             </div>
                           )}
                         </div>
                       )}
-
-                      {/* Token Usage Details */}
-                      {focusedAgent.tokenUsage &&
-                        expandedReasoning === focusedAgent._id && (
-                          <div className="mt-3 p-3 bg-gray-900/30 rounded-lg text-sm text-gray-400">
-                            <div className="grid grid-cols-3 gap-3">
-                              <div>
-                                Input: {focusedAgent.tokenUsage.promptTokens}
-                              </div>
-                              <div>
-                                Output:{" "}
-                                {focusedAgent.tokenUsage.completionTokens}
-                              </div>
-                              <div>
-                                Total: {focusedAgent.tokenUsage.totalTokens}
-                              </div>
-                            </div>
-                          </div>
-                        )}
                     </div>
                   </div>
                 </div>
@@ -535,13 +545,29 @@ export function ChatArea({
   return (
     <div
       ref={containerRef}
-      className="flex-1 flex overflow-hidden bg-black w-full relative"
+      className="flex-1 flex flex-col overflow-hidden bg-black w-full relative"
       style={
         {
           "--disable-transitions": isResizing ? "1" : "0",
         } as React.CSSProperties
       }
     >
+      {/* Chain Performance Summary */}
+      {agentGroups.length > 1 && (
+        <div className="flex-shrink-0 px-4 py-3 border-b border-gray-700/30">
+          <ChainPerformanceSummary
+            steps={agentGroups.map((agent) => ({
+              tokenUsage: agent.tokenUsage,
+              executionDuration: agent.executionDuration,
+              estimatedCost: agent.estimatedCost,
+              model: agent.model,
+              isComplete: agent.isComplete,
+              wasSkipped: agent.wasSkipped,
+            }))}
+          />
+        </div>
+      )}
+
       {focusedAgent ? (
         // Focused agent view
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -552,10 +578,10 @@ export function ChatArea({
                 <ModelAvatar model={focusedAgent.model} size="sm" />
                 <div className="flex flex-col">
                   <span className="text-white font-medium text-sm">
-                    {focusedAgent.model}
+                    {focusedAgent.name || `Step ${focusedAgent.index + 1}`}
                   </span>
                   <span className="text-gray-400 text-xs">
-                    Agent {focusedAgent.index + 1} • Focus
+                    {focusedAgent.model}
                   </span>
                 </div>
               </div>
@@ -563,11 +589,11 @@ export function ChatArea({
                 onClick={() => handleFocusToggle(focusedAgent.index)}
                 className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500/50 rounded-lg text-gray-300 hover:text-white transition-all group"
               >
-                <Grid3X3
+                <Focus
                   size={14}
                   className="group-hover:scale-110 transition-transform"
                 />
-                <span className="text-sm">Exit Focus</span>
+                <span className="text-sm">Focus</span>
               </button>
             </div>
           </div>
@@ -662,19 +688,26 @@ export function ChatArea({
                                 <span className="text-sm">Streaming...</span>
                               </div>
                             )}
-                            {focusedAgent.tokenUsage && (
-                              <div className="flex items-center gap-2 text-sm text-gray-400">
-                                <Zap size={12} />
-                                <span>
-                                  {focusedAgent.tokenUsage.totalTokens}
-                                </span>
-                              </div>
-                            )}
                           </div>
                         </div>
 
+                        {/* Performance Metrics */}
+                        {(focusedAgent.tokenUsage ||
+                          focusedAgent.executionDuration) && (
+                          <div className="mt-3">
+                            <PerformanceMetrics
+                              tokenUsage={focusedAgent.tokenUsage}
+                              executionDuration={focusedAgent.executionDuration}
+                              tokensPerSecond={focusedAgent.tokensPerSecond}
+                              estimatedCost={focusedAgent.estimatedCost}
+                              model={focusedAgent.model}
+                              size="sm"
+                            />
+                          </div>
+                        )}
+
                         {/* Main Response */}
-                        <div className="text-white text-base">
+                        <div className="text-white text-base break-words overflow-hidden">
                           <MarkdownRenderer
                             content={
                               focusedAgent.response ||
@@ -682,6 +715,7 @@ export function ChatArea({
                               ""
                             }
                             isStreaming={focusedAgent.isStreaming}
+                            className="break-words overflow-wrap-anywhere"
                           />
                           {focusedAgent.isStreaming && (
                             <span className="inline-block w-2 h-4 bg-lavender-400 ml-1 streaming-cursor"></span>
@@ -708,34 +742,16 @@ export function ChatArea({
                                 <div className="text-sm text-gray-400 mb-3">
                                   Model Reasoning:
                                 </div>
-                                <div className="text-base text-gray-300">
+                                <div className="text-base text-gray-300 break-words overflow-hidden">
                                   <MarkdownRenderer
                                     content={focusedAgent.reasoning}
+                                    className="break-words overflow-wrap-anywhere"
                                   />
                                 </div>
                               </div>
                             )}
                           </div>
                         )}
-
-                        {/* Token Usage Details */}
-                        {focusedAgent.tokenUsage &&
-                          expandedReasoning === focusedAgent._id && (
-                            <div className="mt-3 p-3 bg-gray-900/30 rounded-lg text-sm text-gray-400">
-                              <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                  Input: {focusedAgent.tokenUsage.promptTokens}
-                                </div>
-                                <div>
-                                  Output:{" "}
-                                  {focusedAgent.tokenUsage.completionTokens}
-                                </div>
-                                <div>
-                                  Total: {focusedAgent.tokenUsage.totalTokens}
-                                </div>
-                              </div>
-                            </div>
-                          )}
                       </div>
                     </div>
                   </div>
@@ -852,39 +868,27 @@ export function ChatArea({
                           <ModelAvatar model={agent.model} size="xs" />
                           <div className="flex flex-col">
                             <span className="text-white font-medium text-xs">
+                              {agent.name || `Step ${agent.index + 1}`}
+                            </span>
+                            <span className="text-gray-400 text-xs">
                               {agent.model}
                             </span>
-                            {agent.provider && (
-                              <span className="text-gray-400 text-xs">
-                                {agent.provider}
-                              </span>
-                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleFocusToggle(agent.index)}
-                            className="p-1 hover:bg-gray-800/50 rounded transition-colors group"
+                            className="flex items-center gap-1 px-2 py-1 hover:bg-gray-800/50 rounded transition-colors group"
                             title="Focus on this agent"
                           >
                             <Focus
                               size={10}
                               className="text-gray-400 hover:text-lavender-400 group-hover:scale-110 transition-all"
                             />
+                            <span className="text-xs text-gray-400 group-hover:text-lavender-400">
+                              Focus
+                            </span>
                           </button>
-                          <button
-                            onClick={() => toggleCollapse(agent.index)}
-                            className="p-1 hover:bg-gray-800/50 rounded transition-colors"
-                          >
-                            <ChevronLeft
-                              size={10}
-                              className="text-gray-400 hover:text-lavender-400"
-                            />
-                          </button>
-                          <div className="w-1.5 h-1.5 bg-lavender-400/60 rounded-full"></div>
-                          <span className="text-lavender-400/80 text-xs font-mono">
-                            {agent.index + 1}
-                          </span>
                         </div>
                       </div>
                     </div>
@@ -980,19 +984,28 @@ export function ChatArea({
                                         </span>
                                       </div>
                                     )}
-                                    {agent.tokenUsage && (
-                                      <div className="flex items-center gap-1 text-xs text-gray-400">
-                                        <Zap size={10} />
-                                        <span className="text-xs">
-                                          {agent.tokenUsage.totalTokens}
-                                        </span>
-                                      </div>
-                                    )}
                                   </div>
                                 </div>
 
+                                {/* Performance Metrics */}
+                                {(agent.tokenUsage ||
+                                  agent.executionDuration) && (
+                                  <div className="mt-3">
+                                    <PerformanceMetrics
+                                      tokenUsage={agent.tokenUsage}
+                                      executionDuration={
+                                        agent.executionDuration
+                                      }
+                                      tokensPerSecond={agent.tokensPerSecond}
+                                      estimatedCost={agent.estimatedCost}
+                                      model={agent.model}
+                                      size="sm"
+                                    />
+                                  </div>
+                                )}
+
                                 {/* Main Response */}
-                                <div className="text-white text-sm">
+                                <div className="text-white text-sm break-words overflow-hidden">
                                   <MarkdownRenderer
                                     content={
                                       agent.response ||
@@ -1000,6 +1013,7 @@ export function ChatArea({
                                       ""
                                     }
                                     isStreaming={agent.isStreaming}
+                                    className="break-words overflow-wrap-anywhere"
                                   />
                                   {agent.isStreaming && (
                                     <span className="inline-block w-1.5 h-3 bg-lavender-400 ml-1 streaming-cursor"></span>
@@ -1026,35 +1040,16 @@ export function ChatArea({
                                         <div className="text-xs text-gray-400 mb-2">
                                           Model Reasoning:
                                         </div>
-                                        <div className="text-sm text-gray-300">
+                                        <div className="text-sm text-gray-300 break-words overflow-hidden">
                                           <MarkdownRenderer
                                             content={agent.reasoning}
-                                            className="text-sm"
+                                            className="break-words overflow-wrap-anywhere"
                                           />
                                         </div>
                                       </div>
                                     )}
                                   </div>
                                 )}
-
-                                {/* Token Usage Details */}
-                                {agent.tokenUsage &&
-                                  expandedReasoning === agent._id && (
-                                    <div className="mt-2 p-2 bg-gray-900/30 rounded text-xs text-gray-400">
-                                      <div className="grid grid-cols-3 gap-2 text-xs">
-                                        <div>
-                                          In: {agent.tokenUsage.promptTokens}
-                                        </div>
-                                        <div>
-                                          Out:{" "}
-                                          {agent.tokenUsage.completionTokens}
-                                        </div>
-                                        <div>
-                                          Total: {agent.tokenUsage.totalTokens}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
                               </div>
                             </div>
                           </div>

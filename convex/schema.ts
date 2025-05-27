@@ -38,6 +38,7 @@ export default defineSchema({
     index: v.number(), // 0, 1, or 2
     model: v.string(),
     prompt: v.string(),
+    name: v.optional(v.string()), // Custom name for the step
     response: v.optional(v.string()),
     reasoning: v.optional(v.string()), // For models that support reasoning
     timestamp: v.number(),
@@ -53,6 +54,13 @@ export default defineSchema({
     ),
     error: v.optional(v.string()),
     streamedContent: v.optional(v.string()), // For partial streaming content
+
+    // Performance tracking fields
+    executionStartTime: v.optional(v.number()),
+    executionEndTime: v.optional(v.number()),
+    executionDuration: v.optional(v.number()), // milliseconds
+    tokensPerSecond: v.optional(v.number()),
+    estimatedCost: v.optional(v.number()), // in USD
 
     // Chain execution fields
     connectionType: v.optional(
