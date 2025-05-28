@@ -545,7 +545,7 @@ export default function LandingPage() {
                 <div className="relative flex flex-col items-center space-y-6">
                   {/* Input Node */}
                   <div className="group">
-                    <div className="bg-gray-800/50 border border-lavender-500/50 rounded-full px-6 py-3 text-lavender-300 font-medium shadow-lg shadow-lavender-500/10 group-hover:shadow-lavender-500/20 transition-all duration-300">
+                    <div className="bg-gray-800/50 border border-lavender-500/50 rounded-full px-6 py-3 text-lavender-400 font-medium shadow-lg shadow-lavender-500/10 group-hover:shadow-lavender-500/20 transition-all duration-300">
                       User Input
                     </div>
                   </div>
@@ -601,7 +601,7 @@ export default function LandingPage() {
 
                   {/* Output Node */}
                   <div className="group">
-                    <div className="bg-gray-800/50 border border-lavender-500/50 rounded-full px-6 py-3 text-lavender-300 font-medium shadow-lg shadow-lavender-500/10 group-hover:shadow-lavender-500/20 transition-all duration-300">
+                    <div className="bg-gray-800/50 border border-lavender-500/50 rounded-full px-6 py-3 text-lavender-400 font-medium shadow-lg shadow-lavender-500/10 group-hover:shadow-lavender-500/20 transition-all duration-300">
                       Final Output
                     </div>
                   </div>
