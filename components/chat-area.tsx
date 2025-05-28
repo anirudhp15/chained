@@ -947,7 +947,7 @@ export function ChatArea({
                                   {/* Performance Metrics */}
                                   {(agent.tokenUsage ||
                                     agent.executionDuration) && (
-                                    <div className="mt-3">
+                                    <div className="my-2">
                                       <PerformanceMetrics
                                         tokenUsage={agent.tokenUsage}
                                         executionDuration={

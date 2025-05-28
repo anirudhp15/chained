@@ -658,7 +658,7 @@ export function AgentInput({
         />
 
         {/* Bottom controls - absolutely positioned with gradient background */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center rounded-b-2xl justify-between px-4 py-3 bg-gradient-to-t from-gray-700/90 via-gray-700/50 to-transparent backdrop-blur-sm">
+        <div className="absolute bottom-0 left-0 right-0 flex items-center rounded-b-2xl justify-between px-4 py-3 bg-gray-800/95">
           {/* Left side controls */}
           <div className="flex items-center gap-2">
             {/* Model Selection */}

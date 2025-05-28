@@ -435,7 +435,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
               >
                 <button
                   onClick={handleBackToCategories}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500/50 rounded-lg text-gray-300 hover:text-white transition-all duration-200 group"
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500/50 rounded-full text-lavender-400 hover:text-white transition-all duration-200 group"
                 >
                   <ArrowLeft
                     size={16}
@@ -450,7 +450,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                       size={24}
                       className={selectedTheme.iconColor}
                     />
-                    <h2 className="text-2xl font-bold text-white">
+                    <h2 className="text-2xl font-bold text-lavender-400">
                       {selectedTheme.title} Workflows
                     </h2>
                   </div>
@@ -548,7 +548,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                 <button
                   key={theme.title}
                   onClick={() => handleCategoryClick(theme.title)}
-                  className="flex items-center gap-3 px-4 py-2 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-xl text-white hover:text-lavender-300 transition-all duration-200 group backdrop-blur-sm hover:scale-105 animate-in fade-in slide-in-from-bottom-4 ease-out"
+                  className="flex items-center gap-3 px-4 py-2 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-full text-lavender-400 hover:text-lavender-300 transition-all duration-200 group backdrop-blur-sm hover:scale-105 animate-in fade-in slide-in-from-bottom-4 ease-out"
                   style={{
                     animationDelay: `${0.5 + index * 0.1}s`,
                     animationDuration: "0.6s",
