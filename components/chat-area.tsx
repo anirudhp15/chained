@@ -52,12 +52,7 @@ export function ChatArea({
 
   // Column resize state
   const [columnStates, setColumnStates] = useState<ColumnState[]>([]);
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizeStartX, setResizeStartX] = useState(0);
-  const [resizeColumnIndex, setResizeColumnIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
-  const rafRef = useRef<number>();
-  const lastUpdateTime = useRef<number>(0);
 
   // Minimum column width in pixels
   const MIN_COLUMN_WIDTH = 256;
@@ -164,127 +159,6 @@ export function ChatArea({
     },
     [focusedAgentIndex, onFocusAgent]
   );
-
-  // Handle resize start
-  const handleResizeStart = useCallback(
-    (e: React.MouseEvent, columnIndex: number) => {
-      e.preventDefault();
-      setIsResizing(true);
-      setResizeStartX(e.clientX);
-      setResizeColumnIndex(columnIndex);
-
-      // Disable transitions during drag for better performance
-      if (containerRef.current) {
-        containerRef.current.style.setProperty("--disable-transitions", "1");
-      }
-    },
-    []
-  );
-
-  // Handle resize move with throttling and RAF optimization
-  const handleResizeMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isResizing || !containerRef.current || resizeColumnIndex === -1)
-        return;
-
-      // Throttle updates to every 16ms (60fps)
-      const now = Date.now();
-      if (now - lastUpdateTime.current < 16) return;
-      lastUpdateTime.current = now;
-
-      // Cancel previous RAF if still pending
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
-
-      // Use RAF for smooth updates
-      rafRef.current = requestAnimationFrame(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const containerWidth = container.getBoundingClientRect().width;
-        const deltaX = e.clientX - resizeStartX;
-
-        setColumnStates((prev) => {
-          const newStates = [...prev];
-          const currentColumn = newStates[resizeColumnIndex];
-          const nextColumn = newStates[resizeColumnIndex + 1];
-
-          if (!currentColumn || !nextColumn) return prev;
-
-          // Calculate new widths with minimum width constraints
-          const newCurrentWidth = Math.max(
-            MIN_COLUMN_WIDTH,
-            currentColumn.width + deltaX
-          );
-          const newNextWidth = Math.max(
-            MIN_COLUMN_WIDTH,
-            nextColumn.width - deltaX
-          );
-
-          // Only update if both columns meet minimum requirements
-          if (
-            newCurrentWidth >= MIN_COLUMN_WIDTH &&
-            newNextWidth >= MIN_COLUMN_WIDTH
-          ) {
-            newStates[resizeColumnIndex] = {
-              ...currentColumn,
-              width: newCurrentWidth,
-              isCollapsed: false,
-            };
-
-            newStates[resizeColumnIndex + 1] = {
-              ...nextColumn,
-              width: newNextWidth,
-              isCollapsed: false,
-            };
-          }
-
-          return newStates;
-        });
-
-        setResizeStartX(e.clientX);
-      });
-    },
-    [isResizing, resizeStartX, resizeColumnIndex, MIN_COLUMN_WIDTH]
-  );
-
-  // Handle resize end
-  const handleResizeEnd = useCallback(() => {
-    setIsResizing(false);
-    setResizeColumnIndex(-1);
-
-    // Re-enable transitions after drag ends
-    if (containerRef.current) {
-      containerRef.current.style.removeProperty("--disable-transitions");
-    }
-
-    // Cancel any pending RAF
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = undefined;
-    }
-  }, []);
-
-  // Mouse event listeners
-  React.useEffect(() => {
-    if (isResizing) {
-      document.addEventListener("mousemove", handleResizeMove, {
-        passive: false,
-      });
-      document.addEventListener("mouseup", handleResizeEnd);
-
-      return () => {
-        document.removeEventListener("mousemove", handleResizeMove);
-        document.removeEventListener("mouseup", handleResizeEnd);
-
-        // Cleanup RAF on unmount
-        if (rafRef.current) {
-          cancelAnimationFrame(rafRef.current);
-        }
-      };
-    }
-  }, [isResizing, handleResizeMove, handleResizeEnd]);
 
   if (!sessionId) {
     return (
@@ -417,8 +291,8 @@ export function ChatArea({
                             size="sm"
                           />
                           {focusedAgent.isStreaming && (
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
+                            <div className="flex items-center gap-1">
+                              <div className="streaming-indicator"></div>
                               <span className="text-sm">Streaming...</span>
                             </div>
                           )}
@@ -519,10 +393,15 @@ export function ChatArea({
                       <div className="text-sm text-lavender-400/80 mb-3">
                         Thinking...
                       </div>
-                      <div className="flex space-x-2">
-                        <div className="w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
-                        <div className="w-2 h-2 bg-lavender-400 rounded-full animate-pulse delay-75"></div>
-                        <div className="w-2 h-2 bg-lavender-400 rounded-full animate-pulse delay-150"></div>
+                      <div className="flex items-center gap-3">
+                        <div className="thinking-dots">
+                          <div className="thinking-dot"></div>
+                          <div className="thinking-dot"></div>
+                          <div className="thinking-dot"></div>
+                        </div>
+                        <span className="text-xs text-lavender-400/80">
+                          Thinking...
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -539,11 +418,6 @@ export function ChatArea({
     <div
       ref={containerRef}
       className="flex-1 flex flex-col overflow-hidden bg-black w-full relative"
-      style={
-        {
-          "--disable-transitions": isResizing ? "1" : "0",
-        } as React.CSSProperties
-      }
     >
       {/* Chain Performance Summary */}
       {agentGroups.length > 1 && (
@@ -656,100 +530,133 @@ export function ChatArea({
                 </div>
               )}
 
-              {/* Agent Response */}
-              {!focusedAgent.wasSkipped &&
-                (focusedAgent.response ||
-                  focusedAgent.streamedContent ||
-                  focusedAgent.isStreaming) && (
-                  <div className="flex gap-4">
-                    <ModelAvatar model={focusedAgent.model} size="sm" />
-                    <div className="flex-1">
-                      <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
-                        <div className="text-sm text-lavender-400/80 mb-3 flex items-center justify-between">
-                          <span>Response</span>
-                          <div className="flex items-center gap-3">
-                            <CopyButton
-                              text={
+              {/* Agent Response or Loading State */}
+              {!focusedAgent.wasSkipped && (
+                <>
+                  {/* Has content or is streaming */}
+                  {(focusedAgent.response ||
+                    focusedAgent.streamedContent ||
+                    focusedAgent.isStreaming) && (
+                    <div className="flex gap-4">
+                      <ModelAvatar model={focusedAgent.model} size="sm" />
+                      <div className="flex-1">
+                        <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
+                          <div className="text-sm text-lavender-400/80 mb-3 flex items-center justify-between">
+                            <span>Response</span>
+                            <div className="flex items-center gap-3">
+                              {focusedAgent.isStreaming && (
+                                <div className="flex items-center gap-1">
+                                  <div className="streaming-indicator"></div>
+                                  <span className="text-sm">Streaming...</span>
+                                </div>
+                              )}
+                              <CopyButton
+                                text={
+                                  focusedAgent.response ||
+                                  focusedAgent.streamedContent ||
+                                  ""
+                                }
+                                size="sm"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Performance Metrics */}
+                          {(focusedAgent.tokenUsage ||
+                            focusedAgent.executionDuration) && (
+                            <div className="mt-3">
+                              <PerformanceMetrics
+                                tokenUsage={focusedAgent.tokenUsage}
+                                executionDuration={
+                                  focusedAgent.executionDuration
+                                }
+                                tokensPerSecond={focusedAgent.tokensPerSecond}
+                                estimatedCost={focusedAgent.estimatedCost}
+                                model={focusedAgent.model}
+                                size="sm"
+                              />
+                            </div>
+                          )}
+
+                          {/* Main Response */}
+                          <div className="text-white text-base break-words overflow-hidden">
+                            <MarkdownRenderer
+                              content={
                                 focusedAgent.response ||
                                 focusedAgent.streamedContent ||
                                 ""
                               }
-                              size="sm"
+                              isStreaming={focusedAgent.isStreaming}
+                              className="break-words overflow-wrap-anywhere"
                             />
                             {focusedAgent.isStreaming && (
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
-                                <span className="text-sm">Streaming...</span>
-                              </div>
+                              <span className="inline-block w-2 h-4 bg-lavender-400 ml-1 streaming-cursor"></span>
                             )}
                           </div>
-                        </div>
 
-                        {/* Performance Metrics */}
-                        {(focusedAgent.tokenUsage ||
-                          focusedAgent.executionDuration) && (
-                          <div className="mt-3">
-                            <PerformanceMetrics
-                              tokenUsage={focusedAgent.tokenUsage}
-                              executionDuration={focusedAgent.executionDuration}
-                              tokensPerSecond={focusedAgent.tokensPerSecond}
-                              estimatedCost={focusedAgent.estimatedCost}
-                              model={focusedAgent.model}
-                              size="sm"
-                            />
-                          </div>
-                        )}
+                          {/* Reasoning Panel */}
+                          {focusedAgent.reasoning && (
+                            <div className="mt-4 border-t border-gray-600/50 pt-4">
+                              <button
+                                onClick={() =>
+                                  toggleReasoning(focusedAgent._id)
+                                }
+                                className="flex items-center gap-2 text-sm text-lavender-400/80 hover:text-lavender-300 transition-colors"
+                              >
+                                {expandedReasoning === focusedAgent._id ? (
+                                  <ChevronUp size={14} />
+                                ) : (
+                                  <ChevronDown size={14} />
+                                )}
+                                <span>Reasoning</span>
+                              </button>
 
-                        {/* Main Response */}
-                        <div className="text-white text-base break-words overflow-hidden">
-                          <MarkdownRenderer
-                            content={
-                              focusedAgent.response ||
-                              focusedAgent.streamedContent ||
-                              ""
-                            }
-                            isStreaming={focusedAgent.isStreaming}
-                            className="break-words overflow-wrap-anywhere"
-                          />
-                          {focusedAgent.isStreaming && (
-                            <span className="inline-block w-2 h-4 bg-lavender-400 ml-1 streaming-cursor"></span>
+                              {expandedReasoning === focusedAgent._id && (
+                                <div className="mt-3 p-4 bg-gray-900/50 rounded-lg border border-gray-600/50 animate-in slide-in-from-top-2 duration-200">
+                                  <div className="text-sm text-gray-400 mb-3">
+                                    Model Reasoning:
+                                  </div>
+                                  <div className="text-base text-gray-300 break-words overflow-hidden">
+                                    <MarkdownRenderer
+                                      content={focusedAgent.reasoning}
+                                      className="break-words overflow-wrap-anywhere"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
-
-                        {/* Reasoning Panel */}
-                        {focusedAgent.reasoning && (
-                          <div className="mt-4 border-t border-gray-600/50 pt-4">
-                            <button
-                              onClick={() => toggleReasoning(focusedAgent._id)}
-                              className="flex items-center gap-2 text-sm text-lavender-400/80 hover:text-lavender-300 transition-colors"
-                            >
-                              {expandedReasoning === focusedAgent._id ? (
-                                <ChevronUp size={14} />
-                              ) : (
-                                <ChevronDown size={14} />
-                              )}
-                              <span>Reasoning</span>
-                            </button>
-
-                            {expandedReasoning === focusedAgent._id && (
-                              <div className="mt-3 p-4 bg-gray-900/50 rounded-lg border border-gray-600/50 animate-in slide-in-from-top-2 duration-200">
-                                <div className="text-sm text-gray-400 mb-3">
-                                  Model Reasoning:
-                                </div>
-                                <div className="text-base text-gray-300 break-words overflow-hidden">
-                                  <MarkdownRenderer
-                                    content={focusedAgent.reasoning}
-                                    className="break-words overflow-wrap-anywhere"
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+
+                  {/* Thinking state - only when NOT streaming and no content yet */}
+                  {!focusedAgent.isStreaming &&
+                    !focusedAgent.isComplete &&
+                    !focusedAgent.response &&
+                    !focusedAgent.streamedContent &&
+                    !focusedAgent.error && (
+                      <div className="flex gap-4">
+                        <ModelAvatar model={focusedAgent.model} size="sm" />
+                        <div className="flex-1">
+                          <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="thinking-dots">
+                                <div className="thinking-dot"></div>
+                                <div className="thinking-dot"></div>
+                                <div className="thinking-dot"></div>
+                              </div>
+                              <span className="text-xs text-lavender-400/80">
+                                Thinking...
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                </>
+              )}
 
               {/* Error State */}
               {!focusedAgent.wasSkipped && focusedAgent.error && (
@@ -765,311 +672,266 @@ export function ChatArea({
                   </div>
                 </div>
               )}
-
-              {/* Loading State */}
-              {!focusedAgent.wasSkipped &&
-                !focusedAgent.isComplete &&
-                !focusedAgent.response &&
-                !focusedAgent.streamedContent &&
-                !focusedAgent.error && (
-                  <div className="flex gap-4">
-                    <ModelAvatar model={focusedAgent.model} size="sm" />
-                    <div className="flex-1">
-                      <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
-                        <div className="text-sm text-lavender-400/80 mb-3">
-                          Thinking...
-                        </div>
-                        <div className="flex space-x-2">
-                          <div className="w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
-                          <div className="w-2 h-2 bg-lavender-400 rounded-full animate-pulse delay-75"></div>
-                          <div className="w-2 h-2 bg-lavender-400 rounded-full animate-pulse delay-150"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
             </div>
           </div>
         </div>
       ) : (
         // Multi-agent view
-        <div className="flex-1 flex overflow-hidden">
+        <div
+          className="flex-1 grid overflow-hidden w-full gap-1"
+          style={{
+            gridTemplateColumns: `repeat(${agentGroups.length}, minmax(${MIN_COLUMN_WIDTH}px, 1fr))`,
+          }}
+        >
           {agentGroups.map((agent, index) => (
-            <React.Fragment key={agent._id}>
-              <div
-                className={`agent-container flex flex-col overflow-hidden ${
-                  columnStates[index]?.isCollapsed ? "collapsed-column" : ""
-                }`}
-                style={{
-                  width: `${columnStates[index]?.width || MIN_COLUMN_WIDTH}px`,
-                  minWidth: `${MIN_COLUMN_WIDTH}px`,
-                  maxWidth: "none",
-                }}
-              >
-                {/* Agent Column */}
-                <div className="h-full flex flex-col">
-                  {columnStates[index]
-                    ?.isCollapsed /* Collapsed State - Remove this section since we're not using collapse */ ? null : (
-                    /* Expanded State */
-                    <>
-                      {/* Agent Header */}
-                      <div className="agent-header flex-shrink-0 px-3 py-3 bg-gray-950/95 backdrop-blur-sm border-b border-gray-700/30">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <ModelAvatar model={agent.model} size="xs" />
-                            <div className="flex flex-col">
-                              <span className="text-white font-medium text-xs">
-                                {agent.name || `Node ${agent.index + 1}`}
-                              </span>
-                              <span className="text-gray-400 text-xs">
-                                {agent.model}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleFocusToggle(agent.index)}
-                              className="flex items-center gap-1 px-2 py-1 hover:bg-gray-800/50 rounded transition-colors group"
-                              title="Focus on this agent"
-                            >
-                              <Focus
-                                size={10}
-                                className="text-gray-400 hover:text-lavender-400 group-hover:scale-110 transition-all"
-                              />
-                              <span className="text-xs text-gray-400 group-hover:text-lavender-400">
-                                Focus
-                              </span>
-                            </button>
-                          </div>
+            <div
+              key={agent._id}
+              className="agent-container flex flex-col overflow-hidden"
+            >
+              {/* Agent Column */}
+              <div className="h-full flex flex-col">
+                {/* Agent Header */}
+                <div className="agent-header flex-shrink-0 px-3 py-3 bg-gray-950/95 backdrop-blur-sm border-b border-gray-700/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ModelAvatar model={agent.model} size="xs" />
+                      <div className="flex flex-col">
+                        <span className="text-white font-medium text-xs">
+                          {agent.name || `Node ${agent.index + 1}`}
+                        </span>
+                        <span className="text-gray-400 text-xs">
+                          {agent.model}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleFocusToggle(agent.index)}
+                        className="flex items-center gap-1 px-2 py-1 hover:bg-gray-800/50 rounded transition-colors group"
+                        title="Focus on this agent"
+                      >
+                        <Focus
+                          size={10}
+                          className="text-gray-400 hover:text-lavender-400 group-hover:scale-110 transition-all"
+                        />
+                        <span className="text-xs text-gray-400 group-hover:text-lavender-400">
+                          Focus
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Agent Content - Individually Scrollable */}
+                <div className="flex-1 overflow-y-auto px-3 py-4 pb-64 space-y-4 agent-content scrollbar-thin scrollbar-dark">
+                  {/* User Prompt */}
+                  <div className="w-full px-0.5">
+                    <div className="bg-gray-800/90 border border-gray-700/50 rounded-lg px-4 py-3">
+                      <div className="flex flex-row items-center gap-2">
+                        <span className="text-xs text-lavender-400/80 font-medium">
+                          Prompt
+                        </span>
+                        {agent.connectionType && agent.index > 0 && (
+                          <ConnectionBadge
+                            type={agent.connectionType}
+                            sourceAgentIndex={agent.index - 1}
+                            condition={agent.connectionCondition}
+                            size="sm"
+                          />
+                        )}
+                        <div className="ml-auto">
+                          <CopyButton text={agent.prompt} size="sm" />
                         </div>
                       </div>
+                      <TruncatedText
+                        text={agent.prompt}
+                        maxLines={3}
+                        className="text-white text-sm"
+                        showButtonText="Show all"
+                        hideButtonText="Show less"
+                        buttonClassName="text-xs"
+                        gradientFrom="from-gray-800/90"
+                      />
+                    </div>
+                  </div>
 
-                      {/* Agent Content - Individually Scrollable */}
-                      <div className="flex-1 overflow-y-auto px-3 py-4 pb-64 space-y-4 agent-content scrollbar-thin scrollbar-dark">
-                        {/* User Prompt */}
-                        <div className="w-full px-0.5">
-                          <div className="bg-gray-800/90 border border-gray-700/50 rounded-lg px-4 py-3">
-                            <div className="flex flex-row items-center gap-2">
-                              <span className="text-xs text-lavender-400/80 font-medium">
-                                Prompt
-                              </span>
-                              {agent.connectionType && agent.index > 0 && (
-                                <ConnectionBadge
-                                  type={agent.connectionType}
-                                  sourceAgentIndex={agent.index - 1}
-                                  condition={agent.connectionCondition}
-                                  size="sm"
-                                />
-                              )}
-                              <div className="ml-auto">
-                                <CopyButton text={agent.prompt} size="sm" />
-                              </div>
-                            </div>
-                            <TruncatedText
-                              text={agent.prompt}
-                              maxLines={3}
-                              className="text-white text-sm"
-                              showButtonText="Show all"
-                              hideButtonText="Show less"
-                              buttonClassName="text-xs"
-                              gradientFrom="from-gray-800/90"
-                            />
+                  {/* Multimodal Attachments */}
+                  <AttachmentDisplay
+                    images={agent.images}
+                    audioBlob={agent.audioBlob}
+                    audioDuration={agent.audioDuration}
+                    webSearchData={agent.webSearchData}
+                    className="mt-3"
+                  />
+
+                  {/* Skipped Agent State */}
+                  {agent.wasSkipped && (
+                    <div className="flex gap-2">
+                      <ModelAvatar model={agent.model} size="sm" />
+                      <div className="flex-1">
+                        <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+                          <div className="text-xs text-orange-400 mb-1 flex items-center gap-2">
+                            <span>Skipped</span>
+                            <span className="font-mono">→?</span>
                           </div>
+                          <p className="text-orange-300 text-sm">
+                            {agent.skipReason ||
+                              "Agent was skipped due to conditional logic"}
+                          </p>
+                          {agent.connectionCondition && (
+                            <div className="mt-2 text-xs text-orange-400/70">
+                              Condition:{" "}
+                              <span className="font-mono">
+                                {agent.connectionCondition}
+                              </span>
+                            </div>
+                          )}
                         </div>
+                      </div>
+                    </div>
+                  )}
 
-                        {/* Multimodal Attachments */}
-                        <AttachmentDisplay
-                          images={agent.images}
-                          audioBlob={agent.audioBlob}
-                          audioDuration={agent.audioDuration}
-                          webSearchData={agent.webSearchData}
-                          className="mt-3"
-                        />
-
-                        {/* Skipped Agent State */}
-                        {agent.wasSkipped && (
-                          <div className="flex gap-2">
-                            <ModelAvatar model={agent.model} size="sm" />
-                            <div className="flex-1">
-                              <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
-                                <div className="text-xs text-orange-400 mb-1 flex items-center gap-2">
-                                  <span>Skipped</span>
-                                  <span className="font-mono">→?</span>
+                  {/* Agent Response or Loading State */}
+                  {!agent.wasSkipped && (
+                    <>
+                      {/* Has content or is streaming */}
+                      {(agent.response ||
+                        agent.streamedContent ||
+                        agent.isStreaming) && (
+                        <div className="flex gap-2">
+                          <ModelAvatar model={agent.model} size="sm" />
+                          <div className="flex-1">
+                            <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
+                              <div className="text-xs text-lavender-400/80 mb-1 flex items-center justify-between">
+                                <span>Response</span>
+                                <div className="flex items-center gap-2">
+                                  {agent.isStreaming && (
+                                    <div className="flex items-center gap-1">
+                                      <div className="streaming-indicator"></div>
+                                      <span className="text-xs">
+                                        Streaming...
+                                      </span>
+                                    </div>
+                                  )}
+                                  <CopyButton
+                                    text={
+                                      agent.response ||
+                                      agent.streamedContent ||
+                                      ""
+                                    }
+                                    size="sm"
+                                  />
                                 </div>
-                                <p className="text-orange-300 text-sm">
-                                  {agent.skipReason ||
-                                    "Agent was skipped due to conditional logic"}
-                                </p>
-                                {agent.connectionCondition && (
-                                  <div className="mt-2 text-xs text-orange-400/70">
-                                    Condition:{" "}
-                                    <span className="font-mono">
-                                      {agent.connectionCondition}
-                                    </span>
-                                  </div>
+                              </div>
+
+                              {/* Performance Metrics */}
+                              {(agent.tokenUsage ||
+                                agent.executionDuration) && (
+                                <div className="my-2">
+                                  <PerformanceMetrics
+                                    tokenUsage={agent.tokenUsage}
+                                    executionDuration={agent.executionDuration}
+                                    tokensPerSecond={agent.tokensPerSecond}
+                                    estimatedCost={agent.estimatedCost}
+                                    model={agent.model}
+                                    size="sm"
+                                  />
+                                </div>
+                              )}
+
+                              {/* Main Response */}
+                              <div className="text-white text-sm break-words overflow-hidden">
+                                <MarkdownRenderer
+                                  content={
+                                    agent.response ||
+                                    agent.streamedContent ||
+                                    ""
+                                  }
+                                  isStreaming={agent.isStreaming}
+                                  className="break-words overflow-wrap-anywhere"
+                                />
+                                {agent.isStreaming && (
+                                  <span className="inline-block w-1.5 h-3 bg-lavender-400 ml-1 streaming-cursor"></span>
                                 )}
                               </div>
-                            </div>
-                          </div>
-                        )}
 
-                        {/* Agent Response */}
-                        {!agent.wasSkipped &&
-                          (agent.response ||
-                            agent.streamedContent ||
-                            agent.isStreaming) && (
-                            <div className="flex gap-2">
-                              <ModelAvatar model={agent.model} size="sm" />
-                              <div className="flex-1">
-                                <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
-                                  <div className="text-xs text-lavender-400/80 mb-1 flex items-center justify-between">
-                                    <span>Response</span>
-                                    <div className="flex items-center gap-2">
-                                      <CopyButton
-                                        text={
-                                          agent.response ||
-                                          agent.streamedContent ||
-                                          ""
-                                        }
-                                        size="sm"
-                                      />
-                                      {agent.isStreaming && (
-                                        <div className="flex items-center gap-1">
-                                          <div className="w-1.5 h-1.5 bg-lavender-400 rounded-full animate-pulse"></div>
-                                          <span className="text-xs">
-                                            Streaming...
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Performance Metrics */}
-                                  {(agent.tokenUsage ||
-                                    agent.executionDuration) && (
-                                    <div className="my-2">
-                                      <PerformanceMetrics
-                                        tokenUsage={agent.tokenUsage}
-                                        executionDuration={
-                                          agent.executionDuration
-                                        }
-                                        tokensPerSecond={agent.tokensPerSecond}
-                                        estimatedCost={agent.estimatedCost}
-                                        model={agent.model}
-                                        size="sm"
-                                      />
-                                    </div>
-                                  )}
-
-                                  {/* Main Response */}
-                                  <div className="text-white text-sm break-words overflow-hidden">
-                                    <MarkdownRenderer
-                                      content={
-                                        agent.response ||
-                                        agent.streamedContent ||
-                                        ""
-                                      }
-                                      isStreaming={agent.isStreaming}
-                                      className="break-words overflow-wrap-anywhere"
-                                    />
-                                    {agent.isStreaming && (
-                                      <span className="inline-block w-1.5 h-3 bg-lavender-400 ml-1 streaming-cursor"></span>
+                              {/* Reasoning Panel */}
+                              {agent.reasoning && (
+                                <div className="mt-3 border-t border-gray-600/50 pt-3">
+                                  <button
+                                    onClick={() => toggleReasoning(agent._id)}
+                                    className="flex items-center gap-2 text-xs text-lavender-400/80 hover:text-lavender-300 transition-colors"
+                                  >
+                                    {expandedReasoning === agent._id ? (
+                                      <ChevronUp size={12} />
+                                    ) : (
+                                      <ChevronDown size={12} />
                                     )}
-                                  </div>
+                                    <span>Reasoning</span>
+                                  </button>
 
-                                  {/* Reasoning Panel */}
-                                  {agent.reasoning && (
-                                    <div className="mt-3 border-t border-gray-600/50 pt-3">
-                                      <button
-                                        onClick={() =>
-                                          toggleReasoning(agent._id)
-                                        }
-                                        className="flex items-center gap-2 text-xs text-lavender-400/80 hover:text-lavender-300 transition-colors"
-                                      >
-                                        {expandedReasoning === agent._id ? (
-                                          <ChevronUp size={12} />
-                                        ) : (
-                                          <ChevronDown size={12} />
-                                        )}
-                                        <span>Reasoning</span>
-                                      </button>
-
-                                      {expandedReasoning === agent._id && (
-                                        <div className="mt-2 p-3 bg-gray-900/50 rounded border border-gray-600/50 animate-in slide-in-from-top-2 duration-200">
-                                          <div className="text-xs text-gray-400 mb-2">
-                                            Model Reasoning:
-                                          </div>
-                                          <div className="text-sm text-gray-300 break-words overflow-hidden">
-                                            <MarkdownRenderer
-                                              content={agent.reasoning}
-                                              className="break-words overflow-wrap-anywhere"
-                                            />
-                                          </div>
-                                        </div>
-                                      )}
+                                  {expandedReasoning === agent._id && (
+                                    <div className="mt-2 p-3 bg-gray-900/50 rounded border border-gray-600/50 animate-in slide-in-from-top-2 duration-200">
+                                      <div className="text-xs text-gray-400 mb-2">
+                                        Model Reasoning:
+                                      </div>
+                                      <div className="text-sm text-gray-300 break-words overflow-hidden">
+                                        <MarkdownRenderer
+                                          content={agent.reasoning}
+                                          className="break-words overflow-wrap-anywhere"
+                                        />
+                                      </div>
                                     </div>
                                   )}
                                 </div>
-                              </div>
+                              )}
                             </div>
-                          )}
+                          </div>
+                        </div>
+                      )}
 
-                        {/* Error State */}
-                        {!agent.wasSkipped && agent.error && (
+                      {/* Thinking state - only when NOT streaming and no content yet */}
+                      {!agent.isStreaming &&
+                        !agent.isComplete &&
+                        !agent.response &&
+                        !agent.streamedContent &&
+                        !agent.error && (
                           <div className="flex gap-2">
                             <ModelAvatar model={agent.model} size="sm" />
                             <div className="flex-1">
-                              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                                <div className="text-xs text-red-400 mb-1">
-                                  Error
+                              <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="thinking-dots">
+                                    <div className="thinking-dot"></div>
+                                    <div className="thinking-dot"></div>
+                                    <div className="thinking-dot"></div>
+                                  </div>
+                                  <span className="text-xs text-lavender-400/80">
+                                    Thinking...
+                                  </span>
                                 </div>
-                                <p className="text-red-300 text-sm">
-                                  {agent.error}
-                                </p>
                               </div>
                             </div>
                           </div>
                         )}
-
-                        {/* Loading State */}
-                        {!agent.wasSkipped &&
-                          !agent.isComplete &&
-                          !agent.response &&
-                          !agent.streamedContent &&
-                          !agent.error && (
-                            <div className="flex gap-2">
-                              <ModelAvatar model={agent.model} size="sm" />
-                              <div className="flex-1">
-                                <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
-                                  <div className="text-xs text-lavender-400/80 mb-1">
-                                    Thinking...
-                                  </div>
-                                  <div className="flex space-x-1">
-                                    <div className="w-1.5 h-1.5 bg-lavender-400 rounded-full animate-pulse"></div>
-                                    <div className="w-1.5 h-1.5 bg-lavender-400 rounded-full animate-pulse delay-75"></div>
-                                    <div className="w-1.5 h-1.5 bg-lavender-400 rounded-full animate-pulse delay-150"></div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                      </div>
                     </>
+                  )}
+
+                  {/* Error State */}
+                  {!agent.wasSkipped && agent.error && (
+                    <div className="flex gap-2">
+                      <ModelAvatar model={agent.model} size="sm" />
+                      <div className="flex-1">
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                          <div className="text-xs text-red-400 mb-1">Error</div>
+                          <p className="text-red-300 text-sm">{agent.error}</p>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
-
-              {/* Resize Handle between columns */}
-              {index < agentGroups.length - 1 && (
-                <div
-                  className={`resize-handle w-1 bg-gray-700/30 hover:bg-lavender-400/30 cursor-col-resize transition-colors flex-shrink-0 border-l border-r border-gray-700/20 ${
-                    isResizing && resizeColumnIndex === index ? "resizing" : ""
-                  }`}
-                  onMouseDown={(e) => handleResizeStart(e, index)}
-                  style={{ minWidth: "4px", maxWidth: "4px" }}
-                />
-              )}
-            </React.Fragment>
+            </div>
           ))}
         </div>
       )}

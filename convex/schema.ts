@@ -2,40 +2,32 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  // Users table to store Clerk user data
+  users: defineTable({
+    tokenIdentifier: v.string(), // Clerk's unique identifier
+    email: v.string(),
+    name: v.string(),
+    createdAt: v.number(),
+    lastSeen: v.number(),
+  })
+    .index("by_token", ["tokenIdentifier"])
+    .index("by_email", ["email"]),
+
+  // Chat sessions associated with users
   chatSessions: defineTable({
+    userId: v.id("users"),
     title: v.string(),
     createdAt: v.number(),
-  }),
-
-  // New table for storing attachment metadata
-  attachments: defineTable({
-    sessionId: v.id("chatSessions"),
-    agentStepId: v.optional(v.id("agentSteps")),
-    type: v.union(
-      v.literal("image"),
-      v.literal("audio"),
-      v.literal("document")
-    ),
-    fileName: v.string(),
-    fileSize: v.number(),
-    mimeType: v.string(),
-    storageId: v.id("_storage"), // Convex file storage ID
-    uploadedAt: v.number(),
-    metadata: v.optional(
-      v.object({
-        width: v.optional(v.number()),
-        height: v.optional(v.number()),
-        duration: v.optional(v.number()), // for audio files
-        transcription: v.optional(v.string()), // for audio files
-      })
-    ),
+    updatedAt: v.number(),
   })
-    .index("by_session", ["sessionId"])
-    .index("by_agent_step", ["agentStepId"]),
+    .index("by_user", ["userId"])
+    .index("by_user_created", ["userId", "createdAt"]),
 
+  // Agent steps within chat sessions
   agentSteps: defineTable({
     sessionId: v.id("chatSessions"),
-    index: v.number(), // 0, 1, or 2
+    userId: v.id("users"), // Direct user association for easier querying
+    index: v.number(), // Step order within the session
     model: v.string(),
     prompt: v.string(),
     name: v.optional(v.string()), // Custom name for the step
@@ -78,8 +70,8 @@ export default defineSchema({
     wasSkipped: v.optional(v.boolean()), // If conditional agent was skipped
     skipReason: v.optional(v.string()), // Why agent was skipped
 
-    // NEW: Multimodal fields
-    attachmentIds: v.optional(v.array(v.id("attachments"))), // References to uploaded files
+    // Multimodal fields
+    attachmentIds: v.optional(v.array(v.id("fileAttachments"))), // References to uploaded files
     webSearchResults: v.optional(
       v.array(
         v.object({
@@ -105,5 +97,37 @@ export default defineSchema({
         duration: v.optional(v.number()),
       })
     ),
-  }).index("by_session", ["sessionId", "index"]),
+  })
+    .index("by_session", ["sessionId", "index"])
+    .index("by_user", ["userId"])
+    .index("by_user_session", ["userId", "sessionId"]),
+
+  // File attachments associated with users and sessions
+  fileAttachments: defineTable({
+    userId: v.id("users"), // Direct user association
+    sessionId: v.optional(v.id("chatSessions")),
+    agentStepId: v.optional(v.id("agentSteps")),
+    type: v.union(
+      v.literal("image"),
+      v.literal("audio"),
+      v.literal("document")
+    ),
+    fileName: v.string(),
+    fileSize: v.number(),
+    mimeType: v.string(),
+    storageId: v.id("_storage"), // Convex file storage ID
+    uploadedAt: v.number(),
+    metadata: v.optional(
+      v.object({
+        width: v.optional(v.number()),
+        height: v.optional(v.number()),
+        duration: v.optional(v.number()), // for audio files
+        transcription: v.optional(v.string()), // for audio files
+      })
+    ),
+  })
+    .index("by_user", ["userId"])
+    .index("by_session", ["sessionId"])
+    .index("by_agent_step", ["agentStepId"])
+    .index("by_user_session", ["userId", "sessionId"]),
 });

@@ -654,11 +654,11 @@ export function AgentInput({
           value={agent.prompt}
           onChange={(e) => onUpdate({ ...agent, prompt: e.target.value })}
           placeholder="Ask anything"
-          className="w-full h-auto px-4 pt-4 pb-16 min-h-16 max-h-48 bg-transparent border-0 text-white placeholder-gray-400 hover:bg-gray-700/20 focus:outline-none focus:ring-0 resize-none transition-all text-sm overflow-y-auto"
+          className="w-full h-auto px-4 pt-4 pb-16 min-h-16 max-h-48 bg-transparent border-0 text-white placeholder-gray-400 hover:bg-gray-700/20 focus:outline-none focus:ring-0 resize-none transition-all text-sm overflow-y-auto rounded-b-2xl"
         />
 
         {/* Bottom controls - absolutely positioned with gradient background */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center rounded-b-2xl justify-between px-4 py-3 bg-gray-800/95">
+        <div className="absolute bottom-0 left-0 right-0 flex items-center rounded-b-2xl justify-between px-4 py-3 bg-gradient-to-t from-gray-700 to-gray-700/20 backdrop-blur-sm overflow-hidden">
           {/* Left side controls */}
           <div className="flex items-center gap-2">
             {/* Model Selection */}

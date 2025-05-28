@@ -138,13 +138,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="bg-black">
+    <html lang="en" className="bg-gray-950">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black min-h-screen overflow-x-hidden`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-950 min-h-screen overflow-x-hidden`}
       >
         <MathJaxContext config={mathJaxConfig}>
           <ConvexProvider>
-            <div className="min-h-screen bg-black">{children}</div>
+            <div className="min-h-screen bg-gray-950">{children}</div>
           </ConvexProvider>
         </MathJaxContext>
       </body>

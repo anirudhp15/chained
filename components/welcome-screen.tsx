@@ -396,7 +396,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
     : null;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col pb-40">
       {/* Main content area */}
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="max-w-7xl mx-auto text-center space-y-8">
@@ -424,6 +424,32 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                 : "Choose from these preset agent workflows, or craft your own chain below"}
             </p>
           </div>
+
+          {/* Category Selection Buttons - Show immediately if no category selected */}
+          {!selectedCategory && (
+            <div className="mt-8">
+              <div className="flex items-center justify-center gap-4">
+                {COLUMN_THEMES.map((theme, index) => (
+                  <button
+                    key={theme.title}
+                    onClick={() => handleCategoryClick(theme.title)}
+                    className="flex items-center gap-3 px-6 py-3 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-full text-lavender-400 hover:text-lavender-300 transition-all duration-200 group backdrop-blur-sm hover:scale-105 animate-in fade-in slide-in-from-bottom-4 ease-out"
+                    style={{
+                      animationDelay: `${0.5 + index * 0.1}s`,
+                      animationDuration: "0.6s",
+                      animationFillMode: "both",
+                    }}
+                  >
+                    <theme.icon
+                      size={20}
+                      className={`${theme.iconColor} group-hover:scale-110 transition-transform duration-200`}
+                    />
+                    <span className="font-medium">{theme.title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Preset Selection View (only show when category is selected) */}
           {selectedCategory && (
@@ -506,11 +532,6 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                               <h3 className="text-lg font-semibold text-white group-hover:text-lavender-300 transition-colors duration-300 truncate">
                                 {preset.title}
                               </h3>
-                              {/* <div className="flex-shrink-0">
-                                <div className="flex items-center gap-1 px-2 py-1 bg-gray-800/70 border border-gray-600/50 rounded-full text-xs text-gray-300 group-hover:border-lavender-400/50 group-hover:text-lavender-300 transition-all duration-300">
-                                  <span>{preset.agents.length} Agents</span>
-                                </div>
-                              </div> */}
                             </div>
                             <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-300 line-clamp-3">
                               {preset.description}
@@ -538,34 +559,6 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
           )}
         </div>
       </div>
-
-      {/* Category Selection Buttons - Fixed at bottom, aligned with input area */}
-      {!selectedCategory && (
-        <div className="mt-4">
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="flex items-center justify-center gap-4">
-              {COLUMN_THEMES.map((theme, index) => (
-                <button
-                  key={theme.title}
-                  onClick={() => handleCategoryClick(theme.title)}
-                  className="flex items-center gap-3 px-4 py-2 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-full text-lavender-400 hover:text-lavender-300 transition-all duration-200 group backdrop-blur-sm hover:scale-105 animate-in fade-in slide-in-from-bottom-4 ease-out"
-                  style={{
-                    animationDelay: `${0.5 + index * 0.1}s`,
-                    animationDuration: "0.6s",
-                    animationFillMode: "both",
-                  }}
-                >
-                  <theme.icon
-                    size={20}
-                    className={`${theme.iconColor} group-hover:scale-110 transition-transform duration-200`}
-                  />
-                  <span className="font-xs">{theme.title}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Preset Info Modal */}
       {showPresetInfo &&

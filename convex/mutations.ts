@@ -1,49 +1,65 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
+import type { MutationCtx } from "./_generated/server";
 
+// Helper function to get or create user from Clerk auth
+async function getOrCreateUser(ctx: MutationCtx) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("Not authenticated");
+  }
+
+  // Check if user already exists
+  let user = await ctx.db
+    .query("users")
+    .withIndex("by_token", (q) =>
+      q.eq("tokenIdentifier", identity.tokenIdentifier)
+    )
+    .first();
+
+  if (!user) {
+    // Create new user
+    const userId = await ctx.db.insert("users", {
+      tokenIdentifier: identity.tokenIdentifier,
+      email: identity.email ?? "",
+      name: identity.name ?? "",
+      createdAt: Date.now(),
+      lastSeen: Date.now(),
+    });
+
+    user = await ctx.db.get(userId);
+  } else {
+    // Update last seen
+    await ctx.db.patch(user._id, {
+      lastSeen: Date.now(),
+    });
+  }
+
+  return user;
+}
+
+// Create a new chat session
 export const createSession = mutation({
-  args: { title: v.string() },
+  args: {
+    title: v.string(),
+  },
   handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to create or get user");
+
     const sessionId = await ctx.db.insert("chatSessions", {
+      userId: user._id,
       title: args.title,
       createdAt: Date.now(),
+      updatedAt: Date.now(),
     });
+
     return sessionId;
   },
 });
 
-export const updateChatTitle = mutation({
-  args: {
-    sessionId: v.id("chatSessions"),
-    title: v.string(),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.sessionId, {
-      title: args.title,
-    });
-  },
-});
-
-export const deleteChat = mutation({
-  args: {
-    sessionId: v.id("chatSessions"),
-  },
-  handler: async (ctx, args) => {
-    // First delete all agent steps associated with this session
-    const agentSteps = await ctx.db
-      .query("agentSteps")
-      .filter((q) => q.eq(q.field("sessionId"), args.sessionId))
-      .collect();
-
-    for (const step of agentSteps) {
-      await ctx.db.delete(step._id);
-    }
-
-    // Then delete the chat session itself
-    await ctx.db.delete(args.sessionId);
-  },
-});
-
+// Add an agent step to a session
 export const addAgentStep = mutation({
   args: {
     sessionId: v.id("chatSessions"),
@@ -55,34 +71,60 @@ export const addAgentStep = mutation({
       v.union(
         v.literal("direct"),
         v.literal("conditional"),
-        v.literal("parallel")
+        v.literal("parallel"),
+        v.literal("collaborative")
       )
     ),
     connectionCondition: v.optional(v.string()),
     sourceAgentIndex: v.optional(v.number()),
+    executionGroup: v.optional(v.number()),
+    dependsOn: v.optional(v.array(v.number())),
   },
   handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the session
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id) {
+      throw new Error("Session not found or access denied");
+    }
+
     const stepId = await ctx.db.insert("agentSteps", {
       sessionId: args.sessionId,
+      userId: user._id,
       index: args.index,
       model: args.model,
       prompt: args.prompt,
       name: args.name,
       timestamp: Date.now(),
       isComplete: false,
+      isStreaming: true,
       connectionType: args.connectionType,
       connectionCondition: args.connectionCondition,
       sourceAgentIndex: args.sourceAgentIndex,
+      executionGroup: args.executionGroup,
+      dependsOn: args.dependsOn,
+      executionStartTime: Date.now(),
     });
+
+    // Update session timestamp
+    await ctx.db.patch(args.sessionId, {
+      updatedAt: Date.now(),
+    });
+
     return stepId;
   },
 });
 
-export const updateAgentResponse = mutation({
+// Update agent step with response
+export const updateAgentStep = mutation({
   args: {
     stepId: v.id("agentSteps"),
-    response: v.string(),
+    response: v.optional(v.string()),
     reasoning: v.optional(v.string()),
+    isComplete: v.boolean(),
+    isStreaming: v.optional(v.boolean()),
     tokenUsage: v.optional(
       v.object({
         promptTokens: v.number(),
@@ -90,134 +132,110 @@ export const updateAgentResponse = mutation({
         totalTokens: v.number(),
       })
     ),
-    isComplete: v.optional(v.boolean()),
-    isStreaming: v.optional(v.boolean()),
+    error: v.optional(v.string()),
+    provider: v.optional(v.string()),
+    estimatedCost: v.optional(v.number()),
+    tokensPerSecond: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.stepId, {
-      response: args.response,
-      reasoning: args.reasoning,
-      tokenUsage: args.tokenUsage,
-      isComplete: args.isComplete ?? true,
-      isStreaming: args.isStreaming ?? false,
-    });
-  },
-});
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
 
-export const updateAgentStreaming = mutation({
-  args: {
-    stepId: v.id("agentSteps"),
-    isStreaming: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.stepId, {
+    // Verify user owns the agent step
+    const step = await ctx.db.get(args.stepId);
+    if (!step || step.userId !== user._id) {
+      throw new Error("Agent step not found or access denied");
+    }
+
+    const updateData: any = {
+      isComplete: args.isComplete,
       isStreaming: args.isStreaming,
-    });
+    };
+
+    if (args.response !== undefined) updateData.response = args.response;
+    if (args.reasoning !== undefined) updateData.reasoning = args.reasoning;
+    if (args.tokenUsage !== undefined) updateData.tokenUsage = args.tokenUsage;
+    if (args.error !== undefined) updateData.error = args.error;
+    if (args.provider !== undefined) updateData.provider = args.provider;
+    if (args.estimatedCost !== undefined)
+      updateData.estimatedCost = args.estimatedCost;
+    if (args.tokensPerSecond !== undefined)
+      updateData.tokensPerSecond = args.tokensPerSecond;
+
+    if (args.isComplete) {
+      updateData.executionEndTime = Date.now();
+      if (step.executionStartTime) {
+        updateData.executionDuration = Date.now() - step.executionStartTime;
+      }
+    }
+
+    await ctx.db.patch(args.stepId, updateData);
   },
 });
 
+// Update streamed content for an agent step
 export const updateStreamedContent = mutation({
   args: {
     stepId: v.id("agentSteps"),
     content: v.string(),
   },
   handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the agent step
+    const step = await ctx.db.get(args.stepId);
+    if (!step || step.userId !== user._id) {
+      throw new Error("Agent step not found or access denied");
+    }
+
     await ctx.db.patch(args.stepId, {
       streamedContent: args.content,
     });
   },
 });
 
-export const updateAgentError = mutation({
-  args: {
-    stepId: v.id("agentSteps"),
-    error: v.string(),
-    isComplete: v.optional(v.boolean()),
-    isStreaming: v.optional(v.boolean()),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.stepId, {
-      error: args.error,
-      isComplete: args.isComplete ?? true,
-      isStreaming: args.isStreaming ?? false,
-    });
-  },
-});
-
-export const runAgentChain = mutation({
-  args: {
-    sessionId: v.id("chatSessions"),
-    agents: v.array(
-      v.object({
-        model: v.string(),
-        prompt: v.string(),
-        name: v.optional(v.string()),
-        index: v.number(),
-      })
-    ),
-  },
-  handler: async (ctx, args) => {
-    // Create agent steps for each agent in the chain
-    const stepIds = [];
-    for (const agent of args.agents) {
-      const stepId = await ctx.db.insert("agentSteps", {
-        sessionId: args.sessionId,
-        index: agent.index,
-        model: agent.model,
-        prompt: agent.prompt,
-        name: agent.name,
-        timestamp: Date.now(),
-        isComplete: false,
-      });
-      stepIds.push(stepId);
-    }
-
-    // Note: In a real implementation, you would integrate with actual AI APIs here
-    // For now, we'll just simulate responses
-    for (let i = 0; i < stepIds.length; i++) {
-      const stepId = stepIds[i];
-      const agent = args.agents[i];
-
-      // Simulate AI response (replace with actual AI API calls)
-      const simulatedResponse = `This is a simulated response from ${agent.model} for: "${agent.prompt}"`;
-
-      await ctx.db.patch(stepId, {
-        response: simulatedResponse,
-        isComplete: true,
-      });
-    }
-
-    return stepIds;
-  },
-});
-
+// Mark agent as skipped
 export const updateAgentSkipped = mutation({
   args: {
     stepId: v.id("agentSteps"),
-    wasSkipped: v.boolean(),
-    skipReason: v.optional(v.string()),
+    skipReason: v.string(),
   },
   handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the agent step
+    const step = await ctx.db.get(args.stepId);
+    if (!step || step.userId !== user._id) {
+      throw new Error("Agent step not found or access denied");
+    }
+
     await ctx.db.patch(args.stepId, {
-      wasSkipped: args.wasSkipped,
+      wasSkipped: true,
       skipReason: args.skipReason,
       isComplete: true,
       isStreaming: false,
+      executionEndTime: Date.now(),
     });
   },
 });
 
-// NEW: File and attachment mutations
+// Generate upload URL for files
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
     return await ctx.storage.generateUploadUrl();
   },
 });
 
+// Create file attachment
 export const createAttachment = mutation({
   args: {
-    sessionId: v.id("chatSessions"),
+    sessionId: v.optional(v.id("chatSessions")),
     agentStepId: v.optional(v.id("agentSteps")),
     type: v.union(
       v.literal("image"),
@@ -238,7 +256,27 @@ export const createAttachment = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const attachmentId = await ctx.db.insert("attachments", {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the session if provided
+    if (args.sessionId) {
+      const session = await ctx.db.get(args.sessionId);
+      if (!session || session.userId !== user._id) {
+        throw new Error("Session not found or access denied");
+      }
+    }
+
+    // Verify user owns the agent step if provided
+    if (args.agentStepId) {
+      const step = await ctx.db.get(args.agentStepId);
+      if (!step || step.userId !== user._id) {
+        throw new Error("Agent step not found or access denied");
+      }
+    }
+
+    const attachmentId = await ctx.db.insert("fileAttachments", {
+      userId: user._id,
       sessionId: args.sessionId,
       agentStepId: args.agentStepId,
       type: args.type,
@@ -249,124 +287,98 @@ export const createAttachment = mutation({
       uploadedAt: Date.now(),
       metadata: args.metadata,
     });
+
     return attachmentId;
   },
 });
 
-export const addAttachmentToAgentStep = mutation({
+// Delete a chat session and all related data
+export const deleteSession = mutation({
   args: {
-    stepId: v.id("agentSteps"),
-    attachmentId: v.id("attachments"),
+    sessionId: v.id("chatSessions"),
   },
   handler: async (ctx, args) => {
-    const step = await ctx.db.get(args.stepId);
-    if (!step) throw new Error("Agent step not found");
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
 
-    const currentAttachments = step.attachmentIds || [];
-    await ctx.db.patch(args.stepId, {
-      attachmentIds: [...currentAttachments, args.attachmentId],
-    });
-
-    // Also update the attachment with the agent step ID
-    await ctx.db.patch(args.attachmentId, {
-      agentStepId: args.stepId,
-    });
-  },
-});
-
-export const addWebSearchResults = mutation({
-  args: {
-    stepId: v.id("agentSteps"),
-    query: v.string(),
-    results: v.array(
-      v.object({
-        title: v.string(),
-        url: v.string(),
-        snippet: v.string(),
-        publishedDate: v.optional(v.string()),
-        source: v.optional(v.string()),
-      })
-    ),
-  },
-  handler: async (ctx, args) => {
-    const step = await ctx.db.get(args.stepId);
-    if (!step) throw new Error("Agent step not found");
-
-    const currentSearchResults = step.webSearchResults || [];
-    const newSearchResult = {
-      query: args.query,
-      results: args.results,
-      searchedAt: Date.now(),
-    };
-
-    await ctx.db.patch(args.stepId, {
-      webSearchResults: [...currentSearchResults, newSearchResult],
-    });
-  },
-});
-
-export const addAudioTranscription = mutation({
-  args: {
-    stepId: v.id("agentSteps"),
-    originalText: v.string(),
-    confidence: v.optional(v.number()),
-    language: v.optional(v.string()),
-    duration: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.stepId, {
-      audioTranscription: {
-        originalText: args.originalText,
-        confidence: args.confidence,
-        language: args.language,
-        duration: args.duration,
-      },
-    });
-  },
-});
-
-export const deleteAttachment = mutation({
-  args: {
-    attachmentId: v.id("attachments"),
-  },
-  handler: async (ctx, args) => {
-    const attachment = await ctx.db.get(args.attachmentId);
-    if (!attachment) throw new Error("Attachment not found");
-
-    // Delete the file from storage
-    await ctx.storage.delete(attachment.storageId);
-
-    // Remove from agent step if associated
-    if (attachment.agentStepId) {
-      const step = await ctx.db.get(attachment.agentStepId);
-      if (step && step.attachmentIds) {
-        const updatedAttachments = step.attachmentIds.filter(
-          (id) => id !== args.attachmentId
-        );
-        await ctx.db.patch(attachment.agentStepId, {
-          attachmentIds: updatedAttachments,
-        });
-      }
+    // Verify user owns the session
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id) {
+      throw new Error("Session not found or access denied");
     }
 
-    // Delete the attachment record
-    await ctx.db.delete(args.attachmentId);
+    // Delete all agent steps
+    const agentSteps = await ctx.db
+      .query("agentSteps")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .collect();
+
+    for (const step of agentSteps) {
+      await ctx.db.delete(step._id);
+    }
+
+    // Delete all file attachments
+    const attachments = await ctx.db
+      .query("fileAttachments")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .collect();
+
+    for (const attachment of attachments) {
+      // Delete from storage
+      await ctx.storage.delete(attachment.storageId);
+      // Delete attachment record
+      await ctx.db.delete(attachment._id);
+    }
+
+    // Delete the session
+    await ctx.db.delete(args.sessionId);
   },
 });
 
-// Performance tracking mutations
-export const startAgentExecution = mutation({
+// Update user profile
+export const updateUserProfile = mutation({
   args: {
-    stepId: v.id("agentSteps"),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.stepId, {
-      executionStartTime: Date.now(),
-      isStreaming: true,
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    const updateData: any = {};
+    if (args.name !== undefined) updateData.name = args.name;
+    if (args.email !== undefined) updateData.email = args.email;
+
+    if (Object.keys(updateData).length > 0) {
+      await ctx.db.patch(user._id, updateData);
+    }
+  },
+});
+
+// Update chat session title
+export const updateSessionTitle = mutation({
+  args: {
+    sessionId: v.id("chatSessions"),
+    title: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the session
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id) {
+      throw new Error("Session not found or access denied");
+    }
+
+    await ctx.db.patch(args.sessionId, {
+      title: args.title,
+      updatedAt: Date.now(),
     });
   },
 });
 
+// Complete agent execution with performance metrics
 export const completeAgentExecution = mutation({
   args: {
     stepId: v.id("agentSteps"),
@@ -379,32 +391,88 @@ export const completeAgentExecution = mutation({
       })
     ),
     estimatedCost: v.optional(v.number()),
-    reasoning: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const endTime = Date.now();
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the agent step
     const step = await ctx.db.get(args.stepId);
+    if (!step || step.userId !== user._id) {
+      throw new Error("Agent step not found or access denied");
+    }
 
-    if (!step) throw new Error("Step not found");
+    const now = Date.now();
+    const executionDuration = step.executionStartTime
+      ? now - step.executionStartTime
+      : undefined;
 
-    const duration = step.executionStartTime
-      ? endTime - step.executionStartTime
-      : 0;
-    const tokensPerSecond =
-      args.tokenUsage && duration > 0
-        ? args.tokenUsage.totalTokens / (duration / 1000)
-        : 0;
+    // Calculate tokens per second if we have duration and token usage
+    let tokensPerSecond: number | undefined = undefined;
+    if (executionDuration && args.tokenUsage && executionDuration > 0) {
+      tokensPerSecond =
+        (args.tokenUsage.totalTokens / executionDuration) * 1000; // Convert to per second
+    }
 
     await ctx.db.patch(args.stepId, {
       response: args.response,
-      reasoning: args.reasoning,
       tokenUsage: args.tokenUsage,
-      executionEndTime: endTime,
-      executionDuration: duration,
-      tokensPerSecond: Math.round(tokensPerSecond * 100) / 100,
       estimatedCost: args.estimatedCost,
+      tokensPerSecond,
+      executionEndTime: now,
+      executionDuration,
       isComplete: true,
       isStreaming: false,
+    });
+  },
+});
+
+// Start agent execution (used by stream-agent route)
+export const startAgentExecution = mutation({
+  args: {
+    stepId: v.id("agentSteps"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the agent step
+    const step = await ctx.db.get(args.stepId);
+    if (!step || step.userId !== user._id) {
+      throw new Error("Agent step not found or access denied");
+    }
+
+    await ctx.db.patch(args.stepId, {
+      executionStartTime: Date.now(),
+      isStreaming: true,
+      isComplete: false,
+    });
+  },
+});
+
+// Update agent with error (used by stream-agent route)
+export const updateAgentError = mutation({
+  args: {
+    stepId: v.id("agentSteps"),
+    error: v.string(),
+    isComplete: v.boolean(),
+    isStreaming: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the agent step
+    const step = await ctx.db.get(args.stepId);
+    if (!step || step.userId !== user._id) {
+      throw new Error("Agent step not found or access denied");
+    }
+
+    await ctx.db.patch(args.stepId, {
+      error: args.error,
+      isComplete: args.isComplete,
+      isStreaming: args.isStreaming,
+      executionEndTime: Date.now(),
     });
   },
 });

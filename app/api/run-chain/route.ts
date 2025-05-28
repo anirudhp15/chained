@@ -1,142 +1,153 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../convex/_generated/api";
-import { callLLM } from "../../../lib/llm";
+import { callLLMStream } from "../../../lib/llm";
+import { calculateCost } from "../../../lib/pricing";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: NextRequest) {
   try {
-    const { sessionId, agents } = await request.json();
-
-    // Process agents sequentially
-    for (let i = 0; i < agents.length; i++) {
-      const agent = agents[i];
-
-      // Add agent step to database
-      const stepId = await convex.mutation(api.mutations.addAgentStep, {
-        sessionId,
-        index: i,
-        model: agent.model,
-        prompt: agent.prompt,
-      });
-
-      // Process multimodal attachments
-      const imageUrls: Array<{ url: string; description?: string }> = [];
-      let audioTranscription: string | undefined;
-      let webSearchResults:
-        | Array<{
-            title: string;
-            snippet: string;
-            url: string;
-            source?: string;
-          }>
-        | undefined;
-
-      // Handle images
-      if (agent.images && agent.images.length > 0) {
-        for (const image of agent.images) {
-          // Upload image and get URL
-          const formData = new FormData();
-          const response = await fetch(image.preview);
-          const blob = await response.blob();
-          const file = new File([blob], image.name, { type: blob.type });
-
-          formData.append("file", file);
-          formData.append("sessionId", sessionId);
-          formData.append("agentStepId", stepId);
-          formData.append("type", "image");
-
-          const uploadResponse = await fetch("/api/upload-file", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (uploadResponse.ok) {
-            const uploadResult = await uploadResponse.json();
-            imageUrls.push({
-              url: uploadResult.url,
-              description: image.name,
-            });
-          }
-        }
-      }
-
-      // Handle audio transcription
-      if (agent.audioBlob) {
-        const formData = new FormData();
-        formData.append("audio", agent.audioBlob);
-
-        const transcribeResponse = await fetch("/api/transcribe-audio", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (transcribeResponse.ok) {
-          const transcribeResult = await transcribeResponse.json();
-          audioTranscription = transcribeResult.transcription;
-
-          // Store audio transcription in database only if transcription exists
-          if (audioTranscription) {
-            await convex.mutation(api.mutations.addAudioTranscription, {
-              stepId,
-              originalText: audioTranscription,
-              duration: transcribeResult.duration,
-            });
-          }
-        }
-      }
-
-      // Handle web search
-      if (agent.webSearchData) {
-        // Transform results to match expected schema
-        const transformedResults = agent.webSearchData.results.map(
-          (result: {
-            title: string;
-            snippet: string;
-            url: string;
-            source?: string;
-          }) => ({
-            title: result.title,
-            url: result.url,
-            snippet: result.snippet,
-            source: result.source,
-            publishedDate: undefined, // Optional field
-          })
-        );
-
-        webSearchResults = agent.webSearchData.results;
-
-        // Store web search results in database
-        await convex.mutation(api.mutations.addWebSearchResults, {
-          stepId,
-          query: agent.webSearchData.query,
-          results: transformedResults,
-        });
-      }
-
-      // Call LLM with multimodal data
-      const response = await callLLM({
-        model: agent.model,
-        prompt: agent.prompt,
-        images: imageUrls.length > 0 ? imageUrls : undefined,
-        audioTranscription,
-        webSearchResults,
-      });
-
-      // Update with response
-      await convex.mutation(api.mutations.updateAgentResponse, {
-        stepId,
-        response: response.content,
-        tokenUsage: response.tokenUsage,
-      });
+    // Authenticate the request
+    const authData = await auth();
+    const { userId } = authData;
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    return NextResponse.json({ success: true });
+    const { stepId, model, prompt } = await request.json();
+
+    if (!stepId || !model || !prompt) {
+      return NextResponse.json(
+        { error: "Missing required fields: stepId, model, prompt" },
+        { status: 400 }
+      );
+    }
+
+    // Set up authenticated Convex client
+    const token = await authData.getToken({ template: "convex" });
+    if (!token) {
+      return NextResponse.json(
+        { error: "Failed to get auth token" },
+        { status: 401 }
+      );
+    }
+    convex.setAuth(token);
+
+    // Get the agent step to check if it belongs to the authenticated user
+    const agentStep = await convex.query(api.queries.getAgentStep, {
+      stepId: stepId as Id<"agentSteps">,
+    });
+
+    if (!agentStep) {
+      return NextResponse.json(
+        { error: "Agent step not found" },
+        { status: 404 }
+      );
+    }
+
+    // Mark execution start and streaming state
+    await convex.mutation(api.mutations.updateAgentStep, {
+      stepId: stepId as Id<"agentSteps">,
+      isStreaming: true,
+      isComplete: false,
+    });
+
+    // Set up Server-Sent Events
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          let fullContent = "";
+          let tokenUsage: any = undefined;
+
+          // Stream tokens from LLM
+          for await (const chunk of callLLMStream({
+            model,
+            prompt,
+          })) {
+            if (chunk.content && !chunk.isComplete) {
+              // Send token to client
+              fullContent += chunk.content;
+              const tokenData = JSON.stringify({
+                type: "token",
+                content: chunk.content,
+              });
+              controller.enqueue(encoder.encode(`data: ${tokenData}\n\n`));
+
+              // Update streamed content in database periodically
+              await convex.mutation(api.mutations.updateStreamedContent, {
+                stepId: stepId as Id<"agentSteps">,
+                content: fullContent,
+              });
+            } else if (chunk.isComplete) {
+              tokenUsage = chunk.tokenUsage;
+            }
+          }
+
+          // Calculate cost if we have token usage
+          let estimatedCost: number | undefined = undefined;
+          if (tokenUsage) {
+            estimatedCost = calculateCost(
+              model,
+              tokenUsage.promptTokens,
+              tokenUsage.completionTokens
+            );
+          }
+
+          // Complete execution with performance metrics
+          await convex.mutation(api.mutations.completeAgentExecution, {
+            stepId: stepId as Id<"agentSteps">,
+            response: fullContent,
+            tokenUsage: tokenUsage,
+            estimatedCost,
+          });
+
+          // Send completion event
+          const completeData = JSON.stringify({
+            type: "complete",
+            content: fullContent,
+            tokenUsage: tokenUsage,
+            estimatedCost,
+          });
+          controller.enqueue(encoder.encode(`data: ${completeData}\n\n`));
+          controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+          controller.close();
+        } catch (error) {
+          console.error("Streaming error:", error);
+
+          // Mark step as errored
+          await convex.mutation(api.mutations.updateAgentStep, {
+            stepId: stepId as Id<"agentSteps">,
+            error: error instanceof Error ? error.message : "Unknown error",
+            isStreaming: false,
+            isComplete: false,
+          });
+
+          // Send error event
+          const errorData = JSON.stringify({
+            type: "error",
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
+          controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
   } catch (error) {
-    console.error("Chain execution failed:", error);
+    console.error("API route error:", error);
     return NextResponse.json(
-      { error: "Failed to execute chain" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

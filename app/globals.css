@@ -73,23 +73,46 @@
     border-color: hsl(var(--border));
   }
 
-  /* Ensure black background everywhere */
+  /* Ensure gray-950 background everywhere to prevent white flashes */
   :root {
-    background-color: #000;
+    background-color: #030712; /* gray-950 */
   }
 
   html {
-    background-color: #000;
+    background-color: #030712; /* gray-950 */
     overflow-x: hidden; /* Prevent horizontal scrolling */
     min-height: 100%;
   }
 
   body {
-    background-color: hsl(var(--background));
+    background-color: #030712; /* gray-950 - override any theme variables */
     color: hsl(var(--foreground));
     min-height: 100vh;
     overflow-x: hidden; /* Prevent horizontal scrolling */
     max-width: 100vw; /* Prevent horizontal overflow */
+  }
+
+  /* Ensure all major containers default to gray-950 */
+  #__next,
+  [data-overlay-container="true"] {
+    background-color: #030712; /* gray-950 */
+  }
+
+  /* Next.js specific elements */
+  #__next-build-watcher,
+  [data-nextjs-dialog],
+  [data-nextjs-dialog-overlay],
+  [data-nextjs-toast],
+  .next-error-h1,
+  .next-error-h2 {
+    background-color: #030712 !important; /* gray-950 */
+    color: #f9fafb; /* gray-50 for text */
+  }
+
+  /* Loading states and transitions */
+  [data-loading="true"],
+  .loading-placeholder {
+    background-color: #030712; /* gray-950 */
   }
 
   /* Custom Scrollbar Styles */
@@ -206,6 +229,73 @@
     51%,
     100% {
       opacity: 0.3;
+    }
+  }
+
+  /* Modern thinking animation */
+  .thinking-dots {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .thinking-dot {
+    width: 6px;
+    height: 6px;
+    background: #a855f7;
+    border-radius: 50%;
+    animation: thinking-bounce 1.4s ease-in-out infinite both;
+  }
+
+  .thinking-dot:nth-child(1) {
+    animation-delay: -0.32s;
+  }
+  .thinking-dot:nth-child(2) {
+    animation-delay: -0.16s;
+  }
+  .thinking-dot:nth-child(3) {
+    animation-delay: 0s;
+  }
+
+  @keyframes thinking-bounce {
+    0%,
+    80%,
+    100% {
+      transform: scale(0.8);
+      opacity: 0.6;
+    }
+    40% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Professional streaming indicator */
+  .streaming-indicator {
+    position: relative;
+    width: 6px;
+    height: 6px;
+    background: #a855f7;
+    border-radius: 50%;
+  }
+
+  .streaming-indicator::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: inherit;
+    border-radius: inherit;
+    animation: streaming-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes streaming-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(1.5);
     }
   }
 

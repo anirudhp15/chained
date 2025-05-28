@@ -87,6 +87,55 @@ export async function callLLM({
   }
 }
 
+export async function* callLLMStream({
+  model,
+  prompt,
+  images,
+  audioTranscription,
+  webSearchResults,
+}: {
+  model: string;
+  prompt: string;
+  images?: Array<{ url: string; description?: string }>;
+  audioTranscription?: string;
+  webSearchResults?: Array<{
+    title: string;
+    snippet: string;
+    url: string;
+    source?: string;
+  }>;
+}): AsyncGenerator<{
+  content: string;
+  isComplete?: boolean;
+  tokenUsage?: any;
+}> {
+  try {
+    // Build enhanced prompt with multimodal context
+    const enhancedPrompt = buildEnhancedPrompt({
+      prompt,
+      images,
+      audioTranscription,
+      webSearchResults,
+    });
+
+    if (model.startsWith("gpt-") || model.includes("openai")) {
+      yield* callOpenAIStream(model, enhancedPrompt, images);
+    } else if (model.includes("claude")) {
+      yield* callAnthropicStream(model, enhancedPrompt, images);
+    } else if (model.startsWith("grok-") || model.includes("xai")) {
+      yield* callXAIStream(model, enhancedPrompt, images);
+    } else {
+      throw new Error(`Unsupported model: ${model}`);
+    }
+  } catch (error) {
+    console.error("LLM stream call failed:", error);
+    yield {
+      content: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      isComplete: true,
+    };
+  }
+}
+
 function buildEnhancedPrompt(input: MultimodalInput): string {
   let enhancedPrompt = input.prompt;
 
@@ -281,4 +330,194 @@ async function callXAI(
         }
       : undefined,
   };
+}
+
+async function* callOpenAIStream(
+  model: string,
+  prompt: string,
+  images?: Array<{ url: string; description?: string }>
+): AsyncGenerator<{ content: string; isComplete?: boolean; tokenUsage?: any }> {
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+
+  if (images && images.length > 0) {
+    const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
+      { type: "text", text: prompt },
+    ];
+
+    images.forEach((image) => {
+      content.push({
+        type: "image_url",
+        image_url: {
+          url: image.url,
+          detail: "high",
+        },
+      });
+    });
+
+    messages.push({
+      role: "user",
+      content: content,
+    });
+  } else {
+    messages.push({
+      role: "user",
+      content: prompt,
+    });
+  }
+
+  const stream = await openai.chat.completions.create({
+    model: model.replace("openai-", ""),
+    messages,
+    max_tokens: 4000,
+    stream: true,
+  });
+
+  let fullContent = "";
+  let tokenUsage: any = undefined;
+
+  for await (const chunk of stream) {
+    const delta = chunk.choices[0]?.delta;
+    if (delta?.content) {
+      fullContent += delta.content;
+      yield { content: delta.content };
+    }
+
+    if (chunk.usage) {
+      tokenUsage = {
+        promptTokens: chunk.usage.prompt_tokens,
+        completionTokens: chunk.usage.completion_tokens,
+        totalTokens: chunk.usage.total_tokens,
+      };
+    }
+  }
+
+  yield { content: "", isComplete: true, tokenUsage };
+}
+
+async function* callAnthropicStream(
+  model: string,
+  prompt: string,
+  images?: Array<{ url: string; description?: string }>
+): AsyncGenerator<{ content: string; isComplete?: boolean; tokenUsage?: any }> {
+  const content: Anthropic.MessageParam["content"] = [];
+
+  // Add text content
+  content.push({
+    type: "text",
+    text: prompt,
+  });
+
+  // Add images if provided and model supports vision
+  if (images && images.length > 0) {
+    for (const image of images) {
+      try {
+        const response = await fetch(image.url);
+        const arrayBuffer = await response.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString("base64");
+        const mimeType = response.headers.get("content-type") || "image/jpeg";
+
+        content.push({
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: mimeType as
+              | "image/jpeg"
+              | "image/png"
+              | "image/gif"
+              | "image/webp",
+            data: base64,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to process image for Anthropic:", error);
+      }
+    }
+  }
+
+  const stream = await anthropic.messages.create({
+    model: model,
+    max_tokens: 4000,
+    messages: [{ role: "user", content }],
+    stream: true,
+  });
+
+  let tokenUsage: any = undefined;
+
+  for await (const chunk of stream) {
+    if (
+      chunk.type === "content_block_delta" &&
+      chunk.delta.type === "text_delta"
+    ) {
+      yield { content: chunk.delta.text };
+    } else if (chunk.type === "message_delta" && chunk.usage) {
+      tokenUsage = {
+        promptTokens: chunk.usage.input_tokens || 0,
+        completionTokens: chunk.usage.output_tokens || 0,
+        totalTokens:
+          (chunk.usage.input_tokens || 0) + (chunk.usage.output_tokens || 0),
+      };
+    }
+  }
+
+  yield { content: "", isComplete: true, tokenUsage };
+}
+
+async function* callXAIStream(
+  model: string,
+  prompt: string,
+  images?: Array<{ url: string; description?: string }>
+): AsyncGenerator<{ content: string; isComplete?: boolean; tokenUsage?: any }> {
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+
+  if (images && images.length > 0) {
+    const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
+      { type: "text", text: prompt },
+    ];
+
+    images.forEach((image) => {
+      content.push({
+        type: "image_url",
+        image_url: {
+          url: image.url,
+          detail: "high",
+        },
+      });
+    });
+
+    messages.push({
+      role: "user",
+      content: content,
+    });
+  } else {
+    messages.push({
+      role: "user",
+      content: prompt,
+    });
+  }
+
+  const stream = await xai.chat.completions.create({
+    model: model,
+    messages,
+    max_tokens: 4000,
+    stream: true,
+  });
+
+  let tokenUsage: any = undefined;
+
+  for await (const chunk of stream) {
+    const delta = chunk.choices[0]?.delta;
+    if (delta?.content) {
+      yield { content: delta.content };
+    }
+
+    if (chunk.usage) {
+      tokenUsage = {
+        promptTokens: chunk.usage.prompt_tokens,
+        completionTokens: chunk.usage.completion_tokens,
+        totalTokens: chunk.usage.total_tokens,
+      };
+    }
+  }
+
+  yield { content: "", isComplete: true, tokenUsage };
 }

@@ -246,8 +246,8 @@ export function InputArea({
   // Regular Chain Mode Input - Horizontal Layout
   return (
     <div className="absolute bottom-0 left-0 right-0 z-10">
-      <div className="h-full flex items-end justify-center px-4">
-        <div className="w-full py-6 max-w-[calc(100vw-280px)]">
+      <div className="flex items-end justify-center px-6 py-6">
+        <div className="w-full max-w-6xl">
           <div className="flex items-stretch justify-center">
             {agents.map((agent, index) => (
               <div key={agent.id} className="flex items-stretch">
