@@ -1,0 +1,26 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg16" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#1f2937"/>
+      <stop offset="100%" style="stop-color:#000000"/>
+    </radialGradient>
+    <linearGradient id="chain16" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a855f7"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+  </defs>
+  
+  <circle cx="8" cy="8" r="8" fill="url(#bg16)"/>
+  
+  <!-- Simplified chain for 16x16 -->
+  <circle cx="4" cy="6" r="1.5" fill="#ddd6fe" stroke="url(#chain16)" stroke-width="0.5"/>
+  <path d="M5.5 6 L6.5 8" stroke="url(#chain16)" stroke-width="1" stroke-linecap="round"/>
+  <circle cx="8" cy="9" r="1.5" fill="#ddd6fe" stroke="url(#chain16)" stroke-width="0.5"/>
+  <path d="M9.5 8 L10.5 6" stroke="url(#chain16)" stroke-width="1" stroke-linecap="round"/>
+  <circle cx="12" cy="6" r="1.5" fill="#ddd6fe" stroke="url(#chain16)" stroke-width="0.5"/>
+  
+  <!-- Bottom connection -->
+  <path d="M4 7.5 L4 10 L8 10.5" stroke="url(#chain16)" stroke-width="0.5" opacity="0.7"/>
+  <path d="M12 7.5 L12 10 L8 10.5" stroke="url(#chain16)" stroke-width="0.5" opacity="0.7"/>
+  <circle cx="8" cy="11" r="1" fill="#ddd6fe" stroke="url(#chain16)" stroke-width="0.5"/>
+</svg> 

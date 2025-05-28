@@ -91,6 +91,51 @@
     overflow-x: hidden; /* Prevent horizontal scrolling */
     max-width: 100vw; /* Prevent horizontal overflow */
   }
+
+  /* Custom Scrollbar Styles */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(55, 65, 81, 0.6); /* gray-700 with opacity */
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(75, 85, 99, 0.8); /* gray-600 with opacity */
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(55, 65, 81, 0.6) rgba(0, 0, 0, 0.1);
+  }
+
+  /* Specific scrollbar styles for agent content areas */
+  .agent-content::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .agent-content::-webkit-scrollbar-thumb {
+    background: rgba(31, 41, 55, 0.5); /* gray-800 with opacity */
+    border-radius: 2px;
+  }
+
+  .agent-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(55, 65, 81, 0.7); /* gray-700 with opacity */
+  }
 }
 
 /* Markdown Rendering Enhancements */
@@ -174,13 +219,12 @@
   }
 
   .agent-slide-in {
-    animation: slideInFromRight 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)
-      forwards;
+    animation: slideInFromRight 0.4s ease-out;
   }
 
   @keyframes slideInFromRight {
     0% {
-      transform: translateX(100%);
+      transform: translateX(20px);
       opacity: 0;
     }
     100% {
@@ -190,14 +234,6 @@
   }
 
   /* Welcome Screen Animations */
-  .welcome-fade-in {
-    animation: welcomeFadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  }
-
-  .welcome-slide-up {
-    animation: welcomeSlideUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  }
-
   .preset-card-hover {
     transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
@@ -205,28 +241,6 @@
   .preset-card-hover:hover {
     transform: translateY(-4px) scale(1.02);
     box-shadow: 0 20px 40px rgba(147, 112, 219, 0.15);
-  }
-
-  @keyframes welcomeFadeIn {
-    0% {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes welcomeSlideUp {
-    0% {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
   }
 
   /* Sparkle animation for welcome text */
@@ -260,40 +274,20 @@
   /* Resize handle styling */
   .resize-handle {
     position: relative;
-    background: linear-gradient(
-      to bottom,
-      transparent 0%,
-      rgba(147, 112, 219, 0.1) 30%,
-      rgba(147, 112, 219, 0.3) 50%,
-      rgba(147, 112, 219, 0.1) 70%,
-      transparent 100%
-    );
-
+    background: rgba(31, 41, 55, 0.3); /* gray-800 with low opacity */
     transition: all 0.2s ease-in-out;
     will-change: background;
     contain: layout style;
   }
 
   .resize-handle:hover {
-    background: linear-gradient(
-      to bottom,
-      transparent 0%,
-      rgba(147, 112, 219, 0.2) 20%,
-      rgba(147, 112, 219, 0.5) 50%,
-      rgba(147, 112, 219, 0.2) 80%,
-      transparent 100%
-    );
+    background: rgba(147, 112, 219, 0.2); /* lavender with low opacity */
+    box-shadow: 0 0 8px rgba(147, 112, 219, 0.1);
   }
 
   .resize-handle.resizing {
-    background: linear-gradient(
-      to bottom,
-      transparent 0%,
-      rgba(147, 112, 219, 0.3) 10%,
-      rgba(147, 112, 219, 0.7) 50%,
-      rgba(147, 112, 219, 0.3) 90%,
-      transparent 100%
-    );
+    background: rgba(147, 112, 219, 0.4); /* lavender with medium opacity */
+    box-shadow: 0 0 12px rgba(147, 112, 219, 0.2);
     cursor: col-resize;
   }
 

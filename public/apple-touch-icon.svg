@@ -1,0 +1,62 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgApple" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#1f2937"/>
+      <stop offset="70%" style="stop-color:#111827"/>
+      <stop offset="100%" style="stop-color:#000000"/>
+    </radialGradient>
+    <linearGradient id="chainApple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a855f7"/>
+      <stop offset="25%" style="stop-color:#9333ea"/>
+      <stop offset="75%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#6b21a8"/>
+    </linearGradient>
+    <linearGradient id="nodeApple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f3f4f6"/>
+      <stop offset="50%" style="stop-color:#ddd6fe"/>
+      <stop offset="100%" style="stop-color:#c4b5fd"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background with rounded corners for iOS -->
+  <rect width="180" height="180" rx="40" ry="40" fill="url(#bgApple)"/>
+  
+  <!-- AI Chain Network - Larger and more detailed -->
+  <!-- Input nodes -->
+  <circle cx="45" cy="65" r="12" fill="url(#nodeApple)" stroke="url(#chainApple)" stroke-width="3" filter="url(#glow)"/>
+  <circle cx="90" cy="45" r="12" fill="url(#nodeApple)" stroke="url(#chainApple)" stroke-width="3" filter="url(#glow)"/>
+  <circle cx="135" cy="65" r="12" fill="url(#nodeApple)" stroke="url(#chainApple)" stroke-width="3" filter="url(#glow)"/>
+  
+  <!-- Processing connections -->
+  <path d="M57 70 L78 85" stroke="url(#chainApple)" stroke-width="4" stroke-linecap="round" filter="url(#glow)"/>
+  <path d="M102 55 L123 70" stroke="url(#chainApple)" stroke-width="4" stroke-linecap="round" filter="url(#glow)"/>
+  
+  <!-- Central processing node -->
+  <circle cx="90" cy="100" r="15" fill="url(#nodeApple)" stroke="url(#chainApple)" stroke-width="3" filter="url(#glow)"/>
+  
+  <!-- Parallel processing branches -->
+  <path d="M45 77 L45 115 L75 120" stroke="url(#chainApple)" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  <path d="M135 77 L135 115 L105 120" stroke="url(#chainApple)" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+  
+  <!-- Output convergence -->
+  <path d="M90 115 L90 125" stroke="url(#chainApple)" stroke-width="4" stroke-linecap="round" filter="url(#glow)"/>
+  
+  <!-- Final output node -->
+  <circle cx="90" cy="140" r="10" fill="url(#nodeApple)" stroke="url(#chainApple)" stroke-width="3" filter="url(#glow)"/>
+  
+  <!-- Ambient glow around the entire design -->
+  <circle cx="90" cy="90" r="75" fill="none" stroke="url(#chainApple)" stroke-width="1" opacity="0.2"/>
+  <circle cx="90" cy="90" r="65" fill="none" stroke="url(#chainApple)" stroke-width="0.5" opacity="0.3"/>
+  
+  <!-- Small connecting dots for detail -->
+  <circle cx="67" cy="77" r="2" fill="url(#chainApple)" opacity="0.6"/>
+  <circle cx="113" cy="77" r="2" fill="url(#chainApple)" opacity="0.6"/>
+  <circle cx="90" cy="125" r="2" fill="url(#chainApple)" opacity="0.6"/>
+</svg> 

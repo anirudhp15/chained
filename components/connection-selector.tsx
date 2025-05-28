@@ -44,7 +44,7 @@ const CONNECTION_TYPES = [
     type: "conditional" as const,
     label: "Conditional",
     Icon: IoGitBranchOutline,
-    description: "Run only if condition is met",
+    description: "Run only if a condition is met",
     color: "text-amber-400",
     iconRotate: "rotate-90",
   },

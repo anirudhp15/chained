@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chained - Favicon Test</title>
+
+    <!-- Favicon links (copy these to your main layout if needed) -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#9333ea" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #000;
+        color: #fff;
+      }
+      .favicon-preview {
+        display: inline-block;
+        margin: 10px;
+        text-align: center;
+        padding: 20px;
+        background: #1f2937;
+        border-radius: 8px;
+      }
+      .favicon-preview img {
+        display: block;
+        margin: 0 auto 10px;
+        border: 1px solid #374151;
+      }
+      h1 {
+        color: #a855f7;
+      }
+      h2 {
+        color: #9333ea;
+      }
+      .success {
+        color: #10b981;
+      }
+      .warning {
+        color: #f59e0b;
+      }
+      .error {
+        color: #ef4444;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎨 Chained Favicon Test Page</h1>
+
+    <h2>📱 Favicon Previews</h2>
+
+    <div class="favicon-preview">
+      <img src="/favicon-16x16.svg" width="16" height="16" alt="16x16" />
+      <div>16×16 (Browser Tab)</div>
+    </div>
+
+    <div class="favicon-preview">
+      <img src="/favicon-32x32.svg" width="32" height="32" alt="32x32" />
+      <div>32×32 (Bookmarks)</div>
+    </div>
+
+    <div class="favicon-preview">
+      <img
+        src="/apple-touch-icon.svg"
+        width="60"
+        height="60"
+        alt="Apple Touch"
+      />
+      <div>180×180 (Apple Touch)</div>
+    </div>
+
+    <div class="favicon-preview">
+      <img
+        src="/safari-pinned-tab.svg"
+        width="32"
+        height="32"
+        alt="Safari Pinned"
+      />
+      <div>Safari Pinned Tab</div>
+    </div>
+
+    <h2>✅ Setup Checklist</h2>
+
+    <div id="checkResults">
+      <p class="warning">🔄 Checking favicon files...</p>
+    </div>
+
+    <h2>🚀 Next Steps</h2>
+    <ul>
+      <li>Convert SVG files to PNG format (see FAVICON_SETUP.md)</li>
+      <li>Update your domain in layout.tsx metadata</li>
+      <li>Add social media verification codes</li>
+      <li>Create og-image.png for social sharing</li>
+      <li>Test on different devices and browsers</li>
+    </ul>
+
+    <script>
+      // Simple file existence checker
+      async function checkFavicons() {
+        const files = [
+          "/favicon.ico",
+          "/favicon.svg",
+          "/site.webmanifest",
+          "/safari-pinned-tab.svg",
+        ];
+
+        const results = [];
+
+        for (const file of files) {
+          try {
+            const response = await fetch(file, { method: "HEAD" });
+            results.push({
+              file,
+              exists: response.ok,
+              status: response.status,
+            });
+          } catch (error) {
+            results.push({
+              file,
+              exists: false,
+              error: error.message,
+            });
+          }
+        }
+
+        const checkDiv = document.getElementById("checkResults");
+        let html = "";
+
+        results.forEach((result) => {
+          const status = result.exists ? "success" : "error";
+          const icon = result.exists ? "✅" : "❌";
+          html += `<p class="${status}">${icon} ${result.file} ${result.exists ? "(Found)" : "(Missing)"}</p>`;
+        });
+
+        checkDiv.innerHTML = html;
+      }
+
+      // Run check when page loads
+      window.addEventListener("load", checkFavicons);
+    </script>
+
+    <footer
+      style="
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #374151;
+        color: #6b7280;
+      "
+    >
+      <p>🔗 <strong>Chained</strong> - Professional Favicon Setup Complete</p>
+      <p>Delete this file once you've verified everything works!</p>
+    </footer>
+  </body>
+</html>

@@ -56,5 +56,24 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    function ({ addUtilities }: { addUtilities: any }) {
+      addUtilities({
+        ".scrollbar-thin": {
+          "scrollbar-width": "thin",
+        },
+        ".scrollbar-none": {
+          "scrollbar-width": "none",
+          "-ms-overflow-style": "none",
+          "&::-webkit-scrollbar": {
+            display: "none",
+          },
+        },
+        ".scrollbar-dark": {
+          "scrollbar-color": "rgba(55, 65, 81, 0.6) rgba(0, 0, 0, 0.1)",
+        },
+      });
+    },
+  ],
 };

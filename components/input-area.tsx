@@ -4,31 +4,24 @@ import { useState, useEffect } from "react";
 import { AgentInput, type Agent } from "./agent-input";
 import { v4 as uuidv4 } from "uuid";
 import { ModalityIcons } from "./modality/ModalityIcons";
-import { GitCommitHorizontal, GitFork } from "lucide-react";
-import { IoGitBranchOutline } from "react-icons/io5";
 import { WelcomeScreen } from "./welcome-screen";
+import { CONNECTION_TYPES, DEFAULT_AGENT_CONFIG } from "@/lib/constants";
 
 // Simple connection icon component
 const ConnectionIcon = ({ connectionType }: { connectionType?: string }) => {
-  const getConnectionIcon = () => {
-    switch (connectionType) {
-      case "conditional":
-        return (
-          <IoGitBranchOutline size={16} className="text-amber-400 rotate-90" />
-        );
-      case "parallel":
-        return <GitFork size={16} className="text-purple-400 rotate-90" />;
-      case "direct":
-      default:
-        return <GitCommitHorizontal size={16} className="text-blue-400" />;
-    }
-  };
+  const connectionConfig =
+    CONNECTION_TYPES.find((c) => c.type === connectionType) ||
+    CONNECTION_TYPES[0];
+  const IconComponent = connectionConfig.Icon;
 
   return (
     <div className="flex items-center justify-center px-2">
       <div className="flex items-center gap-2">
-        <div className="p-2 bg-gray-800/20 border border-gray-600/50 rounded-xl backdrop-blur-sm">
-          {getConnectionIcon()}
+        <div className="">
+          <IconComponent
+            size={24}
+            className={`${connectionConfig.color} ${connectionConfig.iconRotate || ""}`}
+          />
         </div>
       </div>
     </div>
@@ -61,9 +54,7 @@ export function InputArea({
   const [agents, setAgents] = useState<Agent[]>([
     {
       id: uuidv4(),
-      model: "gpt-4o-mini",
-      prompt: "",
-      name: "", // Initialize with empty name
+      ...DEFAULT_AGENT_CONFIG,
     },
   ]);
 
@@ -100,9 +91,7 @@ export function InputArea({
     if (agents.length < 3) {
       const newAgent = {
         id: uuidv4(),
-        model: "gpt-4o-mini",
-        prompt: "",
-        name: "", // Initialize with empty name
+        ...DEFAULT_AGENT_CONFIG,
       };
 
       setAnimatingAgentId(newAgent.id);
@@ -135,9 +124,7 @@ export function InputArea({
       setAgents([
         {
           id: uuidv4(),
-          model: "gpt-4o-mini",
-          prompt: "",
-          name: "", // Initialize with empty name
+          ...DEFAULT_AGENT_CONFIG,
         },
       ]);
     }
@@ -272,7 +259,7 @@ export function InputArea({
                       : agents.length === 2
                         ? "w-full max-w-none min-w-[550px] flex-1"
                         : "w-full max-w-none min-w-[450px] flex-1"
-                  } backdrop-blur-sm rounded-xl border-2 border-gray-800/50 ${
+                  } backdrop-blur-sm  ${
                     queuedAgents.some((qa) => qa.id === agent.id)
                       ? "border-lavender-400/50"
                       : ""

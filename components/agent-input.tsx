@@ -25,6 +25,11 @@ import { IoGitBranchOutline } from "react-icons/io5";
 import { UploadedImage } from "./modality/ImageUpload";
 import { WebSearchData } from "./modality/WebSearch";
 import { ModalityIcons } from "./modality/ModalityIcons";
+import {
+  CONNECTION_TYPES,
+  CONDITION_PRESETS,
+  type EnabledConnectionType,
+} from "@/lib/constants";
 
 export interface Agent {
   id: string;
@@ -131,75 +136,6 @@ type ModelProviders = {
 };
 
 // Connection types configuration
-type EnabledConnectionType = "direct" | "conditional" | "parallel";
-
-const CONNECTION_TYPES = [
-  {
-    type: "direct" as const,
-    label: "Direct",
-    Icon: GitCommitHorizontal,
-    description: "Pass previous agent's output directly",
-    color: "text-blue-400",
-  },
-  {
-    type: "conditional" as const,
-    label: "Conditional",
-    Icon: IoGitBranchOutline,
-    description: "Run only if condition is met",
-    color: "text-amber-400",
-    iconRotate: "rotate-90",
-  },
-  {
-    type: "parallel" as const,
-    label: "Parallel",
-    Icon: GitFork,
-    description: "Run simultaneously (coming soon)",
-    color: "text-purple-400",
-    disabled: true,
-    iconRotate: "rotate-90",
-  },
-] satisfies Array<{
-  type: EnabledConnectionType;
-  label: string;
-  Icon: React.ComponentType<any>;
-  description: string;
-  disabled?: boolean;
-  color: string;
-  iconRotate?: string;
-}>;
-
-const CONDITION_PRESETS = [
-  {
-    label: "Contains keyword",
-    condition: "contains('keyword')",
-    placeholder: "contains('error')",
-  },
-  {
-    label: "Starts with",
-    condition: "starts_with('text')",
-    placeholder: "starts_with('SUCCESS')",
-  },
-  {
-    label: "Ends with",
-    condition: "ends_with('text')",
-    placeholder: "ends_with('.')",
-  },
-  {
-    label: "Length greater than",
-    condition: "length > 100",
-    placeholder: "length > 50",
-  },
-  {
-    label: "Length less than",
-    condition: "length < 100",
-    placeholder: "length < 200",
-  },
-  {
-    label: "Not empty",
-    condition: "length > 0",
-    placeholder: "length > 0",
-  },
-];
 
 const MODEL_PROVIDERS: ModelProviders = {
   openai: {
@@ -473,18 +409,19 @@ export function AgentInput({
 
   return (
     <div className="relative">
-      <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 rounded-xl overflow-hidden">
+      {/* Header section */}
+      <div className="bg-gray-700/50 backdrop-blur-sm border border-gray-600/50 border-b-0 rounded-t-2xl overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-2">
             {/* <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="text-gray-400 hover:text-white transition-colors"
-              aria-label={isExpanded ? "Collapse step" : "Expand step"}
+              aria-label={isExpanded ? "Collapse node" : "Expand node"}
             >
               {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button> */}
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 py-1.5">
               {isEditingName ? (
                 <input
                   type="text"
@@ -504,8 +441,8 @@ export function AgentInput({
                       }
                     }
                   }}
-                  className="w-32 px-2 py-0.5 bg-gray-800/90 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-lavender-400/50"
-                  placeholder={`Step ${index + 1}`}
+                  className="w-32 px-2 bg-gray-800/90 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-lavender-400/50"
+                  placeholder={`Node ${index + 1}`}
                   autoFocus
                 />
               ) : (
@@ -516,14 +453,214 @@ export function AgentInput({
                   }}
                   className="flex items-center gap-2 text-xs font-medium text-lavender-400 hover:text-lavender-300 transition-colors group"
                 >
-                  <span>{agent.name || `Step ${index + 1}`}</span>
+                  <span>{agent.name || `Node ${index + 1}`}</span>
                   <Pencil
                     size={12}
-                    className="opacity-0 group-hover:opacity-100"
+                    className="opacity-50 group-hover:opacity-100"
                   />
                 </button>
               )}
             </div>
+
+            {/* Connection Selection - only for agents after the first */}
+            {index > 0 && (
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setButtonPositions((prev) => ({
+                      ...prev,
+                      connection: rect,
+                    }));
+                    setIsConnectionDropdownOpen(!isConnectionDropdownOpen);
+                  }}
+                  className="flex items-center gap-2 px-3 py-1 bg-gray-800/90 border border-gray-600/50 rounded-md text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 transition-all text-xs backdrop-blur-sm group"
+                >
+                  {CurrentConnectionIcon && (
+                    <span
+                      className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""}`}
+                    >
+                      <CurrentConnectionIcon size={14} />
+                    </span>
+                  )}
+                  <span className="font-medium text-xs">
+                    {currentConnection?.label}
+                  </span>
+                  <ChevronUp
+                    size={10}
+                    className={`text-gray-400 group-hover:text-lavender-400 transition-all ${
+                      isConnectionDropdownOpen ? "rotate-0" : "rotate-90"
+                    }`}
+                  />
+                </button>
+
+                {/* Connection Selection Modal */}
+                {isConnectionDropdownOpen &&
+                  createPortal(
+                    <>
+                      {/* Backdrop */}
+                      <div
+                        className="fixed inset-0 z-[999999] bg-black/20"
+                        onClick={() => setIsConnectionDropdownOpen(false)}
+                      />
+
+                      {/* Modal */}
+                      <div
+                        className="fixed min-w-48 w-max bg-gray-800/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-[999999] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+                        style={{
+                          top: `${(buttonPositions.connection?.top || 0) + window.scrollY - 8}px`,
+                          left: `${Math.max(16, Math.min(buttonPositions.connection?.left || 0, window.innerWidth - 200))}px`,
+                          transform: "translateY(-100%)",
+                        }}
+                      >
+                        {CONNECTION_TYPES.map((type) => {
+                          const TypeIcon = type.Icon;
+                          const isSelected =
+                            currentConnectionType === type.type;
+                          return (
+                            <button
+                              key={type.type}
+                              onClick={() =>
+                                !type.disabled &&
+                                handleConnectionTypeChange(type.type)
+                              }
+                              disabled={type.disabled}
+                              className={`w-full px-3 py-2 text-left hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed first:rounded-t-lg last:rounded-b-lg flex items-center gap-3 transition-colors text-xs ${
+                                isSelected
+                                  ? "bg-lavender-500/10 text-lavender-400"
+                                  : "text-white"
+                              }`}
+                            >
+                              <span
+                                className={`${type.color} ${type.iconRotate || ""}`}
+                              >
+                                <TypeIcon size={14} />
+                              </span>
+                              <div className="flex-1">
+                                <div
+                                  className={`font-medium ${isSelected ? "text-lavender-400" : ""}`}
+                                >
+                                  {type.label}
+                                  {isSelected && (
+                                    <span className="ml-2 text-xs opacity-60">
+                                      Selected
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-gray-400 text-xs">
+                                  {type.description}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>,
+                    document.body
+                  )}
+              </div>
+            )}
+            {/* Conditional logic input - inline with other selectors */}
+            {index > 0 && currentConnectionType === "conditional" && (
+              <div className="flex items-center gap-2 relative">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={agent.connection?.condition || ""}
+                    onChange={(e) => handleConditionChange(e.target.value)}
+                    placeholder="Enter condition..."
+                    className="w-40 px-2 py-1 bg-gray-800/90 border border-gray-600/50 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 text-xs"
+                    onFocus={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setButtonPositions((prev) => ({
+                        ...prev,
+                        condition: rect,
+                      }));
+                      setShowConditionInput(true);
+                    }}
+                    onBlur={() => {
+                      // Delay hiding to allow preset clicks
+                      setTimeout(() => setShowConditionInput(false), 150);
+                    }}
+                  />
+
+                  {/* Quick presets dropdown - positioned above */}
+                  {showConditionInput &&
+                    createPortal(
+                      <div
+                        className="fixed w-64 bg-gray-800/98 border border-gray-600/50 rounded-lg shadow-xl z-[999999] p-2 backdrop-blur-xl"
+                        style={{
+                          top: `${(buttonPositions.condition?.top || 0) + window.scrollY - 8}px`,
+                          left: `${Math.max(16, Math.min(buttonPositions.condition?.left || 0, window.innerWidth - 272))}px`,
+                          transform: "translateY(-100%)",
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-gray-300">
+                            Quick presets:
+                          </span>
+                          <button
+                            onClick={() => setShowConditionInput(false)}
+                            className="text-gray-400 hover:text-white text-xs hover:bg-gray-700/50 w-5 h-5 rounded flex items-center justify-center"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {CONDITION_PRESETS.map((preset, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handlePresetSelect(preset)}
+                              className="w-full px-2 py-1.5 text-left text-white hover:bg-gray-600/70 rounded text-xs transition-colors"
+                            >
+                              <div className="font-medium text-lavender-400">
+                                {preset.label}
+                              </div>
+                              <div className="text-gray-400 font-mono text-[10px]">
+                                {preset.placeholder}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>,
+                      document.body
+                    )}
+                </div>
+
+                <button
+                  onClick={() => setShowConditionInput(!showConditionInput)}
+                  className="p-1 text-gray-400 hover:text-lavender-400 transition-colors hover:bg-gray-700/50 rounded"
+                  title="Show condition presets"
+                >
+                  <Zap size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+          {canRemove && (
+            <button
+              onClick={onRemove}
+              className="text-gray-400 hover:text-red-400 transition-colors p-1 hover:bg-gray-700/50 rounded-md"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Seamless input container */}
+      <div className="relative bg-gray-700/50 border border-gray-600/50 border-t-0 rounded-b-2xl">
+        <textarea
+          value={agent.prompt}
+          onChange={(e) => onUpdate({ ...agent, prompt: e.target.value })}
+          placeholder="Ask anything"
+          className="w-full h-auto px-4 pt-4 pb-16 min-h-16 max-h-48 bg-transparent border-0 text-white placeholder-gray-400 hover:bg-gray-700/20 focus:outline-none focus:ring-0 resize-none transition-all text-sm overflow-y-auto"
+        />
+
+        {/* Bottom controls - absolutely positioned with gradient background */}
+        <div className="absolute bottom-0 left-0 right-0 flex items-center rounded-b-2xl justify-between px-4 py-3 bg-gradient-to-t from-gray-700/90 via-gray-700/50 to-transparent backdrop-blur-sm">
+          {/* Left side controls */}
+          <div className="flex items-center gap-2">
             {/* Model Selection */}
             <div className="relative">
               <button
@@ -731,205 +868,6 @@ export function AgentInput({
                   document.body
                 )}
             </div>
-            {/* Connection Selection - only for agents after the first */}
-            {index > 0 && (
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setButtonPositions((prev) => ({
-                      ...prev,
-                      connection: rect,
-                    }));
-                    setIsConnectionDropdownOpen(!isConnectionDropdownOpen);
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-md text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 transition-all text-xs backdrop-blur-sm group"
-                >
-                  {CurrentConnectionIcon && (
-                    <span
-                      className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""}`}
-                    >
-                      <CurrentConnectionIcon size={14} />
-                    </span>
-                  )}
-                  <span className="font-medium text-xs">
-                    {currentConnection?.label}
-                  </span>
-                  <ChevronUp
-                    size={10}
-                    className={`text-gray-400 group-hover:text-lavender-400 transition-all ${
-                      isConnectionDropdownOpen ? "rotate-0" : "rotate-90"
-                    }`}
-                  />
-                </button>
-
-                {/* Connection Selection Modal */}
-                {isConnectionDropdownOpen &&
-                  createPortal(
-                    <>
-                      {/* Backdrop */}
-                      <div
-                        className="fixed inset-0 z-[999999] bg-black/20"
-                        onClick={() => setIsConnectionDropdownOpen(false)}
-                      />
-
-                      {/* Modal */}
-                      <div
-                        className="fixed min-w-48 w-max bg-gray-800/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-[999999] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
-                        style={{
-                          top: `${(buttonPositions.connection?.top || 0) + window.scrollY - 8}px`,
-                          left: `${Math.max(16, Math.min(buttonPositions.connection?.left || 0, window.innerWidth - 200))}px`,
-                          transform: "translateY(-100%)",
-                        }}
-                      >
-                        {CONNECTION_TYPES.map((type) => {
-                          const TypeIcon = type.Icon;
-                          const isSelected =
-                            currentConnectionType === type.type;
-                          return (
-                            <button
-                              key={type.type}
-                              onClick={() =>
-                                !type.disabled &&
-                                handleConnectionTypeChange(type.type)
-                              }
-                              disabled={type.disabled}
-                              className={`w-full px-3 py-2 text-left hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed first:rounded-t-lg last:rounded-b-lg flex items-center gap-3 transition-colors text-xs ${
-                                isSelected
-                                  ? "bg-lavender-500/10 text-lavender-400"
-                                  : "text-white"
-                              }`}
-                            >
-                              <span
-                                className={`${type.color} ${type.iconRotate || ""}`}
-                              >
-                                <TypeIcon size={14} />
-                              </span>
-                              <div className="flex-1">
-                                <div
-                                  className={`font-medium ${isSelected ? "text-lavender-400" : ""}`}
-                                >
-                                  {type.label}
-                                  {isSelected && (
-                                    <span className="ml-2 text-xs opacity-60">
-                                      Selected
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-gray-400 text-xs">
-                                  {type.description}
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </>,
-                    document.body
-                  )}
-              </div>
-            )}
-            {/* Conditional logic input - inline with other selectors */}
-            {index > 0 && currentConnectionType === "conditional" && (
-              <div className="flex items-center gap-2 relative">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={agent.connection?.condition || ""}
-                    onChange={(e) => handleConditionChange(e.target.value)}
-                    placeholder="Enter condition..."
-                    className="w-40 px-2 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 text-xs"
-                    onFocus={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      setButtonPositions((prev) => ({
-                        ...prev,
-                        condition: rect,
-                      }));
-                      setShowConditionInput(true);
-                    }}
-                    onBlur={() => {
-                      // Delay hiding to allow preset clicks
-                      setTimeout(() => setShowConditionInput(false), 150);
-                    }}
-                  />
-
-                  {/* Quick presets dropdown - positioned above */}
-                  {showConditionInput &&
-                    createPortal(
-                      <div
-                        className="fixed w-64 bg-gray-800/98 border border-gray-600/50 rounded-lg shadow-xl z-[999999] p-2 backdrop-blur-xl"
-                        style={{
-                          top: `${(buttonPositions.condition?.top || 0) + window.scrollY - 8}px`,
-                          left: `${Math.max(16, Math.min(buttonPositions.condition?.left || 0, window.innerWidth - 272))}px`,
-                          transform: "translateY(-100%)",
-                        }}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-gray-300">
-                            Quick presets:
-                          </span>
-                          <button
-                            onClick={() => setShowConditionInput(false)}
-                            className="text-gray-400 hover:text-white text-xs hover:bg-gray-700/50 w-5 h-5 rounded flex items-center justify-center"
-                          >
-                            ×
-                          </button>
-                        </div>
-                        <div className="space-y-1 max-h-32 overflow-y-auto">
-                          {CONDITION_PRESETS.map((preset, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handlePresetSelect(preset)}
-                              className="w-full px-2 py-1.5 text-left text-white hover:bg-gray-600/70 rounded text-xs transition-colors"
-                            >
-                              <div className="font-medium text-lavender-400">
-                                {preset.label}
-                              </div>
-                              <div className="text-gray-400 font-mono text-[10px]">
-                                {preset.placeholder}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>,
-                      document.body
-                    )}
-                </div>
-
-                <button
-                  onClick={() => setShowConditionInput(!showConditionInput)}
-                  className="p-1 text-gray-400 hover:text-lavender-400 transition-colors hover:bg-gray-700/50 rounded"
-                  title="Show condition presets"
-                >
-                  <Zap size={12} />
-                </button>
-              </div>
-            )}
-          </div>
-          {canRemove && (
-            <button
-              onClick={onRemove}
-              className="text-gray-400 hover:text-red-400 transition-colors p-1 hover:bg-gray-700/50 rounded-md"
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Main prompt area with absolutely positioned controls */}
-      <div className="relative">
-        <textarea
-          value={agent.prompt}
-          onChange={(e) => onUpdate({ ...agent, prompt: e.target.value })}
-          placeholder="Enter your prompt..."
-          className="w-full h-auto px-3 pt-3 pb-12 min-h-24 bg-gray-600/70 border border-gray-600/50 rounded-lg rounded-t-none text-white placeholder-gray-400 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 focus:border-lavender-400/50 resize-none transition-all text-sm"
-        />
-
-        {/* Bottom controls overlay */}
-        <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between">
-          {/* Left side controls */}
-          <div className="flex items-center gap-2">
             {/* Modality Icons */}
             <ModalityIcons
               selectedModel={agent.model}
@@ -947,7 +885,6 @@ export function AgentInput({
               }
               images={agent.images || []}
             />
-
             {/* Add Agent Button */}
             {isLastAgent && canAddAgent && (
               <button
@@ -972,7 +909,7 @@ export function AgentInput({
             <button
               onClick={onSendChain}
               disabled={!canSend}
-              className="flex items-center gap-2 px-3 py-1.5 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md font-medium transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm"
+              className="flex items-center gap-2 px-3 py-1.5 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 rounded-md font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm"
             >
               {isLoading ? "Running..." : "Run Chain"}
 

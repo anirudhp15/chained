@@ -82,7 +82,7 @@ export function ChainPerformanceSummary({
           Chain Performance
         </span>
         <span className="text-xs text-gray-400">
-          ({summary.stepCount}/{summary.totalSteps} completed
+          ({summary.stepCount}/{summary.totalSteps} nodes completed
           {summary.skippedSteps > 0 && `, ${summary.skippedSteps} skipped`})
         </span>
       </div>

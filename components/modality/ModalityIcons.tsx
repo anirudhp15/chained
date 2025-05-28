@@ -44,7 +44,7 @@ export function ModalityIcons({
 
   const iconBaseClasses = "p-2 rounded-md transition-all";
   const enabledClasses =
-    "text-gray-400 hover:text-lavender-400 hover:bg-gray-700";
+    "text-gray-400 hover:text-lavender-400 hover:bg-gray-600";
   const disabledClasses = "text-gray-600 cursor-not-allowed opacity-50";
 
   return (
