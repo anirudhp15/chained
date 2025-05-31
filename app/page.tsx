@@ -631,7 +631,7 @@ export default function LandingPage() {
             {FEATURE_DETAILS.map((feature, index) => (
               <div
                 key={feature.id}
-                className={`group relative bg-gray-900/30 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 lg:p-8 hover:border-lavender-500/50 transition-all duration-500 hover:bg-gray-900/50 cursor-pointer overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 ${feature.delay}`}
+                className={`group relative bg-gray-900/30 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 lg:p-8 hover:border-lavender-500/50 transition-all duration-500 hover:bg-gray-900/50 cursor-pointer overflow-hidden animate-in fade-in slide-in-from-bottom-8 ${feature.delay}`}
               >
                 {/* Enhanced Background Glow Effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-lavender-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -993,7 +993,7 @@ export default function LandingPage() {
                 ].map((model, index) => (
                   <div
                     key={index}
-                    className={`group bg-gray-800/50 border border-gray-600/50 rounded-xl p-4 text-center hover:border-lavender-500/50 transition-all duration-300 hover:bg-gray-800/70 cursor-pointer animate-in fade-in slide-in-from-bottom-4 duration-700`}
+                    className={`group bg-gray-800/50 border border-gray-600/50 rounded-xl p-4 text-center hover:border-lavender-500/50 transition-all duration-300 hover:bg-gray-800/70 cursor-pointer animate-in fade-in slide-in-from-bottom-4 `}
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     <div
