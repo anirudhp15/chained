@@ -34,3 +34,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Large video files (exclude future large videos to save Git storage)
+# Keep existing demo video but prevent new large videos
+public/videos/*.mp4
+!public/videos/chained_demo.mp4

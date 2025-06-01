@@ -387,7 +387,7 @@ export default function LandingPage() {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-purple-600/20 to-lavender-600/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-lavender-500/5 to-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-lavender-500/3 to-transparent rounded-full blur-2xl"></div>
+        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-radial from-emerald-400/50 to-lavender-500/50 rounded-full blur-2xl"></div>
 
         {/* Animated grid */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(147,112,219,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(147,112,219,0.03)_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse"></div>
@@ -398,7 +398,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2 group">
             <div className="relative">
-              <Link2 className="h-6 w-6 text-lavender-400 group-hover:text-lavender-300 transition-colors duration-300" />
+              <Link2 className="h-6 w-6 text-lavender-400 group-hover:text-lavender-300 transition-colors duration-300 hover:" />
               <div className="absolute inset-0 bg-lavender-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
             <span className="text-xl font-bold text-white group-hover:text-lavender-300 transition-colors duration-300">
@@ -538,18 +538,65 @@ export default function LandingPage() {
               </button>
             </div>
 
-            {/* Chain Interface Preview */}
-            <div className="relative max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
-              <div className="bg-gray-800/50 p-1 rounded-2xl overflow-hidden">
-                <Video
-                  src="/videos/chained_demo.mp4"
-                  controls
-                  autoPlay
-                  muted
-                  loop
-                  className="w-full h-auto rounded-xl opacity-90 hover:opacity-100 transition-opacity duration-300"
-                />
+            {/* Chain Interface Preview - Cinematic Showcase */}
+            <div className="relative max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-800">
+              {/* Ambient glow effects */}
+              <div className="absolute inset-0 -m-8">
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-r from-lavender-500/10 via-purple-500/5 to-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-emerald-400/8 via-lavender-400/8 to-purple-400/8 rounded-full blur-2xl animate-pulse delay-1000"></div>
               </div>
+
+              {/* Glass morphism container */}
+              <div className="relative bg-gradient-to-br from-gray-900/40 via-gray-800/30 to-gray-900/40 backdrop-blur-2xl border border-gray-700/30 rounded-3xl p-2 shadow-2xl">
+                {/* Inner glow border */}
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-lavender-500/20 via-transparent to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-sm"></div>
+
+                {/* Video container with sophisticated framing */}
+                <div className="relative group overflow-hidden rounded-2xl bg-gradient-to-br from-gray-950/50 to-gray-900/50">
+                  {/* Subtle inner shadow for depth */}
+                  <div className="absolute inset-0 rounded-2xl shadow-inner shadow-black/20"></div>
+
+                  {/* Video with cinematic aspect ratio */}
+                  <div className="relative aspect-[16/10] overflow-hidden rounded-2xl">
+                    <Video
+                      src="/videos/chained_demo.mp4"
+                      controls
+                      autoPlay
+                      muted
+                      loop
+                      className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-[1.02] filter group-hover:brightness-110 group-hover:contrast-105"
+                    />
+
+                    {/* Subtle vignette overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/5 via-transparent to-black/5 pointer-events-none"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-black/5 pointer-events-none"></div>
+                  </div>
+
+                  {/* Floating UI elements */}
+                  <div className="absolute top-4 left-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-200">
+                    <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
+                    <span className="text-xs font-medium text-white/80 bg-black/20 backdrop-blur-sm px-2 py-1 rounded-full">
+                      Live Demo
+                    </span>
+                  </div>
+
+                  {/* Elegant corner accents */}
+                  <div className="absolute top-0 left-0 w-16 h-16 border-l-2 border-t-2 border-lavender-400/30 rounded-tl-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="absolute top-0 right-0 w-16 h-16 border-r-2 border-t-2 border-emerald-400/30 rounded-tr-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100"></div>
+                  <div className="absolute bottom-0 left-0 w-16 h-16 border-l-2 border-b-2 border-purple-400/30 rounded-bl-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-200"></div>
+                  <div className="absolute bottom-0 right-0 w-16 h-16 border-r-2 border-b-2 border-lavender-400/30 rounded-br-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-300"></div>
+                </div>
+
+                {/* Floating particles effect */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl">
+                  <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-lavender-400/40 rounded-full animate-ping delay-1000"></div>
+                  <div className="absolute top-3/4 right-1/3 w-1 h-1 bg-emerald-400/40 rounded-full animate-ping delay-2000"></div>
+                  <div className="absolute bottom-1/4 left-2/3 w-1 h-1 bg-purple-400/40 rounded-full animate-ping delay-3000"></div>
+                </div>
+              </div>
+
+              {/* Reflection effect */}
+              <div className="absolute inset-x-0 -bottom-32 h-32 bg-gradient-to-t from-transparent via-gray-900/5 to-transparent transform scale-y-[-1] opacity-20 blur-sm"></div>
             </div>
           </div>
         </div>
@@ -830,21 +877,35 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Demo Video Placeholder */}
-            <div className="relative animate-in fade-in slide-in-from-right-8 duration-700 delay-300">
-              <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-700/50 rounded-2xl overflow-hidden relative group">
-                <div className="aspect-video flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-lavender-500/5 to-purple-500/5"></div>
-                  <div className="text-center z-10">
-                    <div className="bg-lavender-600/20 rounded-full p-6 mb-4 mx-auto w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-lavender-500/30">
-                      <Play className="h-8 w-8 text-lavender-400 ml-1" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-white mb-2">
-                      Interactive Demo
-                    </h3>
-                    <p className="text-gray-400">See AI chains in action</p>
+            {/* Demo Video - Cinematic Treatment */}
+            <div className="relative animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
+              {/* Ambient glow for demo video */}
+              <div className="absolute inset-0 -m-4">
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-gradient-to-r from-emerald-500/8 via-lavender-500/5 to-purple-500/8 rounded-full blur-2xl animate-pulse delay-500"></div>
+              </div>
+
+              {/* Glass morphism container */}
+              <div className="relative bg-gradient-to-br from-gray-900/30 via-gray-800/20 to-gray-900/30 backdrop-blur-xl border border-gray-700/20 rounded-2xl p-1.5 shadow-xl">
+                {/* Video container */}
+                <div className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-gray-950/40 to-gray-900/40">
+                  {/* Video with aspect ratio */}
+                  <div className="relative aspect-video overflow-hidden rounded-xl">
+                    <Video
+                      src="/videos/chained_demo.mp4"
+                      controls
+                      autoPlay
+                      muted
+                      loop
+                      className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.01] filter group-hover:brightness-105"
+                    />
+
+                    {/* Subtle overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-black/3 pointer-events-none"></div>
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-lavender-500/5 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+
+                  {/* Minimal corner accents */}
+                  <div className="absolute top-0 left-0 w-8 h-8 border-l border-t border-lavender-400/20 rounded-tl-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-r border-b border-emerald-400/20 rounded-br-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100"></div>
                 </div>
               </div>
             </div>
