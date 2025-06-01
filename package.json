@@ -22,6 +22,7 @@
     "gpt-tokenizer": "^2.9.0",
     "lucide-react": "^0.511.0",
     "next": "14.2.25",
+    "next-video": "^2.2.0",
     "node-fetch": "^3.3.2",
     "openai": "^4.103.0",
     "react": "^18",

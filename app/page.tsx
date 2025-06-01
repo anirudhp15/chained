@@ -32,7 +32,7 @@ import {
   Timer,
   CheckCircle,
 } from "lucide-react";
-import Image from "next/image";
+import Video from "next-video";
 
 // Feature data structure matching welcome screen pattern
 interface FeatureDetail {
@@ -214,7 +214,7 @@ const FEATURE_DETAILS: FeatureDetail[] = [
     icon: GitMerge,
     gradient: "from-green-500 to-teal-500",
     delay: "delay-800",
-    videoPlaceholder: "Model Integration Demo",
+    videoPlaceholder: "images/model_diversity.jpg",
     detailedDescription:
       "Integrate the best AI models from different providers in one workflow. Each model brings unique strengths - combine them strategically to create workflows that outperform any single model.",
     useCases: [
@@ -494,8 +494,8 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <main className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-4xl mx-auto">
+        <div className="max-w-8xl mx-auto">
+          <div className="text-center max-w-7xl mx-auto">
             {/* Hero Badge */}
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-gray-900/50 border border-gray-700/50 text-sm text-gray-300 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
               <Sparkles className="h-4 w-4 text-lavender-400 mr-2" />
@@ -539,17 +539,16 @@ export default function LandingPage() {
             </div>
 
             {/* Chain Interface Preview */}
-            <div className="relative max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
-              <div className="relative overflow-hidden rounded-2xl">
-                <Image
-                  src="/images/chain_chat_interface.jpg"
-                  alt="Chain Chat Interface Preview"
-                  width={1200}
-                  height={800}
-                  className="w-full h-auto rounded-2xl opacity-80 hover:opacity-90 transition-opacity duration-300"
-                  priority
+            <div className="relative max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
+              <div className="bg-gray-800/50 p-1 rounded-2xl overflow-hidden">
+                <Video
+                  src="/videos/chained_demo.mp4"
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  className="w-full h-auto rounded-xl opacity-90 hover:opacity-100 transition-opacity duration-300"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/20 to-transparent rounded-2xl"></div>
               </div>
             </div>
           </div>
@@ -671,44 +670,22 @@ export default function LandingPage() {
 
               {/* Content */}
               <div className="p-6 space-y-8">
-                {/* Video Placeholder */}
-                <div
-                  className="animate-in fade-in slide-in-from-top-2 duration-400 ease-out"
-                  style={{ animationDelay: "0.1s", animationFillMode: "both" }}
-                >
-                  <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl overflow-hidden relative group">
-                    <div className="aspect-video flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 relative overflow-hidden">
-                      <div
-                        className={`absolute inset-0 bg-gradient-to-br ${featureDetail.gradient} opacity-5`}
-                      ></div>
-                      <div className="text-center z-10">
-                        <div className="bg-lavender-600/20 rounded-full p-6 mb-4 mx-auto w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-lavender-500/30">
-                          <Play className="h-8 w-8 text-lavender-400 ml-1" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-white mb-2">
-                          {featureDetail.videoPlaceholder}
-                        </h3>
-                        <p className="text-gray-400">
-                          See this feature in action
-                        </p>
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-lavender-500/5 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Description */}
                 <div
                   className="animate-in fade-in slide-in-from-top-2 duration-400 ease-out"
                   style={{ animationDelay: "0.2s", animationFillMode: "both" }}
                 >
-                  <h4 className="text-lg font-semibold text-lavender-400 mb-3">
-                    Overview
-                  </h4>
                   <p className="text-gray-300 leading-relaxed text-lg">
                     {featureDetail.detailedDescription}
                   </p>
                 </div>
+                {/* Image Placeholder */}
+                <img
+                  src={featureDetail.videoPlaceholder}
+                  alt={featureDetail.title}
+                  className="w-full h-auto rounded-2xl"
+                  style={{ maxWidth: "100%", height: "auto" }}
+                />
 
                 {/* Use Cases */}
                 <div
