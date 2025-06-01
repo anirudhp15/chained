@@ -72,10 +72,7 @@ export function ChatArea({
       "User";
 
     return (
-      <div className="flex items-center gap-2 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-        <User size={14} className="text-blue-400" />
-        <span className="text-blue-400 text-xs font-medium">{displayName}</span>
-      </div>
+      <div className="text-lavender-400 text-xs font-medium">{displayName}</div>
     );
   };
 
@@ -286,7 +283,7 @@ export function ChatArea({
                 <div className="flex-1">
                   <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
                     <div className="text-sm text-lavender-400/80 mb-3 flex items-center justify-between">
-                      <span>Response</span>
+                      <span>{agent.name || `Node ${agent.index + 1}`}</span>
                       <div className="flex items-center gap-3">
                         <CopyButton
                           text={agent.response || agent.streamedContent || ""}
@@ -570,7 +567,9 @@ export function ChatArea({
                         <div className="flex-1">
                           <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
                             <div className="text-xs text-lavender-400/80 mb-1 flex items-center justify-between">
-                              <span>Response</span>
+                              <span>
+                                {agent.name || `Node ${agent.index + 1}`}
+                              </span>
                               <div className="flex items-center gap-2">
                                 {agent.isStreaming && (
                                   <div className="flex items-center gap-1">

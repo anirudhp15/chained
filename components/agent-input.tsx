@@ -286,6 +286,7 @@ const STYLES = {
   modal:
     "fixed bg-gray-800/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-[999999] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200",
   backdrop: "fixed inset-0 z-[999999] bg-black/20",
+  backdropBlur: "fixed inset-0 z-[999999] bg-black/30 backdrop-blur-sm",
   input:
     "bg-gray-800/90 border border-gray-600/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400/50",
 } as const;
@@ -644,7 +645,7 @@ export function AgentInput({
         createPortal(
           <>
             <div
-              className={STYLES.backdrop}
+              className={STYLES.backdropBlur}
               onClick={() => setIsModelDropdownOpen(false)}
             />
             <div
