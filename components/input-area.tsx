@@ -5,6 +5,7 @@ import { AgentInput, type Agent } from "./agent-input";
 import { v4 as uuidv4 } from "uuid";
 import { ModalityIcons } from "./modality/ModalityIcons";
 import { CONNECTION_TYPES, DEFAULT_AGENT_CONFIG } from "@/lib/constants";
+import { useSidebar } from "@/lib/sidebar-context";
 
 // Simple connection icon component
 const ConnectionIcon = ({ connectionType }: { connectionType?: string }) => {
@@ -62,6 +63,23 @@ export function InputArea({
   );
 
   const [animatingAgentId, setAnimatingAgentId] = useState<string | null>(null);
+
+  // Get sidebar state for positioning
+  const { sidebarWidth } = useSidebar();
+
+  // Calculate margin for desktop centering
+  const getContainerStyle = () => {
+    // Only apply margin on desktop (md and up)
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      return {
+        marginLeft: `${sidebarWidth}px`,
+        width: `calc(100% - ${sidebarWidth}px)`,
+        transition:
+          "margin-left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+      };
+    }
+    return {};
+  };
 
   // Handle preset loading
   useEffect(() => {
@@ -155,85 +173,93 @@ export function InputArea({
   // Focus Mode Input
   if (focusedAgentIndex !== null && focusedAgentState) {
     return (
-      <div className="absolute bottom-0 left-0 right-0 bg-gray-950/95 backdrop-blur-sm border-t border-gray-700/50">
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="space-y-4">
-            {/* Focus Mode Header */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-2 h-2 bg-lavender-400 rounded-full"></div>
-              <span className="text-sm text-gray-400">
-                Focus Mode • Agent {(focusedAgentIndex ?? 0) + 1}
-              </span>
-            </div>
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 bg-gray-950/95 backdrop-blur-sm border-t border-gray-700/50"
+        style={{
+          paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))",
+          ...getContainerStyle(),
+        }}
+      >
+        <div className="w-full flex justify-center">
+          <div className="w-full max-w-4xl mx-auto p-6">
+            <div className="space-y-4">
+              {/* Focus Mode Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-2 h-2 bg-lavender-400 rounded-full"></div>
+                <span className="text-sm text-gray-400">
+                  Focus Mode • Agent {(focusedAgentIndex ?? 0) + 1}
+                </span>
+              </div>
 
-            {/* Enhanced Input Area */}
-            <div className="relative">
-              <textarea
-                value={focusedAgentState.prompt}
-                onChange={(e) =>
-                  updateFocusedAgent({
-                    ...focusedAgentState,
-                    prompt: e.target.value,
-                  })
-                }
-                placeholder={`Continue conversation with ${focusedAgentState.model}...`}
-                className="w-full h-32 px-4 py-4 pb-16 bg-gray-800/70 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 focus:border-lavender-400/50 resize-none transition-all text-base"
-              />
+              {/* Enhanced Input Area */}
+              <div className="relative">
+                <textarea
+                  value={focusedAgentState.prompt}
+                  onChange={(e) =>
+                    updateFocusedAgent({
+                      ...focusedAgentState,
+                      prompt: e.target.value,
+                    })
+                  }
+                  placeholder={`Continue conversation with ${focusedAgentState.model}...`}
+                  className="w-full h-32 px-4 py-4 pb-16 bg-gray-800/70 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 focus:border-lavender-400/50 resize-none transition-all text-base"
+                />
 
-              {/* Bottom controls */}
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {/* Model Display */}
-                  <div className="px-3 py-1.5 bg-gray-900/90 border border-gray-600/50 rounded-lg text-gray-300 text-sm backdrop-blur-sm">
-                    <span className="font-medium">
-                      {focusedAgentState.model}
-                    </span>
+                {/* Bottom controls */}
+                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {/* Model Display */}
+                    <div className="px-3 py-1.5 bg-gray-900/90 border border-gray-600/50 rounded-lg text-gray-300 text-sm backdrop-blur-sm">
+                      <span className="font-medium">
+                        {focusedAgentState.model}
+                      </span>
+                    </div>
+
+                    {/* Modality Icons */}
+                    <ModalityIcons
+                      selectedModel={focusedAgentState.model}
+                      onImagesChange={(images) =>
+                        updateFocusedAgent({ ...focusedAgentState, images })
+                      }
+                      onAudioRecording={(audioBlob, duration) =>
+                        updateFocusedAgent({
+                          ...focusedAgentState,
+                          audioBlob,
+                          audioDuration: duration,
+                        })
+                      }
+                      onWebSearch={(webSearchData) =>
+                        updateFocusedAgent({
+                          ...focusedAgentState,
+                          webSearchData,
+                        })
+                      }
+                      images={focusedAgentState.images || []}
+                    />
                   </div>
 
-                  {/* Modality Icons */}
-                  <ModalityIcons
-                    selectedModel={focusedAgentState.model}
-                    onImagesChange={(images) =>
-                      updateFocusedAgent({ ...focusedAgentState, images })
-                    }
-                    onAudioRecording={(audioBlob, duration) =>
-                      updateFocusedAgent({
-                        ...focusedAgentState,
-                        audioBlob,
-                        audioDuration: duration,
-                      })
-                    }
-                    onWebSearch={(webSearchData) =>
-                      updateFocusedAgent({
-                        ...focusedAgentState,
-                        webSearchData,
-                      })
-                    }
-                    images={focusedAgentState.images || []}
-                  />
-                </div>
-
-                {/* Send Button */}
-                <button
-                  onClick={handleSendFocusedAgent}
-                  disabled={!canSendFocused || isLoading || isStreaming}
-                  className="flex items-center gap-2 px-4 py-2 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none backdrop-blur-sm"
-                >
-                  {isLoading || isStreaming ? "Sending..." : "Send"}
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                  {/* Send Button */}
+                  <button
+                    onClick={handleSendFocusedAgent}
+                    disabled={!canSendFocused || isLoading || isStreaming}
+                    className="flex items-center gap-2 px-4 py-2 bg-lavender-600 hover:bg-lavender-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 rounded-lg text-sm font-medium transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none backdrop-blur-sm"
                   >
-                    <path d="m22 2-7 20-4-9-9-4Z" />
-                    <path d="M22 2 11 13" />
-                  </svg>
-                </button>
+                    {isLoading || isStreaming ? "Sending..." : "Send"}
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m22 2-7 20-4-9-9-4Z" />
+                      <path d="M22 2 11 13" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -244,74 +270,84 @@ export function InputArea({
 
   // Regular Chain Mode Input - Mobile Responsive Layout
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-10">
-      <div className="flex items-end justify-center px-2 md:px-6 py-2 md:py-6">
-        <div className="w-full max-w-6xl">
-          {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
-          <div className="flex flex-col md:flex-row md:items-stretch md:justify-center gap-2 md:gap-0">
-            {agents.map((agent, index) => (
-              <div
-                key={agent.id}
-                className="flex flex-col md:flex-row md:items-stretch"
-              >
-                {/* Agent Card using AgentInput component */}
+    <div
+      className="fixed bottom-0 left-0 right-0 z-50"
+      style={{
+        paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+        ...getContainerStyle(),
+      }}
+    >
+      <div className="w-full flex justify-center">
+        <div className="w-full flex items-end justify-center px-2 md:px-6 py-2 md:py-6">
+          <div className="w-full max-w-6xl">
+            {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
+            <div className="flex flex-col md:flex-row md:items-stretch md:justify-center gap-2 md:gap-0">
+              {agents.map((agent, index) => (
                 <div
-                  className={`${
-                    agents.length === 1
-                      ? "w-full md:max-w-4xl md:min-w-[800px]"
-                      : agents.length === 2
-                        ? "w-full md:max-w-none md:min-w-[550px] md:flex-1"
-                        : "w-full md:max-w-none md:min-w-[450px] md:flex-1"
-                  } backdrop-blur-sm ${
-                    queuedAgents.some((qa) => qa.id === agent.id)
-                      ? "border-lavender-400/50"
-                      : ""
-                  } ${
-                    animatingAgentId === agent.id
-                      ? "animate-in slide-in-from-bottom-4 md:slide-in-from-right-8 fade-in duration-300 ease-out"
-                      : ""
-                  }`}
+                  key={agent.id}
+                  className="flex flex-col md:flex-row md:items-stretch"
                 >
-                  <AgentInput
-                    agent={agent}
-                    onUpdate={(updatedAgent) =>
-                      updateAgent(index, updatedAgent)
-                    }
-                    onRemove={() => removeAgent(index)}
-                    canRemove={canRemove}
-                    index={index}
-                    onAddAgent={agents.length < 3 ? addAgent : undefined}
-                    canAddAgent={agents.length < 3}
-                    isLastAgent={index === agents.length - 1}
-                    onSendChain={
-                      index === agents.length - 1 ? handleSendChain : undefined
-                    }
-                    canSend={canSend}
-                    isLoading={isLoading || isStreaming}
-                  />
+                  {/* Agent Card using AgentInput component */}
+                  <div
+                    className={`${
+                      agents.length === 1
+                        ? "w-full md:max-w-4xl md:min-w-[800px]"
+                        : agents.length === 2
+                          ? "w-full md:max-w-none md:min-w-[550px] md:flex-1"
+                          : "w-full md:max-w-none md:min-w-[450px] md:flex-1"
+                    } backdrop-blur-sm ${
+                      queuedAgents.some((qa) => qa.id === agent.id)
+                        ? "border-lavender-400/50"
+                        : ""
+                    } ${
+                      animatingAgentId === agent.id
+                        ? "animate-in slide-in-from-bottom-4 md:slide-in-from-right-8 fade-in duration-300 ease-out"
+                        : ""
+                    }`}
+                  >
+                    <AgentInput
+                      agent={agent}
+                      onUpdate={(updatedAgent) =>
+                        updateAgent(index, updatedAgent)
+                      }
+                      onRemove={() => removeAgent(index)}
+                      canRemove={canRemove}
+                      index={index}
+                      onAddAgent={agents.length < 3 ? addAgent : undefined}
+                      canAddAgent={agents.length < 3}
+                      isLastAgent={index === agents.length - 1}
+                      onSendChain={
+                        index === agents.length - 1
+                          ? handleSendChain
+                          : undefined
+                      }
+                      canSend={canSend}
+                      isLoading={isLoading || isStreaming}
+                    />
 
-                  {/* Queued Agent Indicator */}
-                  {queuedAgents.some((qa) => qa.id === agent.id) && (
-                    <div className="text-xs text-lavender-400/60 text-center mt-1">
-                      Queued...
+                    {/* Queued Agent Indicator */}
+                    {queuedAgents.some((qa) => qa.id === agent.id) && (
+                      <div className="text-xs text-lavender-400/60 text-center mt-1">
+                        Queued...
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Connection Selector (between agents) */}
+                  {index < agents.length - 1 && (
+                    <div className="flex md:items-center justify-center py-1 md:py-0 md:px-2">
+                      <div className="flex items-center gap-2">
+                        <div className="transform md:transform-none rotate-90 md:rotate-0">
+                          <ConnectionIcon
+                            connectionType={agents[index + 1].connection?.type}
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
-
-                {/* Connection Selector (between agents) */}
-                {index < agents.length - 1 && (
-                  <div className="flex md:items-center justify-center py-1 md:py-0 md:px-2">
-                    <div className="flex items-center gap-2">
-                      <div className="transform md:transform-none rotate-90 md:rotate-0">
-                        <ConnectionIcon
-                          connectionType={agents[index + 1].connection?.type}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>

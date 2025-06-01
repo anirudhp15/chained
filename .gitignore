@@ -39,4 +39,4 @@ next-env.d.ts
 # Keep existing demo video but prevent new large videos
 public/videos/*.mp4
 !public/videos/chained_demo.mp4
-public/videos
+public/videos/chained_demo.mp4

@@ -11,6 +11,7 @@ import {
   CONDITION_PRESETS,
   type EnabledConnectionType,
 } from "@/lib/constants";
+import { useSidebar } from "@/lib/sidebar-context";
 
 // Mobile Connection Selector Component
 const MobileConnectionSelector = ({
@@ -460,6 +461,23 @@ export function InitialChainInput({
 
   const [animatingAgentId, setAnimatingAgentId] = useState<string | null>(null);
 
+  // Get sidebar state for positioning
+  const { sidebarWidth } = useSidebar();
+
+  // Calculate margin for desktop centering
+  const getContainerStyle = () => {
+    // Only apply margin on desktop (md and up)
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      return {
+        marginLeft: `${sidebarWidth}px`,
+        width: `calc(100% - ${sidebarWidth}px)`,
+        transition:
+          "margin-left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+      };
+    }
+    return {};
+  };
+
   // Handle preset loading
   useEffect(() => {
     if (presetAgents && presetAgents.length > 0) {
@@ -519,84 +537,94 @@ export function InitialChainInput({
 
   // Regular Chain Mode Input - Mobile Responsive Layout
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-10">
-      <div className="flex items-end justify-center px-1 md:px-0 py-2 md:py-6">
-        <div className="w-full max-w-7xl">
-          {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
-          <div className="flex flex-col md:flex-row md:items-end md:justify-center gap-1.5 md:gap-0">
-            {agents.map((agent, index) => (
-              <div
-                key={agent.id}
-                className="flex flex-col md:flex-row md:items-stretch md:max-w-4xl"
-              >
-                {/* Agent Card using AgentInput component */}
+    <div
+      className="fixed bottom-0 left-0 right-0 z-50"
+      style={{
+        paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+        ...getContainerStyle(),
+      }}
+    >
+      <div className="w-full flex justify-center">
+        <div className="w-full flex items-end justify-center px-1 md:px-0 py-2 md:py-6">
+          <div className="w-full max-w-7xl">
+            {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
+            <div className="flex flex-col md:flex-row md:items-end md:justify-center gap-1.5 md:gap-0">
+              {agents.map((agent, index) => (
                 <div
-                  className={`${
-                    agents.length === 1
-                      ? "w-full md:max-w-4xl md:min-w-[894px] "
-                      : agents.length === 2
-                        ? "w-full md:max-w-none md:min-w-[550px] md:flex-1"
-                        : "w-full md:max-w-none md:min-w-[450px] md:flex-1"
-                  } backdrop-blur-sm ${
-                    queuedAgents.some((qa) => qa.id === agent.id)
-                      ? "border-lavender-400/50"
-                      : ""
-                  } ${
-                    animatingAgentId === agent.id
-                      ? "animate-in slide-in-from-bottom-4 md:slide-in-from-right-8 fade-in duration-300 ease-out"
-                      : ""
-                  }`}
+                  key={agent.id}
+                  className="flex flex-col md:flex-row md:items-stretch md:max-w-4xl"
                 >
-                  <AgentInput
-                    agent={agent}
-                    onUpdate={(updatedAgent) =>
-                      updateAgent(index, updatedAgent)
-                    }
-                    onRemove={() => removeAgent(index)}
-                    canRemove={canRemove}
-                    index={index}
-                    onAddAgent={agents.length < 3 ? addAgent : undefined}
-                    canAddAgent={agents.length < 3}
-                    isLastAgent={index === agents.length - 1}
-                    onSendChain={
-                      index === agents.length - 1 ? handleSendChain : undefined
-                    }
-                    canSend={canSend}
-                    isLoading={isLoading || isStreaming}
-                  />
+                  {/* Agent Card using AgentInput component */}
+                  <div
+                    className={`${
+                      agents.length === 1
+                        ? "w-full md:max-w-4xl md:min-w-[894px] "
+                        : agents.length === 2
+                          ? "w-full md:max-w-none md:min-w-[550px] md:flex-1"
+                          : "w-full md:max-w-none md:min-w-[450px] md:flex-1"
+                    } backdrop-blur-sm ${
+                      queuedAgents.some((qa) => qa.id === agent.id)
+                        ? "border-lavender-400/50"
+                        : ""
+                    } ${
+                      animatingAgentId === agent.id
+                        ? "animate-in slide-in-from-bottom-4 md:slide-in-from-right-8 fade-in duration-300 ease-out"
+                        : ""
+                    }`}
+                  >
+                    <AgentInput
+                      agent={agent}
+                      onUpdate={(updatedAgent) =>
+                        updateAgent(index, updatedAgent)
+                      }
+                      onRemove={() => removeAgent(index)}
+                      canRemove={canRemove}
+                      index={index}
+                      onAddAgent={agents.length < 3 ? addAgent : undefined}
+                      canAddAgent={agents.length < 3}
+                      isLastAgent={index === agents.length - 1}
+                      onSendChain={
+                        index === agents.length - 1
+                          ? handleSendChain
+                          : undefined
+                      }
+                      canSend={canSend}
+                      isLoading={isLoading || isStreaming}
+                    />
 
-                  {/* Queued Agent Indicator */}
-                  {queuedAgents.some((qa) => qa.id === agent.id) && (
-                    <div className="text-xs text-lavender-400/60 text-center mt-0.5 md:mt-1">
-                      Queued...
+                    {/* Queued Agent Indicator */}
+                    {queuedAgents.some((qa) => qa.id === agent.id) && (
+                      <div className="text-xs text-lavender-400/60 text-center mt-0.5 md:mt-1">
+                        Queued...
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Connection Selector (between agents) */}
+                  {index < agents.length - 1 && (
+                    <div className="flex flex-col md:flex-row md:items-center justify-center md:px-2">
+                      {/* Mobile: Interactive Connection Selector */}
+                      <MobileConnectionSelector
+                        agent={agents[index + 1]}
+                        onUpdate={(updatedAgent) =>
+                          updateAgent(index + 1, updatedAgent)
+                        }
+                        index={index + 1}
+                      />
+
+                      {/* Desktop: Interactive Connection Selector */}
+                      <DesktopConnectionSelector
+                        agent={agents[index + 1]}
+                        onUpdate={(updatedAgent) =>
+                          updateAgent(index + 1, updatedAgent)
+                        }
+                        index={index + 1}
+                      />
                     </div>
                   )}
                 </div>
-
-                {/* Connection Selector (between agents) */}
-                {index < agents.length - 1 && (
-                  <div className="flex flex-col md:flex-row md:items-center justify-center md:px-2">
-                    {/* Mobile: Interactive Connection Selector */}
-                    <MobileConnectionSelector
-                      agent={agents[index + 1]}
-                      onUpdate={(updatedAgent) =>
-                        updateAgent(index + 1, updatedAgent)
-                      }
-                      index={index + 1}
-                    />
-
-                    {/* Desktop: Interactive Connection Selector */}
-                    <DesktopConnectionSelector
-                      agent={agents[index + 1]}
-                      onUpdate={(updatedAgent) =>
-                        updateAgent(index + 1, updatedAgent)
-                      }
-                      index={index + 1}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -737,7 +737,7 @@ export default function LandingPage() {
               Build Powerful
               <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-lavender-400 via-purple-400 to-lavender-500 relative">
-                AI Chains
+                LLM Chains
                 <div className="absolute inset-0 bg-gradient-to-r from-lavender-400/20 via-purple-400/20 to-lavender-500/20 blur-2xl"></div>
               </span>
             </h1>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ConvexProvider } from "./convex-provider";
 import { MathJaxContext } from "better-react-mathjax";
+import { SidebarProvider } from "@/lib/sidebar-context";
 
 // MathJax configuration for the entire app
 const mathJaxConfig = {
@@ -50,6 +51,13 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://chained.app"), // Replace with your actual domain
   alternates: {
     canonical: "/",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: "cover",
   },
   openGraph: {
     title: "Chained - Build Powerful AI Workflows",
@@ -127,10 +135,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-gray-950">
+      <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
+      </head>
       <body className="antialiased bg-gray-950 min-h-screen overflow-x-hidden font-sans">
         <MathJaxContext config={mathJaxConfig}>
           <ConvexProvider>
-            <div className="min-h-screen bg-gray-950">{children}</div>
+            <SidebarProvider>
+              <div className="min-h-screen bg-gray-950">{children}</div>
+            </SidebarProvider>
           </ConvexProvider>
         </MathJaxContext>
       </body>

@@ -12,6 +12,23 @@
   .lavender-glow {
     box-shadow: 0 0 20px rgba(147, 112, 219, 0.3);
   }
+
+  /* Mobile safe area utilities */
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .safe-area-left {
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+
+  .safe-area-right {
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
 }
 
 @layer base {

@@ -23,6 +23,7 @@ import type { Id } from "../convex/_generated/dataModel";
 import Link from "next/link";
 import { useUser, UserButton, SignOutButton, UserProfile } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { useSidebar } from "@/lib/sidebar-context";
 
 interface SidebarProps {
   currentSessionId?: string;
@@ -97,7 +98,8 @@ export function Sidebar({
   const deleteChat = useMutation(api.mutations.deleteSession);
   const router = useRouter();
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Use global sidebar context instead of local state
+  const { isCollapsed, setIsCollapsed } = useSidebar();
   const [isLinkHovered, setIsLinkHovered] = useState(false);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
