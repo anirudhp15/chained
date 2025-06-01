@@ -30,6 +30,7 @@ interface ConnectionBadgeProps {
   condition?: string;
   className?: string;
   size?: "sm" | "default";
+  agents?: Array<{ index: number; name?: string }>;
 }
 
 const CONNECTION_TYPES = [
@@ -114,11 +115,17 @@ export function ConnectionBadge({
   condition,
   className = "",
   size = "default",
+  agents = [],
 }: ConnectionBadgeProps) {
   const connection = CONNECTION_TYPES.find((t) => t.type === type);
   const IconComponent = connection?.Icon;
   const iconSize = size === "sm" ? 14 : 16;
   const iconRotate = connection?.iconRotate || "";
+
+  // Get the source agent's name
+  const sourceAgent = agents.find((agent) => agent.index === sourceAgentIndex);
+  const sourceAgentName =
+    sourceAgent?.name || `Node ${(sourceAgentIndex || 0) + 1}`;
 
   const getTypeColor = () => {
     switch (type) {
@@ -137,7 +144,7 @@ export function ConnectionBadge({
   return (
     <div className={`flex items-center ${className}`}>
       <div
-        className={`flex items-center gap-1.5 ${paddingSize} rounded-md border ${getTypeColor()} ${textSize} font-medium`}
+        className={`flex items-center gap-1.5 ${paddingSize} rounded-full border ${getTypeColor()} ${textSize} font-medium`}
       >
         {IconComponent && (
           <span className={`flex items-center ${iconRotate}`}>
@@ -145,8 +152,8 @@ export function ConnectionBadge({
           </span>
         )}
 
-        <span className="text-gray-300">Chained from</span>
-        <span className="font-semibold">Agent {sourceAgentIndex! + 1}</span>
+        <span className="text-gray-300">chained from</span>
+        <span className="font-semibold">{sourceAgentName}</span>
 
         {type === "conditional" && condition && (
           <>

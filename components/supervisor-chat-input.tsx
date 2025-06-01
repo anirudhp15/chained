@@ -184,7 +184,7 @@ export function SupervisorChatInput({
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               onKeyPress={handleKeyPress}
-              placeholder="Ask me to coordinate your agents: '@Agent1 analyze this data, @Agent2 summarize the findings'"
+              placeholder="What do you want to do next?"
               className="w-full h-32 px-4 py-4 pb-16 border-none outline-none ring-0 text-sm bg-transparent rounded-xl text-white placeholder-gray-400 focus:outline-none  resize-none transition-all "
             />
 
@@ -214,10 +214,10 @@ export function SupervisorChatInput({
             )}
 
             {/* Bottom controls */}
-            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+            <div className="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {/* Agent Count Display */}
-                <div className="px-3 py-1.5 bg-gray-900/90 border border-gray-600/50 rounded-lg text-gray-300 text-xs backdrop-blur-sm">
+                <div className="px-3 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-lg text-gray-300 text-xs backdrop-blur-sm">
                   <span className="font-medium">
                     {agentSteps.length} agent
                     {agentSteps.length !== 1 ? "s" : ""} available

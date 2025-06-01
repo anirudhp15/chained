@@ -112,16 +112,16 @@ export function InitialChainInput({
   // Regular Chain Mode Input - Horizontal Layout
   return (
     <div className="absolute bottom-0 left-0 right-0 z-10">
-      <div className="flex items-end justify-center">
-        <div className="w-full max-w-6xl">
+      <div className="flex items-end justify-center py-6">
+        <div className="w-full max-w-7xl">
           <div className="flex items-stretch justify-center">
             {agents.map((agent, index) => (
-              <div key={agent.id} className="flex items-stretch">
+              <div key={agent.id} className="flex items-stretch max-w-4xl">
                 {/* Agent Card using AgentInput component */}
                 <div
                   className={`${
                     agents.length === 1
-                      ? "w-full max-w-4xl min-w-[800px]"
+                      ? "w-full max-w-4xl min-w-[894px]"
                       : agents.length === 2
                         ? "w-full max-w-none min-w-[550px] flex-1"
                         : "w-full max-w-none min-w-[450px] flex-1"

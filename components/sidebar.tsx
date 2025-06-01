@@ -148,7 +148,7 @@ export function Sidebar({ currentSessionId, onLoadPreset }: SidebarProps) {
   return (
     <>
       <div
-        className={`bg-gray-900 border-r border-gray-800 flex flex-col h-full transition-all duration-300 ease-out ${
+        className={`bg-gray-900/90 border-r border-gray-700 shadow-lg shadow-lavender-400/50 flex flex-col h-full transition-all duration-300 ease-out ${
           isCollapsed ? "w-16" : "w-64"
         }`}
       >
@@ -173,7 +173,7 @@ export function Sidebar({ currentSessionId, onLoadPreset }: SidebarProps) {
             // Expanded state - full header
             <div className="p-4 w-full flex items-center justify-between">
               <Link href="/">
-                <h1 className="text-xl font-normal text-white flex items-center hover:text-lavender-300 transition-colors duration-200">
+                <h1 className="text-xl font-medium text-white flex items-center hover:text-lavender-300 transition-colors duration-200">
                   <span
                     className="mx-1 text-lavender-400 transition-transform duration-200 hover:scale-110"
                     onMouseEnter={() => setIsLinkHovered(true)}

@@ -13,6 +13,7 @@ import {
   Focus,
   Grid3X3,
   Link2,
+  User,
 } from "lucide-react";
 import { useState, useMemo, useRef, useCallback } from "react";
 import { ModelAvatar } from "./model-avatar";
@@ -24,6 +25,7 @@ import { CopyButton } from "./ui/CopyButton";
 import { TruncatedText } from "./ui/TruncatedText";
 import { PerformanceMetrics } from "./PerformanceMetrics";
 import { ChainPerformanceSummary } from "./ChainPerformanceSummary";
+import { UserButton } from "@clerk/nextjs";
 
 interface ChatAreaProps {
   sessionId: Id<"chatSessions"> | null;
@@ -208,6 +210,7 @@ export function ChatArea({
                     type={agent.connectionType}
                     sourceAgentIndex={agent.index - 1}
                     condition={agent.connectionCondition}
+                    agents={agentGroups}
                   />
                 )}
               </div>
@@ -474,22 +477,18 @@ export function ChatArea({
               <div className="flex-1 overflow-y-auto px-3 py-4 pb-64 space-y-4 agent-content scrollbar-thin scrollbar-dark">
                 {/* User Prompt */}
                 <div className="w-full px-0.5">
-                  <div className="bg-gray-800/90 border border-gray-700/50 rounded-lg px-4 py-3">
-                    <div className="flex flex-row items-center gap-2">
-                      <span className="text-xs text-lavender-400/80 font-medium">
-                        Prompt
-                      </span>
+                  <div className="bg-gray-800/90 border border-gray-700/50 rounded-lg p-4">
+                    <div className="flex flex-row items-center gap-2 pb-2">
+                      <UserButton />
                       {agent.connectionType && agent.index > 0 && (
                         <ConnectionBadge
                           type={agent.connectionType}
                           sourceAgentIndex={agent.index - 1}
                           condition={agent.connectionCondition}
                           size="sm"
+                          agents={agentGroups}
                         />
                       )}
-                      <div className="ml-auto">
-                        <CopyButton text={agent.prompt} size="sm" />
-                      </div>
                     </div>
                     <TruncatedText
                       text={agent.prompt}
@@ -500,6 +499,9 @@ export function ChatArea({
                       buttonClassName="text-xs"
                       gradientFrom="from-gray-800/90"
                     />
+                    <div className="ml-auto">
+                      <CopyButton text={agent.prompt} size="sm" />
+                    </div>
                   </div>
                 </div>
 
