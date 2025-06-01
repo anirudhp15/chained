@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     const recentSteps = agentSteps.slice(-5);
     const parsedPrompt = parseSupervisorPrompt(userInput, recentSteps);
     const { valid: validMentions, invalid: invalidMentions } =
-      validateAgentMentions(parsedPrompt.mentions, recentSteps);
+      validateAgentMentions(parsedPrompt.mentionTasks, recentSteps);
 
     // Build supervisor context
     const supervisorHistory = supervisorTurns

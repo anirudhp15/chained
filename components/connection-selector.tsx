@@ -62,8 +62,8 @@ const CONNECTION_TYPES = [
     type: "collaborative" as const,
     label: "Collaborative",
     Icon: GitCompareArrows,
-    description: "Work together (coming soon)",
-    color: "text-gray-400",
+    description: "Agents work together iteratively (coming soon)",
+    color: "text-green-400",
     disabled: true,
   },
 ] satisfies Array<{
@@ -274,27 +274,36 @@ export function ConnectionSelector({
                       !type.disabled && handleTypeChange(type.type)
                     }
                     disabled={type.disabled}
-                    className={`w-full px-3 py-2 text-left hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed first:rounded-t-lg last:rounded-b-lg flex items-center gap-3 transition-colors text-xs ${
+                    className={`w-full px-3 py-2 text-left hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed first:rounded-t-lg last:rounded-b-lg flex items-center gap-3 transition-colors text-xs relative ${
                       isSelected
                         ? "bg-lavender-500/10 text-lavender-400"
                         : "text-white"
-                    }`}
+                    } ${type.disabled ? "bg-gray-800/50" : ""}`}
                   >
-                    <span className={`${type.color} ${type.iconRotate || ""}`}>
+                    <span
+                      className={`${type.color} ${type.iconRotate || ""} ${type.disabled ? "opacity-50" : ""}`}
+                    >
                       <TypeIcon size={14} />
                     </span>
                     <div className="flex-1">
                       <div
-                        className={`font-medium ${isSelected ? "text-lavender-400" : ""}`}
+                        className={`font-medium flex items-center gap-2 ${isSelected ? "text-lavender-400" : ""}`}
                       >
                         {type.label}
-                        {isSelected && (
+                        {type.disabled && (
+                          <span className="text-xs px-2 py-0.5 bg-gray-700/50 border border-gray-600/30 rounded-full text-gray-400">
+                            Coming Soon
+                          </span>
+                        )}
+                        {isSelected && !type.disabled && (
                           <span className="ml-2 text-xs opacity-60">
                             Selected
                           </span>
                         )}
                       </div>
-                      <div className="text-gray-400 text-xs">
+                      <div
+                        className={`text-gray-400 text-xs ${type.disabled ? "opacity-70" : ""}`}
+                      >
                         {type.description}
                       </div>
                     </div>

@@ -60,6 +60,7 @@ async function streamOpenAI({
       messages: [{ role: "user", content: prompt }],
       stream: true,
       max_tokens: 4000,
+      stream_options: { include_usage: true },
     });
 
     let usage: TokenUsage | undefined;

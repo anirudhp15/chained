@@ -14,7 +14,73 @@ import type { Id } from "../../../convex/_generated/dataModel";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
+// STREAM-FIRST ARCHITECTURE: Non-blocking database queue
+const databaseQueue: Array<{
+  type: string;
+  data: any;
+  timestamp: number;
+  stepId: string;
+}> = [];
+
+function queueDatabaseWrite(type: string, data: any, stepId: string) {
+  databaseQueue.push({
+    type,
+    data,
+    timestamp: Date.now(),
+    stepId,
+  });
+
+  // Process queue async without blocking stream
+  setImmediate(() => processDatabaseQueue());
+}
+
+async function processDatabaseQueue() {
+  if (databaseQueue.length === 0) return;
+
+  const batch = databaseQueue.splice(0, 10); // Process in batches
+  try {
+    // Batch write to database
+    await Promise.all(
+      batch.map(async (item) => {
+        try {
+          switch (item.type) {
+            case "thinking":
+              await convex.mutation(api.mutations.updateAgentStep, {
+                stepId: item.stepId as Id<"agentSteps">,
+                thinking: item.data.thinking,
+                isThinking: item.data.isThinking,
+                isComplete: false,
+              });
+              break;
+            case "content":
+              await convex.mutation(api.mutations.updateStreamedContent, {
+                stepId: item.stepId as Id<"agentSteps">,
+                content: item.data.content,
+              });
+              break;
+            case "complete":
+              await convex.mutation(api.mutations.completeAgentExecution, {
+                stepId: item.stepId as Id<"agentSteps">,
+                response: item.data.response,
+                thinking: item.data.thinking,
+                tokenUsage: item.data.tokenUsage,
+                estimatedCost: item.data.estimatedCost,
+              });
+              break;
+          }
+        } catch (error) {
+          console.error(`Database write failed for ${item.type}:`, error);
+        }
+      })
+    );
+  } catch (error) {
+    console.error("Database queue processing error:", error);
+  }
+}
+
 export async function POST(request: NextRequest) {
+  const startTime = performance.now();
+
   try {
     // Authenticate the request
     const authData = await auth();
@@ -70,6 +136,9 @@ export async function POST(request: NextRequest) {
       isComplete: false,
     });
 
+    const setupTime = performance.now();
+    console.log(`🚀 STREAM-FIRST: Setup time: ${setupTime - startTime}ms`);
+
     // Determine provider from model
     const getProvider = (model: string) => {
       if (
@@ -87,18 +156,22 @@ export async function POST(request: NextRequest) {
 
     const provider = getProvider(model);
 
-    // Create unified thinking manager
+    // Create unified thinking manager - DISABLED FOR SPEED
     let thinkingManager = null;
-    try {
-      const providerType = getProviderFromModel(model);
-      thinkingManager = createThinkingManager({
-        stepId: stepId as Id<"agentSteps">,
-        convexClient: convex,
-        provider: providerType,
-        model,
-      });
-    } catch (error) {
-      console.warn("Could not create thinking manager:", error);
+    const SPEED_MODE = true; // Enable maximum streaming speed
+
+    if (!SPEED_MODE) {
+      try {
+        const providerType = getProviderFromModel(model);
+        thinkingManager = createThinkingManager({
+          stepId: stepId as Id<"agentSteps">,
+          convexClient: convex,
+          provider: providerType,
+          model,
+        });
+      } catch (error) {
+        console.warn("Could not create thinking manager:", error);
+      }
     }
 
     // Handle Grok enhanced features with real-time streaming
@@ -129,26 +202,21 @@ export async function POST(request: NextRequest) {
                   // Stream thinking content in real-time
                   fullThinking = chunk.thinking;
 
-                  // Update thinking via ThinkingManager if available
-                  if (thinkingManager) {
-                    await thinkingManager.queueUpdate("thinking", {
+                  // STREAM-FIRST: Queue database write (non-blocking)
+                  queueDatabaseWrite(
+                    "thinking",
+                    {
                       thinking: fullThinking,
                       isThinking: true,
-                    });
-                  } else {
-                    // Fallback to direct database update
-                    await convex.mutation(api.mutations.updateAgentStep, {
-                      stepId: stepId as Id<"agentSteps">,
-                      thinking: fullThinking,
-                      isThinking: true,
-                      isComplete: false,
-                    });
-                  }
+                    },
+                    stepId
+                  );
 
-                  // Send thinking update to client
+                  // Send thinking update to client IMMEDIATELY
                   const thinkingData = JSON.stringify({
                     type: "thinking",
                     thinking: fullThinking,
+                    timestamp: Date.now(),
                   });
                   controller.enqueue(
                     encoder.encode(`data: ${thinkingData}\n\n`)
@@ -160,23 +228,22 @@ export async function POST(request: NextRequest) {
                   // Stream response content in real-time
                   fullContent = chunk.content;
 
-                  // Send content token to client
+                  // Send content token to client IMMEDIATELY
                   const tokenData = JSON.stringify({
                     type: "token",
                     content: chunk.content,
+                    timestamp: Date.now(),
                   });
                   controller.enqueue(encoder.encode(`data: ${tokenData}\n\n`));
 
-                  // Update streamed content via ThinkingManager if available
-                  if (thinkingManager) {
-                    await thinkingManager.updateStreamContent(fullContent);
-                  } else {
-                    // Fallback to direct database update
-                    await convex.mutation(api.mutations.updateStreamedContent, {
-                      stepId: stepId as Id<"agentSteps">,
+                  // STREAM-FIRST: Queue database write (non-blocking)
+                  queueDatabaseWrite(
+                    "content",
+                    {
                       content: fullContent,
-                    });
-                  }
+                    },
+                    stepId
+                  );
                 } else if (chunk.type === "complete") {
                   // Final completion
                   tokenUsage = chunk.usage;
@@ -192,33 +259,26 @@ export async function POST(request: NextRequest) {
                     );
                   }
 
-                  // Complete execution with final data
-                  await convex.mutation(api.mutations.completeAgentExecution, {
-                    stepId: stepId as Id<"agentSteps">,
-                    response: fullContent,
-                    tokenUsage: tokenUsage,
-                    estimatedCost,
-                  });
-
-                  // Complete thinking via ThinkingManager if available
-                  if (thinkingManager) {
-                    await thinkingManager.completeThinking(fullThinking);
-                  } else {
-                    // Fallback to direct database update
-                    await convex.mutation(api.mutations.updateAgentStep, {
-                      stepId: stepId as Id<"agentSteps">,
+                  // STREAM-FIRST: Queue final database write (non-blocking)
+                  queueDatabaseWrite(
+                    "complete",
+                    {
+                      response: fullContent,
                       thinking: fullThinking,
-                      isComplete: true,
-                    });
-                  }
+                      tokenUsage: tokenUsage,
+                      estimatedCost,
+                    },
+                    stepId
+                  );
 
-                  // Send completion event
+                  // Send completion event IMMEDIATELY
                   const completeData = JSON.stringify({
                     type: "complete",
                     content: fullContent,
                     thinking: fullThinking,
                     tokenUsage: tokenUsage,
                     estimatedCost,
+                    timestamp: Date.now(),
                   });
                   controller.enqueue(
                     encoder.encode(`data: ${completeData}\n\n`)
@@ -329,7 +389,7 @@ export async function POST(request: NextRequest) {
                 });
                 controller.enqueue(encoder.encode(`data: ${tokenData}\n\n`));
                 index++;
-                setTimeout(sendChunk, 50); // Simulate streaming
+                sendChunk(); // Immediate recursive call - no artificial delay
               } else {
                 // Send completion event
                 const completeData = JSON.stringify({
@@ -378,6 +438,14 @@ export async function POST(request: NextRequest) {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
+        const streamStartTime = performance.now();
+        console.log(
+          `🚀 STREAM-FIRST: Stream start time: ${streamStartTime - startTime}ms`
+        );
+
+        let firstTokenTime: number | null = null;
+        let tokenCount = 0;
+
         try {
           let fullContent = "";
           let fullThinking = "";
@@ -393,26 +461,58 @@ export async function POST(request: NextRequest) {
             options: {
               stepId: stepId as Id<"agentSteps">,
               convexClient: convex,
-              enableThinking: true,
+              enableThinking: false, // Disabled for speed
             },
           })) {
             if (chunk.thinking !== undefined) {
-              // Handle thinking updates through manager
+              // STREAM-FIRST: Handle thinking updates
               fullThinking = chunk.thinking;
+
+              // Queue database write (non-blocking)
+              queueDatabaseWrite(
+                "thinking",
+                {
+                  thinking: chunk.thinking,
+                  isThinking: chunk.isThinking,
+                },
+                stepId
+              );
+
+              // Send to client IMMEDIATELY
               const thinkingData = JSON.stringify({
                 type: "thinking",
                 thinking: chunk.thinking,
                 isThinking: chunk.isThinking,
+                timestamp: Date.now(),
               });
               controller.enqueue(encoder.encode(`data: ${thinkingData}\n\n`));
             } else if (chunk.content && !chunk.isComplete) {
-              // Send token to client
+              // STREAM-FIRST: Send token to client IMMEDIATELY
+              if (firstTokenTime === null) {
+                firstTokenTime = performance.now();
+                console.log(
+                  `🚀 STREAM-FIRST: First token latency: ${firstTokenTime - streamStartTime}ms`
+                );
+              }
+
+              tokenCount++;
               fullContent += chunk.content;
+
               const tokenData = JSON.stringify({
                 type: "token",
                 content: chunk.content,
+                timestamp: Date.now(),
               });
               controller.enqueue(encoder.encode(`data: ${tokenData}\n\n`));
+
+              // Queue database write (non-blocking)
+              queueDatabaseWrite(
+                "content",
+                {
+                  content: fullContent,
+                },
+                stepId
+              );
             } else if (chunk.isComplete) {
               tokenUsage = chunk.tokenUsage;
             }
@@ -429,21 +529,52 @@ export async function POST(request: NextRequest) {
           }
 
           // Complete execution with performance metrics
-          await convex.mutation(api.mutations.completeAgentExecution, {
-            stepId: stepId as Id<"agentSteps">,
-            response: fullContent,
-            thinking: fullThinking,
-            tokenUsage: tokenUsage,
-            estimatedCost,
-          });
+          // REMOVED FOR STREAM-FIRST ARCHITECTURE - Database writes are queued instead
+          // await convex.mutation(api.mutations.completeAgentExecution, {
+          //   stepId: stepId as Id<"agentSteps">,
+          //   response: fullContent,
+          //   thinking: fullThinking,
+          //   tokenUsage: tokenUsage,
+          //   estimatedCost,
+          // });
 
-          // Send completion event
+          // STREAM-FIRST: Queue final database write (non-blocking)
+          queueDatabaseWrite(
+            "complete",
+            {
+              response: fullContent,
+              thinking: fullThinking,
+              tokenUsage: tokenUsage,
+              estimatedCost,
+            },
+            stepId
+          );
+
+          const endTime = performance.now();
+          const totalTime = endTime - streamStartTime;
+          const tokensPerSecond =
+            tokenCount > 0 ? (tokenCount / (totalTime / 1000)).toFixed(2) : "0";
+
+          console.log(`🚀 STREAM-FIRST: Total stream time: ${totalTime}ms`);
+          console.log(`🚀 STREAM-FIRST: Tokens delivered: ${tokenCount}`);
+          console.log(`🚀 STREAM-FIRST: Tokens per second: ${tokensPerSecond}`);
+
+          // Send completion event IMMEDIATELY
           const completeData = JSON.stringify({
             type: "complete",
             content: fullContent,
             thinking: fullThinking,
             tokenUsage: tokenUsage,
             estimatedCost,
+            timestamp: Date.now(),
+            performance: {
+              totalTime,
+              tokenCount,
+              tokensPerSecond: parseFloat(tokensPerSecond),
+              firstTokenLatency: firstTokenTime
+                ? firstTokenTime - streamStartTime
+                : null,
+            },
           });
           controller.enqueue(encoder.encode(`data: ${completeData}\n\n`));
           controller.enqueue(encoder.encode(`data: [DONE]\n\n`));

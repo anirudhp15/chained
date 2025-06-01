@@ -746,7 +746,11 @@ function ChatPageContent() {
                         "collaborative"
                         ? "direct"
                         : ((agentSteps[focusedAgentIndex].connectionType ||
-                            "direct") as "direct" | "conditional" | "parallel"),
+                            "direct") as
+                            | "direct"
+                            | "conditional"
+                            | "parallel"
+                            | "collaborative"),
                     condition:
                       agentSteps[focusedAgentIndex].connectionCondition,
                     sourceAgentId:

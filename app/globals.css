@@ -238,7 +238,7 @@
 
   /* Smooth streaming animations */
   .streaming-content {
-    @apply animate-in fade-in duration-150;
+    @apply animate-in fade-in duration-100;
   }
 
   /* Fast, professional streaming cursor */

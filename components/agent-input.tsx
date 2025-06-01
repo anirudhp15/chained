@@ -30,7 +30,7 @@ export interface Agent {
   prompt: string;
   name?: string;
   connection?: {
-    type: "direct" | "conditional" | "parallel";
+    type: "direct" | "conditional" | "parallel" | "collaborative";
     condition?: string;
     sourceAgentId?: string;
   };

@@ -63,8 +63,8 @@ export class ThinkingManager {
     this.convex = options.convexClient;
     this.provider = options.provider;
     this.model = options.model;
-    this.batchInterval = options.batchInterval || 2000; // 2 seconds
-    this.maxBatchSize = options.maxBatchSize || 5;
+    this.batchInterval = options.batchInterval || 50; // 50ms instead of 2000ms for speed
+    this.maxBatchSize = options.maxBatchSize || 20; // Larger batches for efficiency
 
     // Determine model type
     this.modelType = this.isReasoningModel(options.model)
@@ -97,14 +97,14 @@ export class ThinkingManager {
 
   private initializeThinkingPhases(): void {
     const basePhases = [
-      { content: "Analyzing the problem statement...", duration: 1500 },
-      { content: "Breaking down the requirements...", duration: 1200 },
-      { content: "Considering different approaches...", duration: 1800 },
-      { content: "Evaluating potential solutions...", duration: 1400 },
-      { content: "Working through the logic step by step...", duration: 2000 },
-      { content: "Checking for edge cases and constraints...", duration: 1600 },
-      { content: "Refining the approach...", duration: 1300 },
-      { content: "Finalizing the solution strategy...", duration: 1100 },
+      { content: "Analyzing the problem statement...", duration: 15 },
+      { content: "Breaking down the requirements...", duration: 12 },
+      { content: "Considering different approaches...", duration: 10 },
+      { content: "Evaluating potential solutions...", duration: 8 },
+      { content: "Working through the logic step by step...", duration: 10 },
+      { content: "Checking for edge cases and constraints...", duration: 8 },
+      { content: "Refining the approach...", duration: 6 },
+      { content: "Finalizing the solution strategy...", duration: 5 },
     ];
 
     // Customize phases based on provider
@@ -126,33 +126,37 @@ export class ThinkingManager {
     switch (this.provider) {
       case "openai":
         return [
-          { content: "Leveraging reasoning capabilities...", duration: 1400 },
           {
-            content: "Cross-checking with OpenAI guidelines...",
-            duration: 1200,
+            content: "Analyzing with GPT's strategic reasoning...",
+            duration: 10,
           },
+          { content: "Structuring data-driven insights...", duration: 8 },
+          { content: "Optimizing for clarity and impact...", duration: 6 },
+          { content: "Finalizing strategic recommendations...", duration: 4 },
         ];
       case "anthropic":
         return [
+          { content: "Applying Constitutional AI principles...", duration: 10 },
           {
-            content: "Applying constitutional AI principles...",
-            duration: 1600,
+            content: "Considering multiple ethical perspectives...",
+            duration: 8,
           },
-          {
-            content: "Ensuring helpful, harmless, and honest response...",
-            duration: 1300,
-          },
+          { content: "Crafting nuanced, balanced response...", duration: 6 },
+          { content: "Ensuring helpful, harmless approach...", duration: 4 },
         ];
       case "xai":
         return [
-          { content: "Accessing real-time information...", duration: 1500 },
-          {
-            content: "Integrating current context and data...",
-            duration: 1400,
-          },
+          { content: "Accessing real-time data streams...", duration: 10 },
+          { content: "Cross-referencing current context...", duration: 8 },
+          { content: "Integrating latest market insights...", duration: 6 },
+          { content: "Delivering cutting-edge analysis...", duration: 4 },
         ];
       default:
-        return [];
+        return [
+          { content: "Processing your request...", duration: 12 },
+          { content: "Generating intelligent response...", duration: 8 },
+          { content: "Finalizing output...", duration: 6 },
+        ];
     }
   }
 
@@ -251,7 +255,7 @@ export class ThinkingManager {
         });
 
         // Small delay between chunks for streaming effect
-        await new Promise((resolve) => setTimeout(resolve, 150));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       }
     } else {
       // Fall back to simulated thinking

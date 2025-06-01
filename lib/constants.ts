@@ -1,8 +1,9 @@
-import { GitCommitHorizontal, GitFork } from "lucide-react";
+import { GitCommitHorizontal, GitFork, GitCompareArrows } from "lucide-react";
 import { IoGitBranchOutline } from "react-icons/io5";
 
 // Connection types configuration
 export type EnabledConnectionType = "direct" | "conditional" | "parallel";
+export type AllConnectionType = EnabledConnectionType | "collaborative";
 
 export const CONNECTION_TYPES = [
   {
@@ -29,8 +30,16 @@ export const CONNECTION_TYPES = [
     disabled: true,
     iconRotate: "rotate-90",
   },
+  {
+    type: "collaborative" as const,
+    label: "Collaborative",
+    Icon: GitCompareArrows,
+    description: "Agents work together iteratively (coming soon)",
+    color: "text-green-400",
+    disabled: true,
+  },
 ] satisfies Array<{
-  type: EnabledConnectionType;
+  type: AllConnectionType;
   label: string;
   Icon: React.ComponentType<any>;
   description: string;
@@ -74,7 +83,7 @@ export const CONDITION_PRESETS = [
 
 // Default agent configuration
 export const DEFAULT_AGENT_CONFIG = {
-  model: "claude-sonnet-4-20250514",
+  model: "gpt-4o",
   name: "",
   prompt: "",
 };

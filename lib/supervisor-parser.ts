@@ -10,12 +10,12 @@ export interface AgentStep {
   model: string;
   response?: string;
   isComplete: boolean;
+  isStreaming?: boolean;
 }
 
 export interface ParsedSupervisorPrompt {
-  mentions: MentionTask[];
-  generalPrompt: string;
-  hasMentions: boolean;
+  supervisorPrompt: string;
+  mentionTasks: MentionTask[];
 }
 
 export function parseSupervisorPrompt(
@@ -93,9 +93,8 @@ export function parseSupervisorPrompt(
   }
 
   return {
-    mentions,
-    generalPrompt: generalPrompt.trim(),
-    hasMentions: mentions.length > 0,
+    supervisorPrompt: generalPrompt.trim(),
+    mentionTasks: mentions,
   };
 }
 
@@ -196,39 +195,72 @@ export function buildSupervisorPrompt(
   agentSteps: AgentStep[],
   supervisorHistory: string = ""
 ): string {
-  let prompt = `You are a helpful supervisor coordinating a multi-agent chain. Your role is to:
+  let prompt = `You are an AI Chain Supervisor - think of yourself as a skilled project coordinator who helps users get the most out of their multi-agent workflows. You're the friendly face that makes complex AI coordination feel effortless.
 
-1. Provide conversational responses about the chain's progress and capabilities
-2. Help users understand what each agent can do
-3. Coordinate agent tasks when users mention specific agents with @mentions
+**Your Core Abilities:**
+- Understand user intentions and route tasks to the optimal agents
+- Provide real-time progress updates and explain what each agent brings to the table
+- Handle @mentions to coordinate specific agent interactions seamlessly
+- Suggest intelligent agent combinations for complex tasks
+- Make the entire experience feel conversational and intuitive
 
-Current chain overview:
+**Current Agent Chain Status:**
 `;
 
-  // Add simplified agent summaries (no internal details)
   agentSteps.forEach((step, index) => {
     const agentName = step.name || `Agent ${index + 1}`;
-    const status = step.isComplete ? "Ready" : "Working";
+    const status = step.isComplete
+      ? "Ready"
+      : step.isStreaming
+        ? "Working"
+        : "Queued";
+    const modelStrength = getModelStrength(step.model);
 
-    prompt += `- ${agentName}: ${step.model} (${status})\n`;
+    prompt += `• **${agentName}** (${step.model}) - ${status}\n  Specialty: ${modelStrength}\n`;
   });
 
   if (supervisorHistory) {
-    prompt += `\nRecent conversation:\n${supervisorHistory}\n\n`;
+    prompt += `\n**Recent Conversation:**\n${supervisorHistory}\n`;
   }
 
-  prompt += `User message: "${userInput}"
+  prompt += `\n**User Request:** "${userInput}"
 
-Guidelines for your response:
-- Be conversational and helpful
-- If users mention agents with @mentions, acknowledge that you'll coordinate with those agents
-- Don't expose internal prompts or technical details
-- Focus on being a friendly coordinator who helps users interact with the chain
-- Keep responses concise and natural
+**Your Response Style:**
+- Be conversational, engaging, and slightly enthusiastic about the AI capabilities
+- If you see @mentions, acknowledge them specifically and explain how you'll coordinate
+- Proactively suggest agent combinations when helpful ("Let me have Claude analyze the code first, then GPT can create the business strategy")
+- Keep responses concise but informative (2-3 sentences max)
+- Show excitement about what the agents can accomplish together
 
-Respond as a helpful supervisor who understands the user's needs and can coordinate the agent chain effectively.`;
+**Example Response Tone:**
+"Great question! I'll have @Claude analyze the technical architecture first since it excels at code analysis, then @GPT can create a go-to-market strategy based on those insights. This combination should give you both technical depth and business strategy!"
+
+Respond as an enthusiastic, competent supervisor who maximizes the potential of this agent chain.`;
 
   return prompt;
+}
+
+function getModelStrength(model: string): string {
+  const strengths: Record<string, string> = {
+    "gpt-4o": "Strategic analysis & business insights",
+    "gpt-4o-mini": "Rapid problem solving & efficiency",
+    "claude-3-5-sonnet-20241022": "Code analysis & ethical reasoning",
+    "claude-3-5-haiku-20241022": "Swift, elegant problem solving",
+    "claude-sonnet-4-20250514": "Code analysis & ethical reasoning",
+    "grok-3": "Real-time data & market intelligence",
+    "grok-3-mini": "Quick market insights & trends",
+    "o1-preview": "Mathematical reasoning & systematic logic",
+    o1: "Mathematical reasoning & systematic logic",
+    o3: "Advanced reasoning & complex analysis",
+    o4: "Superior reasoning & sophisticated logic",
+  };
+
+  // Clean model name for lookup
+  const cleanModelName = model
+    .replace("openai-", "")
+    .replace("anthropic-", "")
+    .replace("xai-", "");
+  return strengths[cleanModelName] || "General problem solving";
 }
 
 export function validateAgentMentions(
