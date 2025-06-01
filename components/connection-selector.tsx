@@ -119,7 +119,7 @@ export function ConnectionBadge({
 }: ConnectionBadgeProps) {
   const connection = CONNECTION_TYPES.find((t) => t.type === type);
   const IconComponent = connection?.Icon;
-  const iconSize = size === "sm" ? 14 : 16;
+  const iconSize = size === "sm" ? 12 : 14;
   const iconRotate = connection?.iconRotate || "";
 
   // Get the source agent's name
@@ -138,28 +138,38 @@ export function ConnectionBadge({
     }
   };
 
-  const textSize = size === "sm" ? "text-xs" : "text-sm";
-  const paddingSize = size === "sm" ? "px-2.5 py-1" : "px-3 py-1.5";
+  const textSize = size === "sm" ? "text-xs" : "text-xs md:text-sm";
+  const paddingSize =
+    size === "sm"
+      ? "px-2 py-0.5 md:px-2.5 md:py-1"
+      : "px-2.5 py-1 md:px-3 md:py-1.5";
 
   return (
     <div className={`flex items-center ${className}`}>
       <div className="relative group">
         <div
-          className={`flex items-center gap-1.5 ${paddingSize} rounded-full border ${getTypeColor()} ${textSize} font-medium`}
+          className={`flex items-center gap-1 md:gap-1.5 ${paddingSize} rounded-full border ${getTypeColor()} ${textSize} font-medium`}
         >
           {IconComponent && (
-            <span className={`flex items-center ${iconRotate}`}>
+            <span
+              className={`flex items-center ${iconRotate} md:rotate-0 rotate-90`}
+            >
               <IconComponent size={iconSize} />
             </span>
           )}
 
           {/* <span className="text-gray-300">chained from</span> */}
-          <span className="font-semibold">{sourceAgentName}</span>
+          <span className="font-semibold hidden md:inline">
+            {sourceAgentName}
+          </span>
+          <span className="font-semibold md:hidden text-xs">
+            {sourceAgentName.split(" ")[0]}
+          </span>
         </div>
 
         {/* Hover tooltip for conditional conditions */}
         {type === "conditional" && condition && (
-          <div className="absolute top-full mt-2 px-3 py-2 bg-gray-900/95 backdrop-blur-sm border border-gray-600/50 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap">
+          <div className="absolute top-full mt-2 px-2 md:px-3 py-1.5 md:py-2 bg-gray-900/95 backdrop-blur-sm border border-gray-600/50 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap">
             <div className="text-xs text-gray-300 mb-1">Condition:</div>
             <code className="text-xs font-mono text-amber-300">
               {condition}

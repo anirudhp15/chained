@@ -340,6 +340,12 @@ export const updateUserProfile = mutation({
   args: {
     name: v.optional(v.string()),
     email: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    company: v.optional(v.string()),
+    location: v.optional(v.string()),
+    website: v.optional(v.string()),
+    timezone: v.optional(v.string()),
+    profileImageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getOrCreateUser(ctx);
@@ -348,10 +354,141 @@ export const updateUserProfile = mutation({
     const updateData: any = {};
     if (args.name !== undefined) updateData.name = args.name;
     if (args.email !== undefined) updateData.email = args.email;
+    if (args.bio !== undefined) updateData.bio = args.bio;
+    if (args.company !== undefined) updateData.company = args.company;
+    if (args.location !== undefined) updateData.location = args.location;
+    if (args.website !== undefined) updateData.website = args.website;
+    if (args.timezone !== undefined) updateData.timezone = args.timezone;
+    if (args.profileImageUrl !== undefined)
+      updateData.profileImageUrl = args.profileImageUrl;
 
     if (Object.keys(updateData).length > 0) {
       await ctx.db.patch(user._id, updateData);
     }
+  },
+});
+
+// Update user preferences
+export const updateUserPreferences = mutation({
+  args: {
+    theme: v.optional(
+      v.union(v.literal("dark"), v.literal("light"), v.literal("system"))
+    ),
+    language: v.optional(v.string()),
+    timezone: v.optional(v.string()),
+    emailNotifications: v.optional(v.boolean()),
+    pushNotifications: v.optional(v.boolean()),
+    weeklyDigest: v.optional(v.boolean()),
+    defaultModel: v.optional(v.string()),
+    maxTokensPerRequest: v.optional(v.number()),
+    temperature: v.optional(v.number()),
+    autoSaveChats: v.optional(v.boolean()),
+    dataRetention: v.optional(v.number()),
+    shareUsageData: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    const existing = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+
+    const updateData: any = {
+      updatedAt: Date.now(),
+    };
+
+    // Add all provided fields to update data
+    Object.keys(args).forEach((key) => {
+      if (args[key as keyof typeof args] !== undefined) {
+        updateData[key] = args[key as keyof typeof args];
+      }
+    });
+
+    if (existing) {
+      await ctx.db.patch(existing._id, updateData);
+    } else {
+      await ctx.db.insert("userPreferences", {
+        userId: user._id,
+        ...updateData,
+      });
+    }
+  },
+});
+
+// Update user billing information
+export const updateUserBilling = mutation({
+  args: {
+    stripeCustomerId: v.optional(v.string()),
+    subscriptionStatus: v.optional(
+      v.union(
+        v.literal("active"),
+        v.literal("canceled"),
+        v.literal("past_due"),
+        v.literal("unpaid"),
+        v.literal("trialing")
+      )
+    ),
+    subscriptionPlan: v.optional(v.string()),
+    subscriptionPeriodStart: v.optional(v.number()),
+    subscriptionPeriodEnd: v.optional(v.number()),
+    monthlyTokenUsage: v.optional(v.number()),
+    monthlyTokenLimit: v.optional(v.number()),
+    monthlySpend: v.optional(v.number()),
+    hasPaymentMethod: v.optional(v.boolean()),
+    lastPaymentDate: v.optional(v.number()),
+    nextBillingDate: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    const existing = await ctx.db
+      .query("userBilling")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+
+    const updateData: any = {
+      updatedAt: Date.now(),
+    };
+
+    // Add all provided fields to update data
+    Object.keys(args).forEach((key) => {
+      if (args[key as keyof typeof args] !== undefined) {
+        updateData[key] = args[key as keyof typeof args];
+      }
+    });
+
+    if (existing) {
+      await ctx.db.patch(existing._id, updateData);
+    } else {
+      await ctx.db.insert("userBilling", {
+        userId: user._id,
+        createdAt: Date.now(),
+        ...updateData,
+      });
+    }
+  },
+});
+
+// Delete user account (soft delete - mark as deleted)
+export const deleteUserAccount = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // In a real app, you might want to soft delete or anonymize data
+    // For now, we'll just mark the user as deleted
+    await ctx.db.patch(user._id, {
+      email: `deleted_${Date.now()}@deleted.com`,
+      name: "Deleted User",
+      lastSeen: Date.now(),
+    });
+
+    // You could also delete related data here
+    // But be careful about data retention requirements
   },
 });
 

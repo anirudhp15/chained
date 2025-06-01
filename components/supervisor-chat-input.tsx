@@ -173,11 +173,11 @@ export function SupervisorChatInput({
   }, []);
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 pb-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="absolute bottom-0 left-0 right-0 pb-4 md:pb-6">
+      <div className="max-w-4xl mx-auto px-3 md:px-0">
         <div className="space-y-4">
           {/* Input Area with Autocomplete */}
-          <div className="relative bg-gray-700/70 backdrop-blur-md border hover:bg-gray-700/80 border-gray-600/50 rounded-xl ">
+          <div className="relative bg-gray-800/70 backdrop-blur-md border hover:bg-gray-700/80 border-gray-600/50 rounded-xl">
             <textarea
               ref={textareaRef}
               value={prompt}
@@ -185,26 +185,26 @@ export function SupervisorChatInput({
               onKeyDown={handleKeyDown}
               onKeyPress={handleKeyPress}
               placeholder="What do you want to do next?"
-              className="w-full h-32 px-4 py-4 pb-16 border-none outline-none ring-0 text-sm bg-transparent rounded-xl text-white placeholder-gray-400 focus:outline-none  resize-none transition-all "
+              className="w-full h-24 md:h-32 px-3 md:px-4 py-3 md:py-4 pb-12 md:pb-16 border-none outline-none ring-0 text-sm bg-transparent rounded-xl text-white placeholder-gray-400 focus:outline-none resize-none transition-all"
             />
 
             {/* @mention autocomplete dropdown */}
             {showAgentDropdown && filteredAgents.length > 0 && (
               <div
                 ref={dropdownRef}
-                className="absolute bottom-full left-0 mb-2 w-min bg-gray-900/90 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-40 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200"
+                className="absolute bottom-full left-0 mb-2 w-full md:w-min bg-gray-900/90 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-40 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200"
               >
                 {filteredAgents.map((agent) => (
                   <button
                     key={agent.index}
                     onClick={() => handleAgentSelect(agent)}
-                    className="w-full px-4 py-3 text-xs text-left hover:bg-gray-700 focus:bg-gray-700 focus:outline-none transition-colors border-b border-gray-700 last:border-b-0"
+                    className="w-full px-3 md:px-4 py-2 md:py-3 text-xs text-left hover:bg-gray-700 focus:bg-gray-700 focus:outline-none transition-colors border-b border-gray-700 last:border-b-0"
                   >
                     <div className="flex items-center gap-2 justify-between">
                       <span className="text-white whitespace-nowrap font-medium">
                         {agent.name}
                       </span>
-                      <span className="text-gray-400 whitespace-nowrap">
+                      <span className="text-gray-400 whitespace-nowrap text-xs">
                         {agent.model}
                       </span>
                     </div>
@@ -214,18 +214,18 @@ export function SupervisorChatInput({
             )}
 
             {/* Bottom controls */}
-            <div className="absolute bottom-0 left-0 right-0 px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="absolute bottom-0 left-0 right-0 px-3 md:px-4 py-2 md:py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 md:gap-3">
                 {/* Agent Count Display */}
-                <div className="px-3 py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-lg text-gray-300 text-xs backdrop-blur-sm">
+                <div className="px-2 md:px-3 py-1 md:py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-lg text-gray-300 text-xs backdrop-blur-sm">
                   <span className="font-medium">
                     {agentSteps.length} agent
                     {agentSteps.length !== 1 ? "s" : ""} available
                   </span>
                 </div>
 
-                {/* Hint Text */}
-                <div className="text-xs text-gray-500">
+                {/* Hint Text - Hide on very small screens */}
+                <div className="hidden sm:block text-xs text-gray-500">
                   Type @ to mention agents
                 </div>
               </div>
@@ -234,18 +234,19 @@ export function SupervisorChatInput({
               <button
                 onClick={handleSend}
                 disabled={!prompt.trim() || isLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 rounded-lg text-sm font-medium transition-all shadow-lg hover:shadow-emerald-500/25 disabled:shadow-none backdrop-blur-sm"
+                className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 rounded-lg text-xs md:text-sm font-medium transition-all shadow-lg hover:shadow-emerald-500/25 disabled:shadow-none backdrop-blur-sm"
               >
                 {isLoading ? "Coordinating..." : "Send"}
                 <svg
-                  width="16"
-                  height="16"
+                  width="14"
+                  height="14"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  className="md:w-4 md:h-4"
                 >
                   <path d="m22 2-7 20-4-9-9-4Z" />
                   <path d="M22 2 11 13" />

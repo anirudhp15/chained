@@ -396,18 +396,18 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
     : null;
 
   return (
-    <div className="h-full flex flex-col pb-40">
+    <div className="h-full flex flex-col pb-20 md:pb-40">
       {/* Main content area */}
       <div className="flex-1 flex items-center justify-center px-4">
-        <div className="max-w-7xl mx-auto text-center space-y-8">
+        <div className="max-w-7xl mx-auto text-center space-y-4 md:space-y-8">
           {/* Welcome Message */}
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div
               className="flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700 ease-out"
               style={{ animationDelay: "0.1s", animationFillMode: "both" }}
             >
-              <h1 className="text-4xl lg:text-5xl font-bold text-white">
-                What tasks would you like to{" "}
+              <h1 className="text-xl md:text-4xl lg:text-5xl font-bold text-white">
+                What would you like to{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-lavender-400 to-purple-400">
                   chain
                 </span>{" "}
@@ -416,24 +416,24 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
             </div>
 
             <p
-              className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-top-4 duration-700 ease-out"
+              className="text-xs md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-top-4 duration-700 ease-out"
               style={{ animationDelay: "0.3s", animationFillMode: "both" }}
             >
               {selectedCategory
-                ? `Choose from these ${selectedCategory.toLowerCase()} workflow templates`
-                : "Choose from these preset agent workflows, or craft your own chain below"}
+                ? `${selectedCategory} workflow templates`
+                : "Choose a preset workflow or create your own"}
             </p>
           </div>
 
           {/* Category Selection Buttons - Show immediately if no category selected */}
           {!selectedCategory && (
-            <div className="mt-8">
-              <div className="flex items-center justify-center gap-4">
+            <div className="mt-4 md:mt-8">
+              <div className="grid grid-cols-3 md:flex md:flex-row md:items-center md:justify-center gap-2 md:gap-4">
                 {COLUMN_THEMES.map((theme, index) => (
                   <button
                     key={theme.title}
                     onClick={() => handleCategoryClick(theme.title)}
-                    className="flex items-center gap-3 px-6 py-3 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-full hover:text-lavender-400  text-gray-300 transition-all duration-200 group backdrop-blur-sm hover:scale-105 animate-in fade-in slide-in-from-bottom-4 ease-out"
+                    className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3 px-2 md:px-6 py-3 md:py-3 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg md:rounded-full hover:text-lavender-400 text-gray-300 transition-all duration-200 group backdrop-blur-sm hover:scale-105 animate-in fade-in slide-in-from-bottom-4 ease-out min-w-0"
                     style={{
                       animationDelay: `${0.5 + index * 0.1}s`,
                       animationDuration: "0.6s",
@@ -442,9 +442,11 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                   >
                     <theme.icon
                       size={16}
-                      className={`${theme.iconColor} group-hover:scale-110 transition-transform duration-200`}
+                      className={`${theme.iconColor} group-hover:scale-110 transition-transform duration-200 flex-shrink-0 md:w-4 md:h-4`}
                     />
-                    <span className="font-medium text-sm">{theme.title}</span>
+                    <span className="font-medium text-xs md:text-sm text-center">
+                      {theme.title}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -453,31 +455,31 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
 
           {/* Preset Selection View (only show when category is selected) */}
           {selectedCategory && (
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {/* Back Button and Category Header */}
               <div
-                className="flex items-center justify-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500 ease-out"
+                className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-4 animate-in fade-in slide-in-from-top-4 duration-500 ease-out"
                 style={{ animationDelay: "0.1s", animationFillMode: "both" }}
               >
                 <button
                   onClick={handleBackToCategories}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500/50 rounded-full text-lavender-400 hover:text-white transition-all duration-200 group"
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500/50 rounded-full text-lavender-400 hover:text-white transition-all duration-200 group"
                 >
                   <ArrowLeft
-                    size={16}
+                    size={14}
                     className="group-hover:scale-110 transition-transform duration-200"
                   />
-                  <span className="text-sm">Back to categories</span>
+                  <span className="text-xs md:text-sm">Back</span>
                 </button>
 
                 {selectedTheme && (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 md:gap-3">
                     <selectedTheme.icon
-                      size={24}
+                      size={18}
                       className={selectedTheme.iconColor}
                     />
-                    <h2 className="text-2xl font-bold text-lavender-400">
-                      {selectedTheme.title} Workflows
+                    <h2 className="text-lg md:text-2xl font-bold text-lavender-400">
+                      {selectedTheme.title}
                     </h2>
                   </div>
                 )}
@@ -485,13 +487,13 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
 
               {/* Presets Grid */}
               {selectedTheme && (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 max-w-6xl mx-auto">
                   {selectedTheme.presets.map((preset, presetIndex) => (
                     <button
                       key={preset.id}
                       onClick={() => handlePresetClick(preset)}
                       disabled={selectedPreset !== null}
-                      className={`group relative p-6 rounded-xl border-2 disabled:opacity-50 disabled:cursor-not-allowed w-full text-left transition-all duration-300 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom-4 ease-out ${
+                      className={`group relative p-3 md:p-6 rounded-xl border-2 disabled:opacity-50 disabled:cursor-not-allowed w-full text-left transition-all duration-300 hover:scale-[1.02] animate-in fade-in slide-in-from-bottom-4 ease-out ${
                         selectedPreset === preset.id
                           ? "border-lavender-400 bg-lavender-500/10 scale-105"
                           : "border-gray-700/50 hover:border-lavender-400/50 bg-gradient-to-br " +
@@ -511,29 +513,29 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                         onClick={(e) => handleShowPresetInfo(preset.id, e)}
                         className="absolute top-2 right-2 p-1 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-300 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100 hover:scale-110"
                       >
-                        <Eye size={16} />
+                        <Eye size={12} className="md:w-3.5 md:h-3.5" />
                       </button>
 
                       {/* Content */}
-                      <div className="relative space-y-4">
+                      <div className="relative space-y-2 md:space-y-4">
                         {/* Icon and Title */}
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-2 md:gap-3">
                           <div className="flex-shrink-0">
-                            <div className="inline-flex p-2.5 rounded-lg bg-gray-800/50 border border-gray-600/50 group-hover:border-gray-500/50 transition-all duration-300 group-hover:scale-110">
+                            <div className="inline-flex p-1.5 md:p-2.5 rounded-lg bg-gray-800/50 border border-gray-600/50 group-hover:border-gray-500/50 transition-all duration-300 group-hover:scale-110">
                               <preset.icon
-                                size={20}
-                                className={`${preset.iconColor} group-hover:scale-110 transition-transform duration-300`}
+                                size={16}
+                                className={`md:w-4.5 md:h-4.5 ${preset.iconColor} group-hover:scale-110 transition-transform duration-300`}
                               />
                             </div>
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="text-lg font-semibold text-white group-hover:text-lavender-300 transition-colors duration-300 truncate">
+                            <div className="flex items-center gap-2 mb-1 md:mb-2">
+                              <h3 className="text-sm md:text-lg font-semibold text-white group-hover:text-lavender-300 transition-colors duration-300 truncate">
                                 {preset.title}
                               </h3>
                             </div>
-                            <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-300 line-clamp-3">
+                            <p className="text-xs md:text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-300 line-clamp-2 md:line-clamp-3">
                               {preset.description}
                             </p>
                           </div>
@@ -544,8 +546,8 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                       {selectedPreset === preset.id && (
                         <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80 rounded-xl animate-in fade-in duration-200">
                           <div className="flex items-center gap-2 text-lavender-400">
-                            <Zap size={16} className="animate-pulse" />
-                            <span className="text-sm font-medium">
+                            <Zap size={14} className="animate-pulse" />
+                            <span className="text-xs md:text-sm font-medium">
                               Loading...
                             </span>
                           </div>
@@ -565,45 +567,45 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
         infoPreset &&
         typeof window !== "undefined" &&
         createPortal(
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-            <div className="bg-gray-900/95 border border-gray-700/50 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto backdrop-blur-xl animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 ease-out">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 md:p-4 animate-in fade-in duration-200">
+            <div className="bg-gray-900/95 border border-gray-700/50 rounded-2xl w-full h-full md:max-w-2xl md:w-full md:max-h-[90vh] md:h-auto overflow-y-auto backdrop-blur-xl animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 ease-out">
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
-                <div className="flex items-center gap-3">
-                  <div className="inline-flex p-2.5 rounded-lg bg-gray-800/50 border border-gray-600/50">
+              <div className="flex items-center justify-between p-3 md:p-6 border-b border-gray-700/50">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="inline-flex p-1.5 md:p-2.5 rounded-lg bg-gray-800/50 border border-gray-600/50">
                     <infoPreset.icon
-                      size={20}
-                      className={infoPreset.iconColor}
+                      size={16}
+                      className={`md:w-4.5 md:h-4.5 ${infoPreset.iconColor}`}
                     />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">
+                    <h3 className="text-base md:text-xl font-bold text-white">
                       {infoPreset.title}
                     </h3>
-                    <p className="text-sm text-gray-400">
+                    <p className="text-xs md:text-sm text-gray-400">
                       {infoPreset.agents.length} Node Workflow
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={handleClosePresetInfo}
-                  className="p-2 hover:bg-gray-800/50 rounded-lg text-gray-400 hover:text-white transition-all duration-200 hover:scale-110"
+                  className="p-1.5 md:p-2 hover:bg-gray-800/50 rounded-lg text-gray-400 hover:text-white transition-all duration-200 hover:scale-110"
                 >
-                  <X size={20} />
+                  <X size={16} className="md:w-4.5 md:h-4.5" />
                 </button>
               </div>
 
               {/* Content */}
-              <div className="p-6 space-y-6">
+              <div className="p-3 md:p-6 space-y-3 md:space-y-6">
                 {/* Description */}
                 <div
                   className="animate-in fade-in slide-in-from-top-2 duration-400 ease-out"
                   style={{ animationDelay: "0.1s", animationFillMode: "both" }}
                 >
-                  <h4 className="text-sm font-semibold text-lavender-400 mb-2">
+                  <h4 className="text-xs md:text-sm font-semibold text-lavender-400 mb-1.5 md:mb-2">
                     Overview
                   </h4>
-                  <p className="text-gray-300 leading-relaxed">
+                  <p className="text-xs md:text-base text-gray-300 leading-relaxed">
                     {infoPreset.description}
                   </p>
                 </div>
@@ -613,29 +615,29 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                   className="animate-in fade-in slide-in-from-top-2 duration-400 ease-out"
                   style={{ animationDelay: "0.2s", animationFillMode: "both" }}
                 >
-                  <h4 className="text-sm font-semibold text-lavender-400 mb-3">
+                  <h4 className="text-xs md:text-sm font-semibold text-lavender-400 mb-2 md:mb-3">
                     Workflow Nodes
                   </h4>
-                  <div className="space-y-3">
+                  <div className="space-y-2 md:space-y-3">
                     {infoPreset.agents.map((agent, index) => (
                       <div
                         key={index}
-                        className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-4 animate-in fade-in slide-in-from-left-4 duration-400 ease-out"
+                        className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-2.5 md:p-4 animate-in fade-in slide-in-from-left-4 duration-400 ease-out"
                         style={{
                           animationDelay: `${0.3 + index * 0.05}s`,
                           animationFillMode: "both",
                         }}
                       >
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-6 h-6 bg-lavender-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        <div className="flex items-center gap-2 md:gap-3 mb-1.5 md:mb-2">
+                          <div className="w-4 h-4 md:w-6 md:h-6 bg-lavender-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
                             {index + 1}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-white">
+                          <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+                            <span className="text-xs md:text-sm font-medium text-white">
                               {agent.model}
                             </span>
                             {agent.connection && (
-                              <span className="px-2 py-1 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-gray-300">
+                              <span className="px-1.5 md:px-2 py-0.5 md:py-1 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-gray-300 w-fit">
                                 {agent.connection.type === "direct"
                                   ? "Direct"
                                   : "Conditional"}
@@ -643,11 +645,11 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                             )}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-400 leading-relaxed">
+                        <p className="text-xs md:text-sm text-gray-400 leading-relaxed">
                           {agent.prompt}
                         </p>
                         {agent.connection?.condition && (
-                          <div className="mt-2 p-2 bg-gray-700/30 border border-gray-600/30 rounded text-xs text-gray-400">
+                          <div className="mt-1.5 md:mt-2 p-1.5 md:p-2 bg-gray-700/30 border border-gray-600/30 rounded text-xs text-gray-400">
                             <span className="font-medium">Condition:</span>{" "}
                             {agent.connection.condition}
                           </div>
@@ -659,7 +661,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
 
                 {/* Action Button */}
                 <div
-                  className="flex justify-end pt-4 border-t border-gray-700/50 animate-in fade-in slide-in-from-bottom-2 duration-400 ease-out"
+                  className="flex justify-end pt-3 md:pt-4 border-t border-gray-700/50 animate-in fade-in slide-in-from-bottom-2 duration-400 ease-out"
                   style={{ animationDelay: "0.4s", animationFillMode: "both" }}
                 >
                   <button
@@ -667,10 +669,10 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                       handleClosePresetInfo();
                       handlePresetClick(infoPreset);
                     }}
-                    className="flex items-center gap-2 text-sm px-4 py-2 bg-lavender-500 hover:bg-lavender-600 text-white rounded-lg font-bold transition-all duration-200 shadow-lg hover:shadow-lavender-500/25 hover:scale-105"
+                    className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm px-3 md:px-4 py-2 bg-lavender-500 hover:bg-lavender-600 text-white rounded-lg font-bold transition-all duration-200 shadow-lg hover:shadow-lavender-500/25 hover:scale-105"
                   >
-                    <Zap size={16} />
-                    Start This Workflow
+                    <Zap size={12} className="md:w-3.5 md:h-3.5" />
+                    Start Workflow
                   </button>
                 </div>
               </div>

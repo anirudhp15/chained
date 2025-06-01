@@ -13,6 +13,7 @@ import { SignInButton } from "@clerk/nextjs";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Sidebar } from "../../../components/sidebar";
+import { MobileSidebarToggle } from "../../../components/MobileSidebarToggle";
 import { ChatArea } from "../../../components/chat-area";
 import {
   InputAreaContainer,
@@ -38,6 +39,7 @@ function ChatPageContent() {
   );
   const [presetAgents, setPresetAgents] = useState<Agent[] | null>(null);
   const [isValidSession, setIsValidSession] = useState<boolean | null>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Supervisor mode state
   const [inputMode, setInputMode] = useState<
@@ -177,6 +179,10 @@ function ChatPageContent() {
     } catch (error) {
       console.error("Failed to load preset:", error);
     }
+  };
+
+  const toggleMobileSidebar = () => {
+    setIsMobileSidebarOpen(!isMobileSidebarOpen);
   };
 
   const handleSendFocusedAgent = async (agent: Agent) => {
@@ -635,7 +641,15 @@ function ChatPageContent() {
 
   return (
     <div className="flex h-screen bg-gray-950">
-      <Sidebar currentSessionId={chainId} />
+      <Sidebar
+        currentSessionId={chainId}
+        isMobileOpen={isMobileSidebarOpen}
+        onMobileToggle={toggleMobileSidebar}
+      />
+      <MobileSidebarToggle
+        isOpen={isMobileSidebarOpen}
+        onToggle={toggleMobileSidebar}
+      />
       <div className="flex-1 flex flex-col relative w-full">
         {/* Conditional rendering based on input mode */}
 

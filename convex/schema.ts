@@ -9,9 +9,77 @@ export default defineSchema({
     name: v.string(),
     createdAt: v.number(),
     lastSeen: v.number(),
+    // Profile fields
+    bio: v.optional(v.string()),
+    company: v.optional(v.string()),
+    location: v.optional(v.string()),
+    website: v.optional(v.string()),
+    timezone: v.optional(v.string()),
+    profileImageUrl: v.optional(v.string()),
   })
     .index("by_token", ["tokenIdentifier"])
     .index("by_email", ["email"]),
+
+  // User preferences
+  userPreferences: defineTable({
+    userId: v.id("users"),
+    // UI Preferences
+    theme: v.optional(
+      v.union(v.literal("dark"), v.literal("light"), v.literal("system"))
+    ),
+    language: v.optional(v.string()),
+    timezone: v.optional(v.string()),
+
+    // Notification Preferences
+    emailNotifications: v.optional(v.boolean()),
+    pushNotifications: v.optional(v.boolean()),
+    weeklyDigest: v.optional(v.boolean()),
+
+    // AI Preferences
+    defaultModel: v.optional(v.string()),
+    maxTokensPerRequest: v.optional(v.number()),
+    temperature: v.optional(v.number()),
+    autoSaveChats: v.optional(v.boolean()),
+
+    // Privacy Preferences
+    dataRetention: v.optional(v.number()), // days
+    shareUsageData: v.optional(v.boolean()),
+
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  // Billing information (placeholder for Stripe integration)
+  userBilling: defineTable({
+    userId: v.id("users"),
+    stripeCustomerId: v.optional(v.string()),
+    subscriptionStatus: v.optional(
+      v.union(
+        v.literal("active"),
+        v.literal("canceled"),
+        v.literal("past_due"),
+        v.literal("unpaid"),
+        v.literal("trialing")
+      )
+    ),
+    subscriptionPlan: v.optional(v.string()),
+    subscriptionPeriodStart: v.optional(v.number()),
+    subscriptionPeriodEnd: v.optional(v.number()),
+
+    // Usage tracking
+    monthlyTokenUsage: v.optional(v.number()),
+    monthlyTokenLimit: v.optional(v.number()),
+    monthlySpend: v.optional(v.number()),
+
+    // Payment method
+    hasPaymentMethod: v.optional(v.boolean()),
+    lastPaymentDate: v.optional(v.number()),
+    nextBillingDate: v.optional(v.number()),
+
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_stripe_customer", ["stripeCustomerId"]),
 
   // Chat sessions associated with users
   chatSessions: defineTable({

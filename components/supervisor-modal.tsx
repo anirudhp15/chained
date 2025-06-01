@@ -27,7 +27,7 @@ interface SupervisorModalProps {
   supervisorStreamContent?: { [turnId: string]: string };
 }
 
-const MODAL_BOTTOM_OFFSET = "bottom-[150px]";
+const MODAL_BOTTOM_OFFSET = "bottom-[110px] md:bottom-[150px]";
 
 export function SupervisorModal({
   sessionId,
@@ -107,11 +107,11 @@ export function SupervisorModal({
   if (!isOpen && !isFullscreen) {
     return (
       <div
-        className={`absolute ${MODAL_BOTTOM_OFFSET} left-0 right-0 flex justify-center pb-4 px-6 z-30`}
+        className={`absolute ${MODAL_BOTTOM_OFFSET} left-0 right-0 flex justify-center pb-4 px-6 z-30 `}
       >
         <button
           onClick={onToggle}
-          className="flex justify-between items-center gap-3 px-4 py-2 bg-gray-900/75 backdrop-blur-sm border max-w-sm hover:max-w-4xl w-full border-gray-600/50 rounded-xl text-sm transition-all duration-200 hover:bg-gray-800/90 hover:border-emerald-400/20 group"
+          className="flex justify-between shadow-lg shadow-gray-950/50 items-center gap-3 px-4 py-2 bg-gray-900/75 backdrop-blur-sm border max-w-sm hover:max-w-4xl w-full border-gray-600/50 rounded-xl text-sm transition-all duration-200 hover:bg-gray-800/90 hover:border-emerald-400/20 group"
         >
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>

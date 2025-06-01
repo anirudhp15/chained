@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { AgentInput, type Agent } from "./agent-input";
 import { v4 as uuidv4 } from "uuid";
 import { ModalityIcons } from "./modality/ModalityIcons";
-import { WelcomeScreen } from "./welcome-screen";
 import { CONNECTION_TYPES, DEFAULT_AGENT_CONFIG } from "@/lib/constants";
 
 // Simple connection icon component
@@ -15,12 +14,12 @@ const ConnectionIcon = ({ connectionType }: { connectionType?: string }) => {
   const IconComponent = connectionConfig.Icon;
 
   return (
-    <div className="flex items-center justify-center px-2">
+    <div className="flex items-center justify-center px-1 md:px-2">
       <div className="flex items-center gap-2">
         <div className="">
           <IconComponent
-            size={24}
-            className={`${connectionConfig.color} ${connectionConfig.iconRotate || ""}`}
+            size={20}
+            className={`md:w-6 md:h-6 ${connectionConfig.color} ${connectionConfig.iconRotate || ""}`}
           />
         </div>
       </div>
@@ -243,29 +242,33 @@ export function InputArea({
     );
   }
 
-  // Regular Chain Mode Input - Horizontal Layout
+  // Regular Chain Mode Input - Mobile Responsive Layout
   return (
     <div className="absolute bottom-0 left-0 right-0 z-10">
-      <div className="flex items-end justify-center px-6 py-6">
+      <div className="flex items-end justify-center px-2 md:px-6 py-2 md:py-6">
         <div className="w-full max-w-6xl">
-          <div className="flex items-stretch justify-center">
+          {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
+          <div className="flex flex-col md:flex-row md:items-stretch md:justify-center gap-2 md:gap-0">
             {agents.map((agent, index) => (
-              <div key={agent.id} className="flex items-stretch">
+              <div
+                key={agent.id}
+                className="flex flex-col md:flex-row md:items-stretch"
+              >
                 {/* Agent Card using AgentInput component */}
                 <div
                   className={`${
                     agents.length === 1
-                      ? "w-full max-w-4xl min-w-[800px]"
+                      ? "w-full md:max-w-4xl md:min-w-[800px]"
                       : agents.length === 2
-                        ? "w-full max-w-none min-w-[550px] flex-1"
-                        : "w-full max-w-none min-w-[450px] flex-1"
-                  } backdrop-blur-sm  ${
+                        ? "w-full md:max-w-none md:min-w-[550px] md:flex-1"
+                        : "w-full md:max-w-none md:min-w-[450px] md:flex-1"
+                  } backdrop-blur-sm ${
                     queuedAgents.some((qa) => qa.id === agent.id)
                       ? "border-lavender-400/50"
                       : ""
                   } ${
                     animatingAgentId === agent.id
-                      ? "animate-in slide-in-from-right-8 fade-in duration-300 ease-out"
+                      ? "animate-in slide-in-from-bottom-4 md:slide-in-from-right-8 fade-in duration-300 ease-out"
                       : ""
                   }`}
                 >
@@ -289,7 +292,7 @@ export function InputArea({
 
                   {/* Queued Agent Indicator */}
                   {queuedAgents.some((qa) => qa.id === agent.id) && (
-                    <div className="text-xs text-lavender-400/60 text-center mt-2">
+                    <div className="text-xs text-lavender-400/60 text-center mt-1">
                       Queued...
                     </div>
                   )}
@@ -297,9 +300,15 @@ export function InputArea({
 
                 {/* Connection Selector (between agents) */}
                 {index < agents.length - 1 && (
-                  <ConnectionIcon
-                    connectionType={agents[index + 1].connection?.type}
-                  />
+                  <div className="flex md:items-center justify-center py-1 md:py-0 md:px-2">
+                    <div className="flex items-center gap-2">
+                      <div className="transform md:transform-none rotate-90 md:rotate-0">
+                        <ConnectionIcon
+                          connectionType={agents[index + 1].connection?.type}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             ))}

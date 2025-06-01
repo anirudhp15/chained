@@ -16,6 +16,7 @@ import {
   CreditCard,
   LogOut,
   ChevronUp,
+  X,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { Id } from "../convex/_generated/dataModel";
@@ -26,6 +27,9 @@ import { useRouter } from "next/navigation";
 interface SidebarProps {
   currentSessionId?: string;
   onLoadPreset?: (agents: any[]) => void;
+  // Mobile props
+  isMobileOpen?: boolean;
+  onMobileToggle?: () => void;
 }
 
 interface ChatGroup {
@@ -81,7 +85,12 @@ const groupChatsByTime = (chats: any[]): ChatGroup[] => {
   return groups.filter((group) => group.chats.length > 0);
 };
 
-export function Sidebar({ currentSessionId, onLoadPreset }: SidebarProps) {
+export function Sidebar({
+  currentSessionId,
+  onLoadPreset,
+  isMobileOpen = false,
+  onMobileToggle,
+}: SidebarProps) {
   const { user } = useUser();
   const recentChats = useQuery(api.queries.getChatSessions);
   const updateChatTitle = useMutation(api.mutations.updateSessionTitle);
@@ -109,6 +118,18 @@ export function Sidebar({ currentSessionId, onLoadPreset }: SidebarProps) {
       return () => document.removeEventListener("click", handleClickOutside);
     }
   }, [openMenuId, showAccountMenu, showUserProfile]);
+
+  // Close mobile sidebar on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isMobileOpen && onMobileToggle) {
+        onMobileToggle();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isMobileOpen, onMobileToggle]);
 
   const handleEditChat = (chatId: string, currentTitle: string) => {
     setEditingChatId(chatId);
@@ -145,14 +166,39 @@ export function Sidebar({ currentSessionId, onLoadPreset }: SidebarProps) {
     }
   };
 
+  const handleMobileChatClick = (chatId: string) => {
+    router.push(`/chat/${chatId}`);
+    // Close mobile sidebar after navigation
+    if (onMobileToggle) {
+      onMobileToggle();
+    }
+  };
+
+  const handleMobileNewChat = () => {
+    router.push("/chat");
+    // Close mobile sidebar after navigation
+    if (onMobileToggle) {
+      onMobileToggle();
+    }
+  };
+
   return (
     <>
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+          onClick={onMobileToggle}
+        />
+      )}
+
+      {/* Desktop Sidebar */}
       <div
-        className={`bg-gray-900/90 border-r border-gray-700 shadow-lg shadow-lavender-400/50 flex flex-col h-full transition-all duration-300 ease-out ${
+        className={`hidden md:flex bg-gray-900/90 border-r border-gray-700 flex-col h-full transition-all duration-300 ease-out ${
           isCollapsed ? "w-16" : "w-64"
         }`}
       >
-        {/* Header */}
+        {/* Desktop Header */}
         <div className="border-b-2 border-gray-700 flex items-center justify-center relative">
           {isCollapsed ? (
             // Collapsed state - just the link icon
@@ -197,7 +243,7 @@ export function Sidebar({ currentSessionId, onLoadPreset }: SidebarProps) {
           )}
         </div>
 
-        {/* New Chat Button */}
+        {/* Desktop New Chat Button */}
         <div className="p-4 flex justify-center">
           <button
             onClick={() => router.push("/chat")}
@@ -212,7 +258,7 @@ export function Sidebar({ currentSessionId, onLoadPreset }: SidebarProps) {
           </button>
         </div>
 
-        {/* Search - Only show when expanded */}
+        {/* Desktop Search - Only show when expanded */}
         {!isCollapsed && (
           <div className="px-4 pb-4">
             <input
@@ -223,7 +269,7 @@ export function Sidebar({ currentSessionId, onLoadPreset }: SidebarProps) {
           </div>
         )}
 
-        {/* Chat List */}
+        {/* Desktop Chat List */}
         <div className="flex-1 overflow-y-auto">
           <div className="px-2">
             {recentChats === undefined ? (
@@ -349,7 +395,7 @@ export function Sidebar({ currentSessionId, onLoadPreset }: SidebarProps) {
           </div>
         </div>
 
-        {/* Account Section */}
+        {/* Desktop Account Section */}
         <div className="border-t border-gray-800 p-4">
           <div className="relative">
             {isCollapsed ? (
@@ -467,6 +513,111 @@ export function Sidebar({ currentSessionId, onLoadPreset }: SidebarProps) {
                 )}
               </>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Sidebar */}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-full bg-gray-900/95 backdrop-blur-sm border-r border-gray-700 flex flex-col transform transition-transform duration-300 ease-out md:hidden ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Mobile Header */}
+        <div className="border-b border-gray-700 flex items-center justify-between p-3">
+          <Link href="/" onClick={onMobileToggle}>
+            <h1 className="text-lg font-medium text-white flex items-center hover:text-lavender-300 transition-colors duration-200">
+              <span className="mr-2 text-lavender-400">
+                <Link2
+                  size={20}
+                  className="hover:-rotate-45 transition-transform duration-200 ease-out"
+                />
+              </span>
+              Chained
+            </h1>
+          </Link>
+          <button
+            onClick={onMobileToggle}
+            className="p-2 text-gray-400 hover:text-white transition-colors duration-200"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Mobile New Chat Button */}
+        <div className="p-3">
+          <button
+            onClick={handleMobileNewChat}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-lavender-500 hover:bg-lavender-600 text-white rounded-lg transition-all duration-200 text-sm font-medium"
+          >
+            <Plus size={16} />
+            <span>New Chain</span>
+          </button>
+        </div>
+
+        {/* Mobile Chat List */}
+        <div className="flex-1 overflow-y-auto px-3">
+          {recentChats === undefined ? (
+            <LoadingAnimation />
+          ) : recentChats.length === 0 ? (
+            <div className="py-8 text-center">
+              <MessageSquare size={24} className="mx-auto text-gray-600 mb-2" />
+              <p className="text-xs text-gray-500">No chains yet</p>
+              <p className="text-xs text-gray-600 mt-1">
+                Create your first chain to get started
+              </p>
+            </div>
+          ) : (
+            groupChatsByTime(recentChats).map((group, groupIndex) => (
+              <div
+                key={group.title}
+                className={`${groupIndex > 0 ? "mt-4" : ""}`}
+              >
+                <h3 className="px-2 py-1 text-xs font-semibold text-lavender-500 uppercase tracking-wide border-b border-gray-800/50 mb-2">
+                  {group.title}
+                </h3>
+                {group.chats.map((chat) => (
+                  <div key={chat._id} className="mb-1">
+                    <button
+                      onClick={() => handleMobileChatClick(chat._id)}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all duration-200 text-xs ${
+                        currentSessionId === chat._id
+                          ? "bg-lavender-500/20 text-lavender-400"
+                          : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                      }`}
+                    >
+                      <span className="truncate flex-1">{chat.title}</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Mobile Account Section */}
+        <div className="border-t border-gray-800 p-3">
+          <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-800/50">
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: "w-6 h-6",
+                  userButtonPopoverCard: "bg-gray-800 border border-gray-700",
+                  userButtonPopoverActionButton:
+                    "text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-200",
+                  userButtonPopoverActionButtonText: "text-gray-300",
+                  userButtonPopoverActionButtonIcon: "text-gray-400",
+                },
+              }}
+            />
+            <div className="flex-1 text-left">
+              <div className="text-xs font-medium text-white">
+                {user?.firstName || user?.username || "User"} {user?.lastName}
+              </div>
+              <div className="text-xs text-gray-400 truncate">
+                {user?.primaryEmailAddress?.emailAddress}
+              </div>
+            </div>
           </div>
         </div>
       </div>

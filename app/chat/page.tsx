@@ -11,6 +11,7 @@ import {
 import { SignInButton } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
 import { Sidebar } from "../../components/sidebar";
+import { MobileSidebarToggle } from "../../components/MobileSidebarToggle";
 import { WelcomeScreen } from "../../components/welcome-screen";
 import { InputAreaContainer } from "@/components/input-area-container";
 import type { Agent } from "../../components/agent-input";
@@ -22,6 +23,7 @@ function ChatLandingContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [queuedAgents, setQueuedAgents] = useState<Agent[]>([]);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const handleLoadPreset = async (agents: Agent[]) => {
     try {
@@ -62,13 +64,25 @@ function ChatLandingContent() {
     setPresetAgents(null);
   };
 
+  const toggleMobileSidebar = () => {
+    setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  };
+
   return (
     <div className="flex h-screen bg-gray-950">
-      <Sidebar currentSessionId={undefined} />
+      <Sidebar
+        currentSessionId={undefined}
+        isMobileOpen={isMobileSidebarOpen}
+        onMobileToggle={toggleMobileSidebar}
+      />
+      <MobileSidebarToggle
+        isOpen={isMobileSidebarOpen}
+        onToggle={toggleMobileSidebar}
+      />
       <div className="flex-1 flex flex-col relative w-full">
         {/* Welcome Screen - only show if no preset agents are loaded */}
         {!presetAgents && (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center px-2 md:px-4 bg-gray-950/50">
             <WelcomeScreen onLoadPreset={handleLoadPreset} />
           </div>
         )}

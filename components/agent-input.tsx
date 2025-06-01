@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -280,13 +280,13 @@ const MODEL_PROVIDERS: ModelProviders = {
 
 // Style constants
 const STYLES = {
-  card: "bg-gray-700/70 backdrop-blur-sm border border-gray-600/50",
+  card: "bg-gray-800/70 backdrop-blur-sm border border-gray-600/50",
   button:
     "bg-gray-800/90 border border-gray-600/50 text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 transition-all text-xs backdrop-blur-sm",
   modal:
     "fixed bg-gray-800/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-[999999] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200",
   backdrop: "fixed inset-0 z-[999999] bg-black/20",
-  backdropBlur: "fixed inset-0 z-[999999] bg-black/30 backdrop-blur-sm",
+  backdropBlur: "fixed inset-0 z-[999999] bg-black/30 ",
   input:
     "bg-gray-800/90 border border-gray-600/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400/50",
 } as const;
@@ -320,6 +320,39 @@ export function AgentInput({
     connection?: DOMRect;
     condition?: DOMRect;
   }>({});
+
+  // Ref for textarea auto-resize
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea based on content
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      // Reset height to auto to get the correct scrollHeight
+      textarea.style.height = "auto";
+
+      // Calculate the new height based on content
+      const scrollHeight = textarea.scrollHeight;
+      const minHeight = window.innerWidth >= 768 ? 64 : 40; // md:min-h-16 : min-h-10
+      const maxHeight = window.innerWidth >= 768 ? 256 : 128; // md:max-h-64 : max-h-32
+
+      // Set the height to the content height, but within min/max bounds
+      const newHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight);
+      textarea.style.height = `${newHeight}px`;
+    }
+  };
+
+  // Adjust height when prompt changes
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [agent.prompt]);
+
+  // Adjust height on window resize
+  useEffect(() => {
+    const handleResize = () => adjustTextareaHeight();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Get provider key from model, handling gpt-4o-mini case
   const getProviderKey = (modelValue: string): keyof ModelProviders => {
@@ -407,11 +440,22 @@ export function AgentInput({
     setButtonPositions((prev) => ({ ...prev, [key]: rect }));
   };
 
-  const getModalPosition = (buttonRect?: DOMRect, width = 200) => ({
-    top: `${(buttonRect?.top || 0) + window.scrollY - 8}px`,
-    left: `${Math.max(16, Math.min(buttonRect?.left || 0, window.innerWidth - width))}px`,
-    transform: "translateY(-100%)",
-  });
+  const getModalPosition = (buttonRect?: DOMRect, width = 200) => {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      return {
+        top: `${(buttonRect?.top || 0) + window.scrollY - 8}px`,
+        left: "5vw",
+        right: "5vw",
+        transform: "translateY(-100%)",
+      };
+    }
+    return {
+      top: `${(buttonRect?.top || 0) + window.scrollY - 8}px`,
+      left: `${Math.max(16, Math.min(buttonRect?.left || 0, window.innerWidth - width))}px`,
+      transform: "translateY(-100%)",
+    };
+  };
 
   const renderNameEditor = () => (
     <div className="flex items-center gap-2 py-1.5">
@@ -434,7 +478,7 @@ export function AgentInput({
               }
             }
           }}
-          className={`w-32 px-2 rounded text-xs focus:ring-1 ${STYLES.input}`}
+          className={`w-20 md:w-32 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs focus:ring-1 ${STYLES.input}`}
           placeholder={`Node ${index + 1}`}
           autoFocus
         />
@@ -444,10 +488,15 @@ export function AgentInput({
             setIsEditingName(true);
             setTempName(agent.name || "");
           }}
-          className="flex items-center gap-2 text-xs font-medium text-lavender-400 hover:text-lavender-300 transition-colors group"
+          className="flex items-center gap-1 md:gap-2 text-xs font-medium text-lavender-400 hover:text-lavender-300 transition-colors group"
         >
-          <span>{agent.name || `Node ${index + 1}`}</span>
-          <Pencil size={12} className="opacity-50 group-hover:opacity-100" />
+          <span className="truncate max-w-16 md:max-w-none">
+            {agent.name || `Node ${index + 1}`}
+          </span>
+          <Pencil
+            size={8}
+            className="opacity-50 group-hover:opacity-100 md:w-3 md:h-3 flex-shrink-0"
+          />
         </button>
       )}
     </div>
@@ -466,21 +515,21 @@ export function AgentInput({
             );
             setIsConnectionDropdownOpen(!isConnectionDropdownOpen);
           }}
-          className={`flex items-center gap-2 px-3 py-1 rounded-md group ${STYLES.button}`}
+          className={`flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1 rounded-md group ${STYLES.button}`}
         >
           {CurrentConnectionIcon && (
             <span
               className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""}`}
             >
-              <CurrentConnectionIcon size={14} />
+              <CurrentConnectionIcon size={12} className="md:w-3.5 md:h-3.5" />
             </span>
           )}
-          <span className="font-medium text-xs">
+          <span className="font-medium text-xs truncate max-w-12 md:max-w-none">
             {currentConnection?.label}
           </span>
           <ChevronUp
-            size={10}
-            className={`text-gray-400 group-hover:text-lavender-400 transition-all ${
+            size={8}
+            className={`md:w-2.5 md:h-2.5 text-gray-400 group-hover:text-lavender-400 transition-all ${
               isConnectionDropdownOpen ? "rotate-0" : "rotate-90"
             }`}
           />
@@ -494,7 +543,7 @@ export function AgentInput({
                 onClick={() => setIsConnectionDropdownOpen(false)}
               />
               <div
-                className={`${STYLES.modal} min-w-48 w-max`}
+                className={`${STYLES.modal} min-w-48 w-max max-w-[90vw]`}
                 style={getModalPosition(buttonPositions.connection)}
               >
                 {CONNECTION_TYPES.map((type) => {
@@ -548,14 +597,14 @@ export function AgentInput({
     if (index === 0 || currentConnectionType !== "conditional") return null;
 
     return (
-      <div className="flex items-center gap-2 relative">
+      <div className="flex items-center gap-1.5 md:gap-2 relative">
         <div className="relative">
           <input
             type="text"
             value={agent.connection?.condition || ""}
             onChange={(e) => handleConditionChange(e.target.value)}
             placeholder="Enter condition..."
-            className={`w-40 px-2 py-1 rounded-md text-xs ${STYLES.input}`}
+            className={`w-24 md:w-40 px-1.5 md:px-2 py-0.5 md:py-1 rounded-md text-xs ${STYLES.input}`}
             onFocus={(e) => {
               setButtonPosition(
                 "condition",
@@ -569,8 +618,8 @@ export function AgentInput({
           {showConditionInput &&
             createPortal(
               <div
-                className={`${STYLES.modal} w-64 p-2`}
-                style={getModalPosition(buttonPositions.condition, 272)}
+                className={`${STYLES.modal} w-[90vw] md:w-64 p-2`}
+                style={getModalPosition(buttonPositions.condition, 256)}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-medium text-gray-300">
@@ -606,10 +655,10 @@ export function AgentInput({
 
         <button
           onClick={() => setShowConditionInput(!showConditionInput)}
-          className="p-1 text-gray-400 hover:text-lavender-400 transition-colors hover:bg-gray-700/50 rounded"
+          className="p-0.5 md:p-1 text-gray-400 hover:text-lavender-400 transition-colors hover:bg-gray-700/50 rounded"
           title="Show condition presets"
         >
-          <Zap size={12} />
+          <Zap size={10} className="md:w-3 md:h-3" />
         </button>
       </div>
     );
@@ -622,20 +671,20 @@ export function AgentInput({
           setButtonPosition("model", e.currentTarget.getBoundingClientRect());
           setIsModelDropdownOpen(!isModelDropdownOpen);
         }}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-md group ${STYLES.button}`}
+        className={`flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-md group ${STYLES.button}`}
       >
         {currentProvider && (
           <currentProvider.icon
-            size={14}
-            className={`${currentProvider.iconColor} flex-shrink-0`}
+            size={12}
+            className={`md:w-3.5 md:h-3.5 ${currentProvider.iconColor} flex-shrink-0`}
           />
         )}
-        <span className="font-medium truncate max-w-20">
+        <span className="font-medium truncate max-w-16 md:max-w-20 text-xs">
           {selectedModel?.label}
         </span>
         <ChevronDown
-          size={12}
-          className={`text-gray-400 flex-shrink-0 transition-transform duration-200 ${
+          size={10}
+          className={`md:w-3 md:h-3 text-gray-400 flex-shrink-0 transition-transform duration-200 ${
             isModelDropdownOpen ? "rotate-180" : ""
           }`}
         />
@@ -649,13 +698,13 @@ export function AgentInput({
               onClick={() => setIsModelDropdownOpen(false)}
             />
             <div
-              className={`${STYLES.modal} w-96 max-h-[80vh] flex flex-col`}
-              style={getModalPosition(buttonPositions.model, 400)}
+              className={`${STYLES.modal} w-[90vw] md:w-96 max-h-[80vh] flex flex-col`}
+              style={getModalPosition(buttonPositions.model, 384)}
             >
               {/* Header with Search */}
               <div className="p-3 border-b border-gray-700/50 bg-gray-800/30">
                 <div className="flex items-center gap-2 mb-2">
-                  <h3 className="text-sm font-medium text-white">
+                  <h3 className="text-xs md:text-sm font-medium text-white">
                     Select Model
                   </h3>
                   <div className="flex gap-1 ml-auto">
@@ -705,7 +754,7 @@ export function AgentInput({
                     {/* Provider Header */}
                     <div className="flex items-center gap-2 px-3 py-2 text-gray-400 bg-gray-800/30 sticky top-0">
                       <provider.icon size={14} className={provider.iconColor} />
-                      <span className="text-xs font-medium">
+                      <span className="text-xs md:text-sm font-medium">
                         {provider.name}
                       </span>
                     </div>
@@ -721,7 +770,7 @@ export function AgentInput({
                               onUpdate({ ...agent, model: model.value });
                               setIsModelDropdownOpen(false);
                             }}
-                            className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-700/50 ${
+                            className={`w-full px-3 py-2 text-left text-xs md:text-sm transition-colors hover:bg-gray-700/50 ${
                               isSelected
                                 ? "bg-lavender-500/10 text-lavender-400"
                                 : "text-white"
@@ -806,42 +855,92 @@ export function AgentInput({
   );
 
   return (
-    <div className="relative flex flex-col">
+    <div className="relative flex flex-col mx-2 mb-2 md:mb-0 md:mx-0 rounded-2xl border border-gray-600/50">
       {/* Header section */}
       <div
-        className={`${STYLES.card} border-b-0 rounded-t-2xl overflow-hidden`}
+        className={`${STYLES.card} border-none rounded-t-2xl overflow-hidden`}
       >
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-row md:items-center justify-between px-2 py-2 gap-1.5 md:gap-0">
+          <div className="flex flex-row md:items-center gap-2">
             {renderNameEditor()}
-            {renderConnectionSelector()}
-            {renderConditionalInput()}
+            {/* Left side controls */}
+            <div className="flex md:hidden items-center gap-2 flex-wrap">
+              {renderModelSelector()}
+
+              {/* Add Agent Button */}
+              {isLastAgent && canAddAgent && (
+                <button
+                  onClick={handleAddAgent}
+                  className={`flex items-center justify-center p-1.5 md:px-3 md:py-1.5 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-md text-lavender-400 hover:text-lavender-300 transition-all group backdrop-blur-sm ${
+                    isAddingAgent ? "scale-95 bg-lavender-500/40" : ""
+                  }`}
+                  title="Add Agent"
+                >
+                  <Plus
+                    size={12}
+                    className={`md:w-3.5 md:h-3.5 group-hover:scale-110 transition-transform ${
+                      isAddingAgent ? "rotate-90 scale-110" : ""
+                    }`}
+                  />
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col md:flex-row items-center gap-1.5 md:gap-2">
+              {/* Hide connection selector on mobile, show on desktop */}
+              <div className="hidden md:flex items-center gap-1.5 md:gap-2">
+                {renderConditionalInput()}
+              </div>
+            </div>
           </div>
           {canRemove && (
             <button
               onClick={onRemove}
-              className="text-gray-400 hover:text-red-400 transition-colors p-1 hover:bg-gray-700/50 rounded-md"
+              className="text-gray-400 hover:text-red-400 transition-colors p-1 hover:bg-gray-700/50 rounded-md self-end md:self-auto"
             >
-              <X size={14} />
+              <X size={12} className="md:w-3.5 md:h-3.5" />
             </button>
           )}
         </div>
       </div>
       <textarea
         value={agent.prompt}
-        onChange={(e) => onUpdate({ ...agent, prompt: e.target.value })}
+        onChange={(e) => {
+          onUpdate({ ...agent, prompt: e.target.value });
+          // Trigger resize on next frame to ensure the value has been updated
+          setTimeout(adjustTextareaHeight, 0);
+        }}
         placeholder="Ask anything"
-        className={`w-full px-4 h-auto min-h-16 max-h-48 ${STYLES.card} border-x border-t-0 border-b-0 text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 resize-none transition-all text-sm overflow-y-auto`}
+        className={`w-full px-2 md:px-4 h-auto min-h-10 md:min-h-16 max-h-32 md:max-h-64 ${STYLES.card} text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 resize-none transition-all text-sm overflow-y-auto`}
+        ref={textareaRef}
       />
 
       {/* Seamless input container */}
       <div
-        className={`relative h-full min-h-16 ${STYLES.card} border-t-0 rounded-b-2xl`}
+        className={`relative h-full min-h-10 md:min-h-16 ${STYLES.card} border-none rounded-b-2xl`}
       >
         {/* Bottom controls - absolutely positioned with gradient background */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center rounded-b-2xl justify-between px-4 py-3 overflow-hidden">
+        <div className="absolute bottom-0 left-0 right-0 flex flex-row md:items-center rounded-b-2xl justify-between px-2 md:px-4 py-1.5 md:py-3 overflow-hidden gap-1.5 md:gap-0">
+          <div className="block md:hidden">
+            {/* Modality Icons */}
+            <ModalityIcons
+              selectedModel={agent.model}
+              onImagesChange={(images) => onUpdate({ ...agent, images })}
+              onAudioRecording={(audioBlob, duration, transcription) =>
+                onUpdate({
+                  ...agent,
+                  audioBlob,
+                  audioDuration: duration,
+                  audioTranscription: transcription,
+                })
+              }
+              onWebSearch={(webSearchData) =>
+                onUpdate({ ...agent, webSearchData })
+              }
+              images={agent.images || []}
+            />
+          </div>
           {/* Left side controls */}
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-1.5 md:gap-2 flex-wrap">
             {renderModelSelector()}
             {/* Modality Icons */}
             <ModalityIcons
@@ -864,14 +963,14 @@ export function AgentInput({
             {isLastAgent && canAddAgent && (
               <button
                 onClick={handleAddAgent}
-                className={`flex items-center justify-center px-3 py-1.5 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-md text-lavender-400 hover:text-lavender-300 transition-all group backdrop-blur-sm ${
+                className={`flex items-center justify-center px-1.5 md:px-3 py-1 md:py-1.5 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-md text-lavender-400 hover:text-lavender-300 transition-all group backdrop-blur-sm ${
                   isAddingAgent ? "scale-95 bg-lavender-500/40" : ""
                 }`}
                 title="Add Agent"
               >
                 <Plus
-                  size={14}
-                  className={`group-hover:scale-110 transition-transform ${
+                  size={12}
+                  className={`md:w-3.5 md:h-3.5 group-hover:scale-110 transition-transform ${
                     isAddingAgent ? "rotate-90 scale-110" : ""
                   }`}
                 />
@@ -884,19 +983,22 @@ export function AgentInput({
             <button
               onClick={onSendChain}
               disabled={!canSend}
-              className="flex items-center gap-2 px-3 py-1.5 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 rounded-md font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm"
+              className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 whitespace-nowrap rounded-lg font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm w-min justify-center"
             >
-              {isLoading ? "Running..." : "Run Chain"}
+              <span className="truncate">
+                {isLoading ? "Running..." : "Run Chain"}
+              </span>
 
               <svg
-                width="14"
-                height="14"
+                width="12"
+                height="12"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                className="md:w-3.5 md:h-3.5 flex-shrink-0"
               >
                 <path d="m22 2-7 20-4-9-9-4Z" />
                 <path d="M22 2 11 13" />

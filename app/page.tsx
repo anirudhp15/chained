@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Zap,
@@ -31,6 +32,10 @@ import {
   Shuffle,
   Timer,
   CheckCircle,
+  Linkedin,
+  Instagram,
+  Twitter,
+  XIcon,
 } from "lucide-react";
 import Video from "next-video";
 
@@ -65,7 +70,7 @@ const FEATURE_DETAILS: FeatureDetail[] = [
     icon: GitCommit,
     gradient: "from-lavender-500 to-purple-500",
     delay: "delay-200",
-    videoPlaceholder: "Sequential Chain Demo",
+    videoPlaceholder: "images/sequential_chains.jpg",
     detailedDescription:
       "Build powerful workflows by connecting AI models in sequence, where each model processes and refines the output from the previous one. Perfect for complex tasks requiring multiple stages of analysis, refinement, and formatting.",
     useCases: [
@@ -113,7 +118,7 @@ const FEATURE_DETAILS: FeatureDetail[] = [
     icon: GitBranch,
     gradient: "from-blue-500 to-cyan-500",
     delay: "delay-400",
-    videoPlaceholder: "Conditional Branching Demo",
+    videoPlaceholder: "images/conditional_logic.jpg",
     detailedDescription:
       "Create intelligent workflows that adapt based on previous outputs. Set conditions that determine which path your data takes, enabling smart decision-making and personalized processing flows.",
     useCases: [
@@ -164,7 +169,7 @@ const FEATURE_DETAILS: FeatureDetail[] = [
     icon: GitFork,
     gradient: "from-purple-500 to-pink-500",
     delay: "delay-600",
-    videoPlaceholder: "Parallel Processing Demo",
+    videoPlaceholder: "images/parallel_processing.jpg",
     detailedDescription:
       "Execute multiple AI models simultaneously to process the same input from different angles, then intelligently combine their outputs for comprehensive results that leverage the strengths of each model.",
     useCases: [
@@ -264,7 +269,7 @@ const FEATURE_DETAILS: FeatureDetail[] = [
     icon: GitPullRequest,
     gradient: "from-orange-500 to-red-500",
     delay: "delay-1000",
-    videoPlaceholder: "Custom Agents Demo",
+    videoPlaceholder: "images/custom_agents.jpg",
     detailedDescription:
       "Design custom AI agents with specific personalities, expertise areas, and behavioral patterns. Each agent can be fine-tuned for particular domains, ensuring consistent, specialized performance across your workflows.",
     useCases: [
@@ -315,7 +320,7 @@ const FEATURE_DETAILS: FeatureDetail[] = [
     icon: Database,
     gradient: "from-indigo-500 to-purple-500",
     delay: "delay-1200",
-    videoPlaceholder: "Template Library Demo",
+    videoPlaceholder: "images/template_library.jpg",
     detailedDescription:
       "Jump-start your AI workflows with our curated library of proven templates. Each template is designed for specific use cases and can be easily customized to match your unique requirements and processes.",
     useCases: [
@@ -355,6 +360,237 @@ const FEATURE_DETAILS: FeatureDetail[] = [
   },
 ];
 
+// Animated Background Component
+const AnimatedBackground = () => {
+  const particles = Array.from({ length: 50 }, (_, i) => i);
+  const geometricShapes = Array.from({ length: 8 }, (_, i) => i);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Morphing Gradient Orbs */}
+      <motion.div
+        className="absolute w-[800px] h-[800px] rounded-full opacity-30"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(147,112,219,0.4) 0%, rgba(138,43,226,0.2) 50%, transparent 100%)",
+        }}
+        animate={{
+          x: [-100, 100, -100],
+          y: [-50, 50, -50],
+          scale: [1, 1.2, 1],
+          rotate: [0, 180, 360],
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        initial={{ x: -200, y: -200 }}
+      />
+
+      <motion.div
+        className="absolute w-[600px] h-[600px] rounded-full opacity-20"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(64,224,208,0.3) 0%, rgba(0,255,127,0.1) 50%, transparent 100%)",
+        }}
+        animate={{
+          x: [200, -200, 200],
+          y: [100, -100, 100],
+          scale: [1.2, 0.8, 1.2],
+          rotate: [360, 180, 0],
+        }}
+        transition={{
+          duration: 25,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        initial={{
+          x: window?.innerWidth || 1200,
+          y: window?.innerHeight || 800,
+        }}
+      />
+
+      <motion.div
+        className="absolute w-[400px] h-[400px] rounded-full opacity-25"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(255,20,147,0.2) 0%, rgba(138,43,226,0.1) 50%, transparent 100%)",
+        }}
+        animate={{
+          x: [0, 300, -300, 0],
+          y: [0, -200, 200, 0],
+          scale: [0.8, 1.5, 0.8],
+        }}
+        transition={{
+          duration: 30,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        initial={{ x: 400, y: 300 }}
+      />
+
+      {/* Floating Particles */}
+      {particles.map((particle) => (
+        <motion.div
+          key={particle}
+          className="absolute w-1 h-1 bg-lavender-400/30 rounded-full"
+          animate={{
+            y: [-20, -100, -20],
+            x: [
+              Math.random() * 50 - 25,
+              Math.random() * 100 - 50,
+              Math.random() * 50 - 25,
+            ],
+            opacity: [0, 1, 0],
+            scale: [0, 1, 0],
+          }}
+          transition={{
+            duration: Math.random() * 10 + 10,
+            repeat: Infinity,
+            delay: Math.random() * 5,
+            ease: "easeOut",
+          }}
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+        />
+      ))}
+
+      {/* Geometric Shapes */}
+      {geometricShapes.map((shape) => (
+        <motion.div
+          key={shape}
+          className="absolute border border-lavender-400/10"
+          style={{
+            width: Math.random() * 100 + 50,
+            height: Math.random() * 100 + 50,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            borderRadius: Math.random() > 0.5 ? "50%" : "0%",
+          }}
+          animate={{
+            rotate: [0, 360],
+            scale: [1, 1.2, 1],
+            opacity: [0.1, 0.3, 0.1],
+          }}
+          transition={{
+            duration: Math.random() * 20 + 15,
+            repeat: Infinity,
+            ease: "linear",
+            delay: Math.random() * 5,
+          }}
+        />
+      ))}
+
+      {/* Flowing Lines */}
+      <svg className="absolute inset-0 w-full h-full">
+        <defs>
+          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="rgba(147,112,219,0.1)" />
+            <stop offset="50%" stopColor="rgba(64,224,208,0.2)" />
+            <stop offset="100%" stopColor="rgba(147,112,219,0.1)" />
+          </linearGradient>
+        </defs>
+        {Array.from({ length: 6 }, (_, i) => (
+          <motion.path
+            key={i}
+            d={`M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`}
+            stroke="url(#lineGradient)"
+            strokeWidth="1"
+            fill="none"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{
+              pathLength: [0, 1, 0],
+              opacity: [0, 0.5, 0],
+              d: [
+                `M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`,
+                `M${Math.random() * 200 + 100},${Math.random() * 200 + 100} Q${Math.random() * 400 + 300},${Math.random() * 400 + 300} ${Math.random() * 200 + 700},${Math.random() * 200 + 500}`,
+                `M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`,
+              ],
+            }}
+            transition={{
+              duration: Math.random() * 15 + 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 2,
+            }}
+          />
+        ))}
+      </svg>
+
+      {/* Neural Network Pattern */}
+      <motion.div
+        className="absolute inset-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 0.1, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <svg className="w-full h-full">
+          {Array.from({ length: 20 }, (_, i) => (
+            <g key={i}>
+              <motion.circle
+                cx={`${(i % 5) * 25 + 10}%`}
+                cy={`${Math.floor(i / 5) * 25 + 10}%`}
+                r="2"
+                fill="rgba(147,112,219,0.3)"
+                animate={{
+                  r: [1, 3, 1],
+                  opacity: [0.2, 0.6, 0.2],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                }}
+              />
+              {i < 19 && (
+                <motion.line
+                  x1={`${(i % 5) * 25 + 10}%`}
+                  y1={`${Math.floor(i / 5) * 25 + 10}%`}
+                  x2={`${((i + 1) % 5) * 25 + 10}%`}
+                  y2={`${Math.floor((i + 1) / 5) * 25 + 10}%`}
+                  stroke="rgba(147,112,219,0.1)"
+                  strokeWidth="0.5"
+                  animate={{
+                    opacity: [0, 0.3, 0],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    delay: i * 0.3,
+                  }}
+                />
+              )}
+            </g>
+          ))}
+        </svg>
+      </motion.div>
+
+      {/* Subtle Grid Animation */}
+      <motion.div
+        className="absolute inset-0 opacity-5"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(147,112,219,0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(147,112,219,0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: "60px 60px",
+        }}
+        animate={{
+          backgroundPosition: ["0px 0px", "60px 60px", "0px 0px"],
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+      />
+    </div>
+  );
+};
+
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -384,21 +620,14 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-purple-600/20 to-lavender-600/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-lavender-500/5 to-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-gradient-radial from-emerald-400/50 to-lavender-500/50 rounded-full blur-2xl"></div>
-
-        {/* Animated grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(147,112,219,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(147,112,219,0.03)_1px,transparent_1px)] bg-[size:50px_50px] animate-pulse"></div>
-      </div>
+      <AnimatedBackground />
 
       {/* Navigation */}
       <nav className="relative z-50 px-4 sm:px-6 py-4 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800/50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2 group">
             <div className="relative">
-              <Link2 className="h-6 w-6 text-lavender-400 group-hover:text-lavender-300 transition-colors duration-300 hover:" />
+              <Link2 className="h-6 w-6 text-lavender-400 group-hover:text-lavender-300 transition-all duration-200 group-hover:-rotate-45" />
               <div className="absolute inset-0 bg-lavender-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
             <span className="text-xl font-bold text-white group-hover:text-lavender-300 transition-colors duration-300">
@@ -508,7 +737,7 @@ export default function LandingPage() {
               Build Powerful
               <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-lavender-400 via-purple-400 to-lavender-500 relative">
-                AI Workflows
+                AI Chains
                 <div className="absolute inset-0 bg-gradient-to-r from-lavender-400/20 via-purple-400/20 to-lavender-500/20 blur-2xl"></div>
               </span>
             </h1>
@@ -521,82 +750,35 @@ export default function LandingPage() {
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-600">
+            <div className="flex flex-row gap-4 justify-center mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-600">
               <Link
                 href="/chat"
-                className="group inline-flex items-center justify-center bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 shadow-2xl hover:shadow-lavender-500/25 relative overflow-hidden"
+                className="group inline-flex items-center justify-center bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white lg:px-8 lg:py-4 px-4 py-2 rounded-xl text-sm lg:text-lg font-medium transition-all duration-300 shadow-2xl hover:shadow-lavender-500/25 relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                 <Zap className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
-                Start Building Free
+                Start Free
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
 
-              <button className="group inline-flex items-center justify-center bg-gray-900/50 hover:bg-gray-800/50 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 border border-gray-700/50 hover:border-lavender-500/50">
+              <button className="group inline-flex items-center justify-center bg-gray-900/50 hover:bg-gray-800/50 text-white lg:px-8 lg:py-4 px-4 py-2 rounded-xl font-medium transition-all duration-300 border border-gray-700/50 hover:border-lavender-500/50 text-sm lg:text-lg">
                 <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
                 Watch Demo
               </button>
             </div>
 
-            {/* Chain Interface Preview - Cinematic Showcase */}
-            <div className="relative max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-800">
-              {/* Ambient glow effects */}
-              <div className="absolute inset-0 -m-8">
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-r from-lavender-500/10 via-purple-500/5 to-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-r from-emerald-400/8 via-lavender-400/8 to-purple-400/8 rounded-full blur-2xl animate-pulse delay-1000"></div>
+            {/* Chain Interface Preview */}
+            <div className="relative max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
+              <div className="bg-gray-800/50 p-1 rounded-2xl overflow-hidden">
+                <Video
+                  src="/videos/chained_demo.mp4"
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  className="w-full h-auto rounded-xl opacity-90 hover:opacity-100 transition-opacity duration-300"
+                />
               </div>
-
-              {/* Glass morphism container */}
-              <div className="relative bg-gradient-to-br from-gray-900/40 via-gray-800/30 to-gray-900/40 backdrop-blur-2xl border border-gray-700/30 rounded-3xl p-2 shadow-2xl">
-                {/* Inner glow border */}
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-lavender-500/20 via-transparent to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-sm"></div>
-
-                {/* Video container with sophisticated framing */}
-                <div className="relative group overflow-hidden rounded-2xl bg-gradient-to-br from-gray-950/50 to-gray-900/50">
-                  {/* Subtle inner shadow for depth */}
-                  <div className="absolute inset-0 rounded-2xl shadow-inner shadow-black/20"></div>
-
-                  {/* Video with cinematic aspect ratio */}
-                  <div className="relative aspect-[16/10] overflow-hidden rounded-2xl">
-                    <Video
-                      src="/videos/chained_demo.mp4"
-                      controls
-                      autoPlay
-                      muted
-                      loop
-                      className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-[1.02] filter group-hover:brightness-110 group-hover:contrast-105"
-                    />
-
-                    {/* Subtle vignette overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/5 via-transparent to-black/5 pointer-events-none"></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-black/5 pointer-events-none"></div>
-                  </div>
-
-                  {/* Floating UI elements */}
-                  <div className="absolute top-4 left-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-200">
-                    <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
-                    <span className="text-xs font-medium text-white/80 bg-black/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                      Live Demo
-                    </span>
-                  </div>
-
-                  {/* Elegant corner accents */}
-                  <div className="absolute top-0 left-0 w-16 h-16 border-l-2 border-t-2 border-lavender-400/30 rounded-tl-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <div className="absolute top-0 right-0 w-16 h-16 border-r-2 border-t-2 border-emerald-400/30 rounded-tr-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100"></div>
-                  <div className="absolute bottom-0 left-0 w-16 h-16 border-l-2 border-b-2 border-purple-400/30 rounded-bl-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-200"></div>
-                  <div className="absolute bottom-0 right-0 w-16 h-16 border-r-2 border-b-2 border-lavender-400/30 rounded-br-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-300"></div>
-                </div>
-
-                {/* Floating particles effect */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl">
-                  <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-lavender-400/40 rounded-full animate-ping delay-1000"></div>
-                  <div className="absolute top-3/4 right-1/3 w-1 h-1 bg-emerald-400/40 rounded-full animate-ping delay-2000"></div>
-                  <div className="absolute bottom-1/4 left-2/3 w-1 h-1 bg-purple-400/40 rounded-full animate-ping delay-3000"></div>
-                </div>
-              </div>
-
-              {/* Reflection effect */}
-              <div className="absolute inset-x-0 -bottom-32 h-32 bg-gradient-to-t from-transparent via-gray-900/5 to-transparent transform scale-y-[-1] opacity-20 blur-sm"></div>
             </div>
           </div>
         </div>
@@ -703,7 +885,7 @@ export default function LandingPage() {
                       {featureDetail.title}
                     </h3>
                     <p className="text-sm text-gray-400">
-                      Advanced AI Workflow Feature
+                      {featureDetail.detailedDescription}
                     </p>
                   </div>
                 </div>
@@ -717,20 +899,11 @@ export default function LandingPage() {
 
               {/* Content */}
               <div className="p-6 space-y-8">
-                {/* Description */}
-                <div
-                  className="animate-in fade-in slide-in-from-top-2 duration-400 ease-out"
-                  style={{ animationDelay: "0.2s", animationFillMode: "both" }}
-                >
-                  <p className="text-gray-300 leading-relaxed text-lg">
-                    {featureDetail.detailedDescription}
-                  </p>
-                </div>
                 {/* Image Placeholder */}
                 <img
                   src={featureDetail.videoPlaceholder}
                   alt={featureDetail.title}
-                  className="w-full h-auto rounded-2xl"
+                  className="w-full h-auto rounded-2xl border-2 opacity-80 border-gray-700/75"
                   style={{ maxWidth: "100%", height: "auto" }}
                 />
 
@@ -877,37 +1050,16 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Demo Video - Cinematic Treatment */}
-            <div className="relative animate-in fade-in slide-in-from-right-8 duration-1000 delay-300">
-              {/* Ambient glow for demo video */}
-              <div className="absolute inset-0 -m-4">
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-gradient-to-r from-emerald-500/8 via-lavender-500/5 to-purple-500/8 rounded-full blur-2xl animate-pulse delay-500"></div>
-              </div>
-
-              {/* Glass morphism container */}
-              <div className="relative bg-gradient-to-br from-gray-900/30 via-gray-800/20 to-gray-900/30 backdrop-blur-xl border border-gray-700/20 rounded-2xl p-1.5 shadow-xl">
-                {/* Video container */}
-                <div className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-gray-950/40 to-gray-900/40">
-                  {/* Video with aspect ratio */}
-                  <div className="relative aspect-video overflow-hidden rounded-xl">
-                    <Video
-                      src="/videos/chained_demo.mp4"
-                      controls
-                      autoPlay
-                      muted
-                      loop
-                      className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.01] filter group-hover:brightness-105"
-                    />
-
-                    {/* Subtle overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-black/3 pointer-events-none"></div>
-                  </div>
-
-                  {/* Minimal corner accents */}
-                  <div className="absolute top-0 left-0 w-8 h-8 border-l border-t border-lavender-400/20 rounded-tl-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="absolute bottom-0 right-0 w-8 h-8 border-r border-b border-emerald-400/20 rounded-br-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100"></div>
-                </div>
-              </div>
+            {/* Demo Video Placeholder */}
+            <div className="relative rounded-xl animate-in fade-in slide-in-from-right-8 duration-700 delay-300">
+              <Video
+                src="/videos/chained_demo.mp4"
+                controls
+                autoPlay
+                muted
+                loop
+                className="w-full h-auto rounded-xl opacity-90 hover:opacity-100 transition-opacity duration-300"
+              />
             </div>
           </div>
         </div>
@@ -1057,12 +1209,15 @@ export default function LandingPage() {
                 together for enhanced results.
               </p>
               <div className="flex space-x-4">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="w-10 h-10 bg-gray-800/50 hover:bg-gray-700/50 rounded-full transition-colors duration-300 cursor-pointer"
-                  ></div>
-                ))}
+                <Link href="https://www.linkedin.com/company/chained-ai">
+                  <Linkedin className="h-6 w-6 text-lavender-400" />
+                </Link>
+                <Link href="https://www.x.com/chained_ai">
+                  <XIcon className="h-6 w-6 text-lavender-400" />
+                </Link>
+                <Link href="https://www.instagram.com/chained_ai">
+                  <Instagram className="h-6 w-6 text-lavender-400" />
+                </Link>
               </div>
             </div>
 
