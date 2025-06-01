@@ -280,7 +280,7 @@ const MODEL_PROVIDERS: ModelProviders = {
 
 // Style constants
 const STYLES = {
-  card: "bg-gray-700/50 backdrop-blur-sm border border-gray-600/50",
+  card: "bg-gray-700/70 backdrop-blur-sm border border-gray-600/50",
   button:
     "bg-gray-800/90 border border-gray-600/50 text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 transition-all text-xs backdrop-blur-sm",
   modal:

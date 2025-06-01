@@ -12,13 +12,16 @@ import { SignInButton } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
 import { Sidebar } from "../../components/sidebar";
 import { WelcomeScreen } from "../../components/welcome-screen";
-import { InputArea } from "../../components/input-area";
+import { InputAreaContainer } from "@/components/input-area-container";
 import type { Agent } from "../../components/agent-input";
 
 function ChatLandingContent() {
   const router = useRouter();
   const createSession = useMutation(api.mutations.createSession);
   const [presetAgents, setPresetAgents] = useState<Agent[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [queuedAgents, setQueuedAgents] = useState<Agent[]>([]);
 
   const handleLoadPreset = async (agents: Agent[]) => {
     try {
@@ -70,15 +73,15 @@ function ChatLandingContent() {
           </div>
         )}
 
-        {/* Input Area - always visible at the bottom */}
-        <InputArea
+        {/* Input Area */}
+        <InputAreaContainer
+          mode="initial"
           onSendChain={handleSendChain}
-          isLoading={false}
-          isStreaming={false}
-          queuedAgents={[]}
-          focusedAgentIndex={null}
           presetAgents={presetAgents}
           onClearPresetAgents={handleClearPresetAgents}
+          isLoading={isLoading}
+          isStreaming={isStreaming}
+          queuedAgents={queuedAgents}
         />
       </div>
     </div>

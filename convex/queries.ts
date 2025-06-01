@@ -162,7 +162,7 @@ export const getAgentStep = query({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
-      return null;
+      throw new Error("Not authenticated");
     }
 
     const user = await ctx.db
@@ -173,15 +173,20 @@ export const getAgentStep = query({
       .first();
 
     if (!user) {
+      throw new Error("User not found");
+    }
+
+    const agentStep = await ctx.db.get(args.stepId);
+    if (!agentStep) {
       return null;
     }
 
-    const step = await ctx.db.get(args.stepId);
-    if (!step || step.userId !== user._id) {
-      return null; // Step not found or access denied
+    // Verify user owns the agent step
+    if (agentStep.userId !== user._id) {
+      throw new Error("Agent step not found or unauthorized");
     }
 
-    return step;
+    return agentStep;
   },
 });
 
@@ -376,5 +381,111 @@ export const getUserStats = query({
         0
       ),
     };
+  },
+});
+
+// Get supervisor turns for a session
+export const getSupervisorTurns = query({
+  args: {
+    sessionId: v.id("chatSessions"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .first();
+
+    if (!user) {
+      return [];
+    }
+
+    // Verify user owns the session
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id) {
+      return []; // Session not found or access denied
+    }
+
+    return await ctx.db
+      .query("supervisorTurns")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .order("asc")
+      .collect();
+  },
+});
+
+// Get latest supervisor turn for a session (for streaming)
+export const getLatestSupervisorTurn = query({
+  args: { sessionId: v.id("chatSessions") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id) {
+      throw new Error("Session not found or unauthorized");
+    }
+
+    return await ctx.db
+      .query("supervisorTurns")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .order("desc")
+      .first();
+  },
+});
+
+// Get agent conversation history
+export const getAgentConversationHistory = query({
+  args: {
+    sessionId: v.id("chatSessions"),
+    agentIndex: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id) {
+      throw new Error("Session not found or unauthorized");
+    }
+
+    return await ctx.db
+      .query("agentConversations")
+      .withIndex("by_session_agent", (q) =>
+        q.eq("sessionId", args.sessionId).eq("agentIndex", args.agentIndex)
+      )
+      .first();
   },
 });

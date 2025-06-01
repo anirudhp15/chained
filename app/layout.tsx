@@ -1,19 +1,7 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
 import { ConvexProvider } from "./convex-provider";
 import { MathJaxContext } from "better-react-mathjax";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
 
 // MathJax configuration for the entire app
 const mathJaxConfig = {
@@ -139,9 +127,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-gray-950">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-950 min-h-screen overflow-x-hidden`}
-      >
+      <body className="antialiased bg-gray-950 min-h-screen overflow-x-hidden font-sans">
         <MathJaxContext config={mathJaxConfig}>
           <ConvexProvider>
             <div className="min-h-screen bg-gray-950">{children}</div>

@@ -433,7 +433,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                   <button
                     key={theme.title}
                     onClick={() => handleCategoryClick(theme.title)}
-                    className="flex items-center gap-3 px-6 py-3 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-full text-lavender-400 hover:text-lavender-300 transition-all duration-200 group backdrop-blur-sm hover:scale-105 animate-in fade-in slide-in-from-bottom-4 ease-out"
+                    className="flex items-center gap-3 px-6 py-3 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-full hover:text-lavender-400  text-gray-300 transition-all duration-200 group backdrop-blur-sm hover:scale-105 animate-in fade-in slide-in-from-bottom-4 ease-out"
                     style={{
                       animationDelay: `${0.5 + index * 0.1}s`,
                       animationDuration: "0.6s",
@@ -441,10 +441,10 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                     }}
                   >
                     <theme.icon
-                      size={20}
+                      size={16}
                       className={`${theme.iconColor} group-hover:scale-110 transition-transform duration-200`}
                     />
-                    <span className="font-medium">{theme.title}</span>
+                    <span className="font-medium text-sm">{theme.title}</span>
                   </button>
                 ))}
               </div>

@@ -173,7 +173,7 @@ export function Sidebar({ currentSessionId, onLoadPreset }: SidebarProps) {
             // Expanded state - full header
             <div className="p-4 w-full flex items-center justify-between">
               <Link href="/">
-                <h1 className="text-xl font-bold text-white flex items-center hover:text-lavender-300 transition-colors duration-200">
+                <h1 className="text-xl font-normal text-white flex items-center hover:text-lavender-300 transition-colors duration-200">
                   <span
                     className="mx-1 text-lavender-400 transition-transform duration-200 hover:scale-110"
                     onMouseEnter={() => setIsLinkHovered(true)}

@@ -60,7 +60,8 @@ export default defineSchema({
         v.literal("direct"),
         v.literal("conditional"),
         v.literal("parallel"),
-        v.literal("collaborative")
+        v.literal("collaborative"),
+        v.literal("supervisor")
       )
     ),
     connectionCondition: v.optional(v.string()), // For conditional logic
@@ -100,6 +101,52 @@ export default defineSchema({
   })
     .index("by_session", ["sessionId", "index"])
     .index("by_user", ["userId"])
+    .index("by_user_session", ["userId", "sessionId"]),
+
+  // Supervisor conversation turns
+  supervisorTurns: defineTable({
+    sessionId: v.id("chatSessions"),
+    userId: v.id("users"), // Direct user association for easier querying
+    userInput: v.string(),
+    supervisorResponse: v.string(),
+    parsedMentions: v.optional(
+      v.array(
+        v.object({
+          agentIndex: v.number(),
+          agentName: v.string(),
+          taskPrompt: v.string(),
+        })
+      )
+    ),
+    executedStepIds: v.optional(v.array(v.id("agentSteps"))),
+    timestamp: v.number(),
+    isComplete: v.boolean(),
+    isStreaming: v.optional(v.boolean()),
+    error: v.optional(v.string()),
+    streamedContent: v.optional(v.string()), // For partial streaming content
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_user", ["userId"])
+    .index("by_user_session", ["userId", "sessionId"]),
+
+  // Agent conversation history (separate from visible agent steps)
+  agentConversations: defineTable({
+    sessionId: v.id("chatSessions"),
+    userId: v.id("users"),
+    agentIndex: v.number(),
+    conversationHistory: v.array(
+      v.object({
+        userPrompt: v.string(), // User-facing task description
+        agentResponse: v.string(), // Agent's response
+        timestamp: v.number(),
+        triggeredBy: v.optional(v.string()), // "user" | "supervisor"
+      })
+    ),
+    lastUpdated: v.number(),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_user", ["userId"])
+    .index("by_session_agent", ["sessionId", "agentIndex"])
     .index("by_user_session", ["userId", "sessionId"]),
 
   // File attachments associated with users and sessions

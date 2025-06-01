@@ -1,0 +1,102 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { InitialChainInput } from "./initial-chain-input";
+import { FocusedAgentInput } from "./focused-agent-input";
+import { SupervisorChatInput } from "./supervisor-chat-input";
+import type { Agent } from "./agent-input";
+import type { Id } from "../convex/_generated/dataModel";
+
+export type InputMode = "initial" | "focused" | "supervisor";
+
+interface InputAreaContainerProps {
+  mode: InputMode;
+  sessionId?: Id<"chatSessions"> | null;
+
+  // Initial chain mode props
+  onSendChain?: (agents: Agent[]) => void;
+  presetAgents?: Agent[] | null;
+  onClearPresetAgents?: () => void;
+
+  // Focused agent mode props
+  focusedAgentIndex?: number | null;
+  focusedAgent?: Agent | null;
+  onSendFocusedAgent?: (agent: Agent) => void;
+
+  // Supervisor mode props
+  onSupervisorSend?: (message: string) => void;
+  onSupervisorTyping?: (isTyping: boolean) => void;
+  agentSteps?: any[]; // For supervisor mode
+
+  // Common props
+  isLoading?: boolean;
+  isStreaming?: boolean;
+  queuedAgents?: Agent[];
+}
+
+export function InputAreaContainer({
+  mode,
+  sessionId,
+  onSendChain,
+  presetAgents,
+  onClearPresetAgents,
+  focusedAgentIndex,
+  focusedAgent,
+  onSendFocusedAgent,
+  onSupervisorSend,
+  onSupervisorTyping,
+  agentSteps = [],
+  isLoading = false,
+  isStreaming = false,
+  queuedAgents = [],
+}: InputAreaContainerProps) {
+  // Render the appropriate input component based on mode
+  switch (mode) {
+    case "initial":
+      return (
+        <InitialChainInput
+          onSendChain={onSendChain!}
+          isLoading={isLoading}
+          isStreaming={isStreaming}
+          queuedAgents={queuedAgents}
+          presetAgents={presetAgents}
+          onClearPresetAgents={onClearPresetAgents}
+        />
+      );
+
+    case "focused":
+      if (
+        focusedAgentIndex === null ||
+        focusedAgentIndex === undefined ||
+        !focusedAgent
+      ) {
+        return null;
+      }
+      return (
+        <FocusedAgentInput
+          focusedAgentIndex={focusedAgentIndex}
+          focusedAgent={focusedAgent}
+          onSendFocusedAgent={onSendFocusedAgent!}
+          isLoading={isLoading}
+          isStreaming={isStreaming}
+        />
+      );
+
+    case "supervisor":
+      if (!sessionId || !onSupervisorSend) {
+        return null;
+      }
+      return (
+        <SupervisorChatInput
+          sessionId={sessionId}
+          agentSteps={agentSteps}
+          onSupervisorSend={onSupervisorSend}
+          onSupervisorTyping={onSupervisorTyping}
+          isLoading={isLoading}
+        />
+      );
+
+    default:
+      return null;
+  }
+}

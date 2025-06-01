@@ -14,9 +14,16 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Sidebar } from "../../../components/sidebar";
 import { ChatArea } from "../../../components/chat-area";
-import { InputArea } from "../../../components/input-area";
+import {
+  InputAreaContainer,
+  type InputMode,
+} from "../../../components/input-area-container";
+import { SupervisorConversation } from "../../../components/supervisor-conversation";
 import type { Agent } from "../../../components/agent-input";
 import { evaluateCondition } from "../../../lib/condition-evaluator";
+import { SupervisorModal } from "@/components/supervisor-modal";
+import Link from "next/link";
+import { ArrowLeft, Bot, MessageSquare } from "lucide-react";
 
 function ChatPageContent() {
   const params = useParams();
@@ -32,6 +39,26 @@ function ChatPageContent() {
   const [presetAgents, setPresetAgents] = useState<Agent[] | null>(null);
   const [isValidSession, setIsValidSession] = useState<boolean | null>(null);
 
+  // Supervisor mode state
+  const [inputMode, setInputMode] = useState<
+    "initial" | "focused" | "supervisor"
+  >("initial");
+  const [supervisorStreaming, setSupervisorStreaming] = useState(false);
+
+  // Supervisor modal state
+  const [supervisorModalOpen, setSupervisorModalOpen] = useState(false);
+  const [supervisorModalFullscreen, setSupervisorModalFullscreen] =
+    useState(false);
+  const [supervisorTyping, setSupervisorTyping] = useState(false);
+  const [supervisorStatus, setSupervisorStatus] = useState<
+    "idle" | "thinking" | "orchestrating" | "ready"
+  >("idle");
+
+  // Add supervisor streaming content state
+  const [supervisorStreamContent, setSupervisorStreamContent] = useState<{
+    [turnId: string]: string;
+  }>({});
+
   const createSession = useMutation(api.mutations.createSession);
   const addAgentStep = useMutation(api.mutations.addAgentStep);
   const updateAgentSkipped = useMutation(api.mutations.updateAgentSkipped);
@@ -46,6 +73,14 @@ function ChatPageContent() {
   const agentSteps = useQuery(
     api.queries.getAgentSteps,
     chainId && isValidSession
+      ? { sessionId: chainId as Id<"chatSessions"> }
+      : "skip"
+  );
+
+  // Get supervisor turns for supervisor mode
+  const supervisorTurns = useQuery(
+    api.queries.getSupervisorTurns,
+    chainId && isValidSession && inputMode === "supervisor"
       ? { sessionId: chainId as Id<"chatSessions"> }
       : "skip"
   );
@@ -70,6 +105,28 @@ function ChatPageContent() {
       router.push("/chat");
     }
   }, [isValidSession, router]);
+
+  // Determine current input mode based on state
+  useEffect(() => {
+    if (focusedAgentIndex !== null) {
+      setInputMode("focused");
+    } else if (agentSteps && agentSteps.length > 0) {
+      // Switch to supervisor mode immediately when there are agent steps
+      if (inputMode !== "supervisor") {
+        setInputMode("supervisor");
+        // Set status based on whether chain is complete
+        const allCompleted = agentSteps.every(
+          (step) => step.isComplete || step.wasSkipped
+        );
+        setSupervisorStatus(allCompleted ? "ready" : "orchestrating");
+      }
+    } else {
+      // No agent steps, stay in initial mode
+      if (inputMode !== "initial") {
+        setInputMode("initial");
+      }
+    }
+  }, [focusedAgentIndex, agentSteps, inputMode]);
 
   // Check for preset agents from localStorage
   useEffect(() => {
@@ -105,7 +162,8 @@ function ChatPageContent() {
   }, [isValidSession, chainId]);
 
   // Check if any agent is currently streaming
-  const isStreaming = agentSteps?.some((step) => step.isStreaming) || false;
+  const isStreaming =
+    agentSteps?.some((step) => step.isStreaming) || supervisorStreaming;
 
   const handleFocusAgent = (agentIndex: number | null) => {
     setFocusedAgentIndex(agentIndex);
@@ -169,6 +227,129 @@ function ChatPageContent() {
     } else {
       await runChain(chainId as Id<"chatSessions">, agents);
     }
+  };
+
+  const handleSupervisorSend = async (message: string) => {
+    if (!chainId || !message.trim()) return;
+
+    setSupervisorTyping(false);
+    setSupervisorStatus("thinking");
+
+    try {
+      const response = await fetch("/api/supervisor-interact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sessionId: chainId,
+          userInput: message.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send supervisor message");
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No response stream");
+      }
+
+      let currentTurnId: string | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = new TextDecoder().decode(value);
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              switch (data.type) {
+                case "supervisor_turn_start":
+                  currentTurnId = data.turnId;
+                  setSupervisorStreamContent((prev) => ({
+                    ...prev,
+                    [data.turnId]: "",
+                  }));
+                  setSupervisorStatus("thinking");
+                  break;
+
+                case "supervisor_chunk":
+                  if (currentTurnId) {
+                    setSupervisorStreamContent((prev) => ({
+                      ...prev,
+                      [currentTurnId!]:
+                        (prev[currentTurnId!] || "") + data.content,
+                    }));
+                  }
+                  setSupervisorStatus("thinking");
+                  break;
+
+                case "mention_execution_start":
+                  setSupervisorStatus("orchestrating");
+                  break;
+
+                case "agent_execution_internal":
+                  // Option A: Log internal agent execution but don't show to user
+                  console.log(
+                    "Agent executing internally:",
+                    data.agentName,
+                    "at index",
+                    data.agentIndex
+                  );
+                  break;
+
+                case "agent_execution_complete":
+                  // Keep orchestrating status until all agents complete
+                  console.log(
+                    "Agent completed:",
+                    data.agentName,
+                    "Preview:",
+                    data.responsePreview
+                  );
+                  break;
+
+                case "supervisor_complete":
+                case "complete":
+                  setSupervisorStatus("ready");
+                  // Clear streaming content for this turn since it's now persisted
+                  if (currentTurnId) {
+                    setSupervisorStreamContent((prev) => {
+                      const newState = { ...prev };
+                      delete newState[currentTurnId!];
+                      return newState;
+                    });
+                  }
+                  break;
+
+                case "error":
+                  setSupervisorStatus("ready");
+                  console.error("Supervisor error:", data.error);
+                  break;
+
+                default:
+                  console.log("Unhandled supervisor event:", data.type, data);
+              }
+            } catch (e) {
+              console.error("Error parsing supervisor stream:", e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error in supervisor interaction:", error);
+      setSupervisorStatus("ready");
+    }
+  };
+
+  const handleSupervisorTyping = (isTyping: boolean) => {
+    setSupervisorTyping(isTyping);
   };
 
   const buildConversationContext = async (
@@ -267,6 +448,10 @@ function ChatPageContent() {
   const runChain = async (sessionId: Id<"chatSessions">, agents: Agent[]) => {
     setIsLoading(true);
     setQueuedAgents(agents.slice(1)); // Set all agents except the first as queued
+
+    // Immediately switch to supervisor mode when chain starts
+    setInputMode("supervisor");
+    setSupervisorStatus("orchestrating");
 
     try {
       // Process agents sequentially with connection logic
@@ -452,21 +637,68 @@ function ChatPageContent() {
     <div className="flex h-screen bg-gray-950">
       <Sidebar currentSessionId={chainId} />
       <div className="flex-1 flex flex-col relative w-full">
+        {/* Conditional rendering based on input mode */}
+
         <ChatArea
           sessionId={chainId as Id<"chatSessions">}
           focusedAgentIndex={focusedAgentIndex}
           onFocusAgent={handleFocusAgent}
           onLoadPreset={handleLoadPreset}
         />
-        <InputArea
+        {inputMode === "supervisor" && (
+          <SupervisorModal
+            sessionId={chainId as Id<"chatSessions">}
+            isOpen={supervisorModalOpen}
+            onToggle={() => setSupervisorModalOpen(!supervisorModalOpen)}
+            isFullscreen={supervisorModalFullscreen}
+            onToggleFullscreen={() =>
+              setSupervisorModalFullscreen(!supervisorModalFullscreen)
+            }
+            isTyping={supervisorTyping}
+            supervisorStatus={supervisorStatus}
+            supervisorStreamContent={supervisorStreamContent}
+          />
+        )}
+        <InputAreaContainer
+          mode={inputMode}
+          sessionId={chainId as Id<"chatSessions">}
           onSendChain={handleSendChain}
           onSendFocusedAgent={handleSendFocusedAgent}
+          focusedAgentIndex={focusedAgentIndex}
+          focusedAgent={
+            focusedAgentIndex !== null && agentSteps
+              ? {
+                  id: agentSteps[focusedAgentIndex]._id,
+                  model: agentSteps[focusedAgentIndex].model,
+                  prompt: "", // Start with empty prompt for new input
+                  name: agentSteps[focusedAgentIndex].name,
+                  connection: {
+                    type:
+                      agentSteps[focusedAgentIndex].connectionType ===
+                        "supervisor" ||
+                      agentSteps[focusedAgentIndex].connectionType ===
+                        "collaborative"
+                        ? "direct"
+                        : ((agentSteps[focusedAgentIndex].connectionType ||
+                            "direct") as "direct" | "conditional" | "parallel"),
+                    condition:
+                      agentSteps[focusedAgentIndex].connectionCondition,
+                    sourceAgentId:
+                      agentSteps[
+                        focusedAgentIndex
+                      ].sourceAgentIndex?.toString(),
+                  },
+                }
+              : null
+          }
+          presetAgents={presetAgents}
+          onClearPresetAgents={handleClearPresetAgents}
+          onSupervisorSend={handleSupervisorSend}
+          onSupervisorTyping={handleSupervisorTyping}
+          agentSteps={agentSteps || []}
           isLoading={isLoading}
           isStreaming={isStreaming}
           queuedAgents={queuedAgents}
-          focusedAgentIndex={focusedAgentIndex}
-          presetAgents={presetAgents}
-          onClearPresetAgents={handleClearPresetAgents}
         />
       </div>
     </div>

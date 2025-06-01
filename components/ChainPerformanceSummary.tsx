@@ -74,17 +74,19 @@ export function ChainPerformanceSummary({
 
   return (
     <div
-      className={`bg-gray-800/30 border border-gray-700/50 rounded-lg p-4 ${className}`}
+      className={`bg-gray-800/30 flex flex-row justify-between border border-gray-700/50 rounded-lg p-4 ${className}`}
     >
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2">
         <BarChart3 size={16} className="text-lavender-400" />
-        <span className="text-sm font-medium text-white">
-          Chain Performance
-        </span>
-        <span className="text-xs text-gray-400">
-          ({summary.stepCount}/{summary.totalSteps} nodes completed
-          {summary.skippedSteps > 0 && `, ${summary.skippedSteps} skipped`})
-        </span>
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-white">
+            Chain Performance
+          </span>
+          <span className="text-xs text-gray-400">
+            ({summary.stepCount}/{summary.totalSteps} nodes completed
+            {summary.skippedSteps > 0 && `, ${summary.skippedSteps} skipped`})
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

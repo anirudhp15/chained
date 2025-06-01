@@ -476,3 +476,170 @@ export const updateAgentError = mutation({
     });
   },
 });
+
+// Add supervisor turn
+export const addSupervisorTurn = mutation({
+  args: {
+    sessionId: v.id("chatSessions"),
+    userInput: v.string(),
+    supervisorResponse: v.string(),
+    parsedMentions: v.optional(
+      v.array(
+        v.object({
+          agentIndex: v.number(),
+          agentName: v.string(),
+          taskPrompt: v.string(),
+        })
+      )
+    ),
+    executedStepIds: v.optional(v.array(v.id("agentSteps"))),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the session
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id) {
+      throw new Error("Session not found or access denied");
+    }
+
+    return await ctx.db.insert("supervisorTurns", {
+      sessionId: args.sessionId,
+      userId: user._id,
+      userInput: args.userInput,
+      supervisorResponse: args.supervisorResponse,
+      parsedMentions: args.parsedMentions,
+      executedStepIds: args.executedStepIds,
+      timestamp: Date.now(),
+      isComplete: true,
+      isStreaming: false,
+    });
+  },
+});
+
+// Start supervisor turn (for streaming)
+export const startSupervisorTurn = mutation({
+  args: {
+    sessionId: v.id("chatSessions"),
+    userInput: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the session
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id) {
+      throw new Error("Session not found or access denied");
+    }
+
+    return await ctx.db.insert("supervisorTurns", {
+      sessionId: args.sessionId,
+      userId: user._id,
+      userInput: args.userInput,
+      supervisorResponse: "",
+      timestamp: Date.now(),
+      isComplete: false,
+      isStreaming: true,
+    });
+  },
+});
+
+// Update supervisor turn with streaming content
+export const updateSupervisorTurn = mutation({
+  args: {
+    turnId: v.id("supervisorTurns"),
+    supervisorResponse: v.optional(v.string()),
+    streamedContent: v.optional(v.string()),
+    parsedMentions: v.optional(
+      v.array(
+        v.object({
+          agentIndex: v.number(),
+          agentName: v.string(),
+          taskPrompt: v.string(),
+        })
+      )
+    ),
+    executedStepIds: v.optional(v.array(v.id("agentSteps"))),
+    isComplete: v.optional(v.boolean()),
+    isStreaming: v.optional(v.boolean()),
+    error: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the supervisor turn
+    const turn = await ctx.db.get(args.turnId);
+    if (!turn || turn.userId !== user._id) {
+      throw new Error("Supervisor turn not found or access denied");
+    }
+
+    const updateData: any = {};
+    if (args.supervisorResponse !== undefined)
+      updateData.supervisorResponse = args.supervisorResponse;
+    if (args.streamedContent !== undefined)
+      updateData.streamedContent = args.streamedContent;
+    if (args.parsedMentions !== undefined)
+      updateData.parsedMentions = args.parsedMentions;
+    if (args.executedStepIds !== undefined)
+      updateData.executedStepIds = args.executedStepIds;
+    if (args.isComplete !== undefined) updateData.isComplete = args.isComplete;
+    if (args.isStreaming !== undefined)
+      updateData.isStreaming = args.isStreaming;
+    if (args.error !== undefined) updateData.error = args.error;
+
+    await ctx.db.patch(args.turnId, updateData);
+  },
+});
+
+// Append to agent conversation history
+export const appendAgentConversation = mutation({
+  args: {
+    sessionId: v.id("chatSessions"),
+    agentIndex: v.number(),
+    userPrompt: v.string(),
+    agentResponse: v.string(),
+    triggeredBy: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the session
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id) {
+      throw new Error("Session not found or access denied");
+    }
+
+    const existing = await ctx.db
+      .query("agentConversations")
+      .withIndex("by_session_agent", (q) =>
+        q.eq("sessionId", args.sessionId).eq("agentIndex", args.agentIndex)
+      )
+      .first();
+
+    const newEntry = {
+      userPrompt: args.userPrompt,
+      agentResponse: args.agentResponse,
+      timestamp: Date.now(),
+      triggeredBy: args.triggeredBy || "supervisor",
+    };
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        conversationHistory: [...existing.conversationHistory, newEntry],
+        lastUpdated: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("agentConversations", {
+        sessionId: args.sessionId,
+        userId: user._id,
+        agentIndex: args.agentIndex,
+        conversationHistory: [newEntry],
+        lastUpdated: Date.now(),
+      });
+    }
+  },
+});
