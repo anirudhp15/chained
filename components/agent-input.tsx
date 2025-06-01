@@ -732,7 +732,7 @@ export function AgentInput({
   };
 
   return (
-    <div className="relative flex flex-col mx-2 md:mx-0 rounded-xl border hover:bg-gray-700/80 border-gray-500/50">
+    <div className="relative flex flex-col mx-2 md:mx-0 rounded-xl border border-gray-600/50 bg-gray-800/70 backdrop-blur-sm hover:bg-gray-800/90 hover:border-lavender-400/20 transition-all duration-200">
       <textarea
         value={agent.prompt}
         onChange={(e) => {
@@ -741,18 +741,14 @@ export function AgentInput({
           setTimeout(adjustTextareaHeight, 0);
         }}
         placeholder="Ask anything"
-        className={`w-full p-4 h-auto rounded-t-xl min-h-12 md:min-h-16 max-h-32 md:max-h-64 ${STYLES.card} text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-sm overflow-y-auto`}
+        className="w-full p-4 h-auto rounded-t-xl min-h-12 md:min-h-16 max-h-32 md:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-sm overflow-y-auto"
         ref={textareaRef}
       />
 
-      {/* Seamless input container */}
-      <div
-        className={`relative h-full min-h-10 md:min-h-16 ${STYLES.card} border-none rounded-b-xl`}
-      >
-        {/* Bottom controls - absolutely positioned with gradient background */}
-        <div
-          className={`absolute bottom-0 left-0 right-0 flex flex-row md:items-center rounded-b-xl justify-between px-2 md:px-4 py-1.5 md:py-3 overflow-hidden ${STYLES.gap} md:gap-0`}
-        >
+      {/* Bottom controls container */}
+      <div className="relative h-full min-h-10 md:min-h-16 border-t border-gray-600/30">
+        {/* Bottom controls - absolutely positioned */}
+        <div className="absolute bottom-0 left-0 right-0 flex flex-row md:items-center justify-between px-2 md:px-4 py-1.5 md:py-3 overflow-hidden gap-1.5 md:gap-2">
           <div className="block md:hidden">
             {/* Modality Icons */}
             <div className="flex items-center gap-1.5">
@@ -771,9 +767,7 @@ export function AgentInput({
             </div>
           </div>
           {/* Left side controls */}
-          <div
-            className={`hidden md:flex items-center ${STYLES.gap} flex-wrap`}
-          >
+          <div className="hidden md:flex items-center gap-1.5 md:gap-2 flex-wrap">
             {renderModelSelector()}
             {/* Tool Button */}
             {renderEnhancedOptions()}
@@ -794,7 +788,7 @@ export function AgentInput({
             <button
               onClick={onSendChain}
               disabled={!canSend}
-              className={`flex items-center ${STYLES.gap} px-3 md:px-4 py-1.5 md:py-2 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 whitespace-nowrap rounded-lg font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm w-min justify-center`}
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 whitespace-nowrap rounded-lg font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm w-min justify-center"
             >
               <span className="truncate">
                 {isLoading ? "Running..." : "Chain"}
@@ -809,7 +803,7 @@ export function AgentInput({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={`${STYLES.iconSize} flex-shrink-0`}
+                className="md:w-3.5 md:h-3.5 flex-shrink-0"
               >
                 <path d="m22 2-7 20-4-9-9-4Z" />
                 <path d="M22 2 11 13" />

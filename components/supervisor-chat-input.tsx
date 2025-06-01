@@ -202,7 +202,7 @@ export function SupervisorChatInput({
         <div className="w-full max-w-4xl mx-auto px-3 md:px-0">
           <div className="space-y-4">
             {/* Input Area with Autocomplete */}
-            <div className="relative bg-gray-800/70 backdrop-blur-md border hover:bg-gray-700/80 border-gray-600/50 rounded-xl">
+            <div className="relative w-full bg-gray-800/70 backdrop-blur-md border hover:bg-gray-700/80 border-gray-600/50 rounded-xl">
               <textarea
                 ref={textareaRef}
                 value={prompt}

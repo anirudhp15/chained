@@ -87,7 +87,7 @@ export function FocusedAgentInput({
       }}
     >
       <div className="w-full flex justify-center">
-        <div className="w-full max-w-4xl mx-auto pb-4 md:pb-6 px-3 md:px-0">
+        <div className="w-full max-w-4xl mx-auto px-3 md:px-0">
           {/* Enhanced Input Area */}
           <div className="relative">
             <textarea
@@ -99,7 +99,7 @@ export function FocusedAgentInput({
                 })
               }
               placeholder={`Continue conversation with ${focusedAgentState.model}...`}
-              className="w-full h-24 md:h-32 px-3 md:px-4 py-3 md:py-4 pb-12 md:pb-16 bg-gray-800/70 backdrop-blur-md border border-gray-600/50 text-white placeholder-gray-400 hover:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-lavender-400/50 focus:border-lavender-400/50 resize-none transition-all text-sm"
+              className="w-full h-24 rounded-xl md:h-32 px-3 md:px-4 py-3 md:py-4 pb-12 md:pb-16 bg-gray-800/70 backdrop-blur-md border border-gray-600/50 text-white placeholder-gray-400 hover:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-lavender-400/50 focus:border-lavender-400/50 resize-none transition-all text-sm"
             />
 
             {/* Bottom controls */}

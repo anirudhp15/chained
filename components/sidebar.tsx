@@ -232,7 +232,7 @@ export function Sidebar({
                       className="rotate-0 hover:-rotate-45 transition-transform duration-200 ease-out"
                     />
                   </span>
-                  Chained
+                  Ch<span className="text-lavender-400">ai</span>ned
                 </h1>
               </Link>
               <button
@@ -535,7 +535,7 @@ export function Sidebar({
                   className="hover:-rotate-45 transition-transform duration-200 ease-out"
                 />
               </span>
-              Chained
+              Ch<span className="text-lavender-400">ai</span>ned
             </h1>
           </Link>
           <button
