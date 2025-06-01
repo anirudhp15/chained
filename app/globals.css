@@ -577,6 +577,33 @@
       min-height: 2.5rem !important; /* 40px */
       max-height: 6rem !important; /* 96px */
     }
+
+    /* Prevent mobile zoom on input focus */
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+      transform: translateZ(0); /* Force hardware acceleration */
+    }
+
+    /* Ensure placeholders also use 16px */
+    input::placeholder,
+    textarea::placeholder {
+      font-size: 16px !important;
+    }
+  }
+
+  /* Desktop can use smaller font sizes */
+  @media (min-width: 769px) {
+    input.text-xs,
+    textarea.text-xs {
+      font-size: 0.75rem !important;
+    }
+
+    input.text-sm,
+    textarea.text-sm {
+      font-size: 0.875rem !important;
+    }
   }
 
   /* Remove horizontal scroll styles - no longer needed */

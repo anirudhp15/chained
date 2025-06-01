@@ -265,7 +265,7 @@ export function NodePill({
       {/* Compact Pill */}
       <div ref={pillRef} className="relative mb-2 px-2 md:px-0">
         {/* Base Pill */}
-        <div className="bg-gray-900/75 backdrop-blur-sm border border-gray-600/50 rounded-xl px-4 py-2 transition-all duration-200 hover:bg-gray-800/90 hover:border-lavender-400/20 group shadow-lg shadow-gray-950/50">
+        <div className="bg-gray-900/75 backdrop-blur-sm mx-auto border border-gray-600/50 rounded-xl px-4 py-2 transition-all duration-200 hover:bg-gray-800/90 hover:border-lavender-400/20 w-full max-w-xl hover:max-w-4xl group shadow-lg shadow-gray-950/50 animate-in fade-in slide-in-from-bottom-4 md:slide-in-from-bottom-8 ease-out">
           <div className="flex items-center justify-between">
             {/* Left: Node Name */}
             <div className="flex items-center gap-3">
@@ -282,13 +282,13 @@ export function NodePill({
                       setTempName(nodeName);
                     }
                   }}
-                  className="bg-gray-700/50 border border-gray-500/50 rounded px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-lavender-400/50"
+                  className="bg-gray-700/50 whitespace-nowrap border border-gray-500/50 rounded px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-lavender-400/50"
                   autoFocus
                 />
               ) : (
                 <>
                   <div className="w-2 h-2 bg-lavender-400 rounded-full"></div>
-                  <span className="text-xs text-lavender-400 font-medium">
+                  <span className="text-xs whitespace-nowrap text-lavender-400 font-medium">
                     {nodeName}
                   </span>
                 </>
@@ -310,14 +310,14 @@ export function NodePill({
               {/* Prompts Button */}
               <button
                 onClick={() => setShowPromptsModal(true)}
-                className="md:opacity-0 md:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 hover:bg-gray-700/50 rounded flex items-center gap-1"
+                className="md:opacity-0 md:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 whitespace-nowrap hover:bg-gray-700/50 rounded flex items-center gap-1"
                 title="Example prompts"
               >
                 <Sparkles
                   size={12}
                   className="text-gray-400 hover:text-lavender-400"
                 />
-                <span className="text-xs text-gray-400 hover:text-lavender-400 hidden lg:inline">
+                <span className="text-xs whitespace-nowrap text-gray-400 hover:text-lavender-400 hidden lg:inline">
                   Ideas
                 </span>
               </button>
@@ -325,7 +325,7 @@ export function NodePill({
 
             {/* Right: Status + Controls */}
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400 hidden md:block">
+              <span className="text-xs text-gray-400 whitespace-nowrap hidden md:block">
                 Ready for task
               </span>
 

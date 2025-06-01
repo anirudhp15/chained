@@ -210,7 +210,8 @@ export function SupervisorChatInput({
                 onKeyDown={handleKeyDown}
                 onKeyPress={handleKeyPress}
                 placeholder="What do you want to do next?"
-                className="w-full h-24 md:h-32 px-3 md:px-4 py-3 md:py-4 pb-12 md:pb-16 border-none outline-none ring-0 text-sm bg-transparent text-white placeholder-gray-400 focus:outline-none resize-none transition-all"
+                className="w-full h-24 md:h-32 px-3 md:px-4 py-3 md:py-4 pb-12 md:pb-16 border-none outline-none ring-0 text-base md:text-sm bg-transparent text-white placeholder-gray-400 focus:outline-none resize-none transition-all"
+                style={{ fontSize: "16px" }}
               />
 
               {/* @mention autocomplete dropdown */}

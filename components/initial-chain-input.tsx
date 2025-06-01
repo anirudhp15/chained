@@ -168,9 +168,10 @@ const MobileConnectionSelector = ({
               value={agent.connection?.condition || ""}
               onChange={(e) => handleConditionChange(e.target.value)}
               placeholder="Enter condition..."
-              className={`w-full px-3 py-1 rounded-md text-xs ${STYLES.input}`}
+              className={`w-full px-3 py-1 rounded-md text-base md:text-xs ${STYLES.input}`}
               onFocus={() => setShowConditionInput(true)}
               onBlur={() => setTimeout(() => setShowConditionInput(false), 150)}
+              style={{ fontSize: "16px" }}
             />
 
             {showConditionInput &&
@@ -228,12 +229,18 @@ const ConnectionIcon = ({ connectionType }: { connectionType?: string }) => {
   const IconComponent = connectionConfig.Icon;
 
   return (
-    <div className="hidden md:flex items-center justify-center px-0.5 md:px-2">
-      <div className="flex items-center gap-2">
-        <div className="">
+    <div className="hidden md:flex items-center justify-center relative">
+      {/* Connection Line/Background */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-12 h-0.5 bg-gray-600/30"></div>
+      </div>
+
+      {/* Tilted Icon Container */}
+      <div className="relative z-10 w-8 h-8 bg-gray-800/90 border border-gray-600/50 rounded-lg flex items-center justify-center transform rotate-45 backdrop-blur-sm">
+        <div className="transform -rotate-45">
           <IconComponent
             size={16}
-            className={`md:w-6 md:h-6 ${connectionConfig.color} ${connectionConfig.iconRotate || ""}`}
+            className={`${connectionConfig.color} ${connectionConfig.iconRotate || ""}`}
           />
         </div>
       </div>
@@ -305,21 +312,29 @@ const DesktopConnectionSelector = ({
   };
 
   return (
-    <div className="hidden md:flex flex-col items-center justify-center ">
+    <div className="hidden md:flex items-center justify-center relative mb-24">
+      {/* Connection Line/Background */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-12 h-0.5 bg-gray-600/30"></div>
+      </div>
+
+      {/* Tilted Interactive Connection Button */}
       <button
         onClick={(e) => {
           setButtonPosition(e.currentTarget.getBoundingClientRect());
           setIsDropdownOpen(!isDropdownOpen);
         }}
-        className="flex items-center justify-center p-2 hover:bg-gray-700/50 border border-gray-600/50 bg-gray-800/25 backdrop-blur-sm rounded-lg transition-all group"
+        className="relative z-10 w-8 h-8 bg-gray-800/90 hover:bg-gray-700/90 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg flex items-center justify-center transform rotate-45 backdrop-blur-sm transition-all group"
         title={`Connection: ${currentConnection?.label}`}
       >
-        {CurrentConnectionIcon && (
-          <CurrentConnectionIcon
-            size={24}
-            className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""} group-hover:scale-110 transition-transform`}
-          />
-        )}
+        <div className="transform -rotate-45">
+          {CurrentConnectionIcon && (
+            <CurrentConnectionIcon
+              size={16}
+              className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""} group-hover:scale-110 transition-transform`}
+            />
+          )}
+        </div>
       </button>
 
       {/* Connection Type Dropdown */}
@@ -375,63 +390,6 @@ const DesktopConnectionSelector = ({
           </>,
           document.body
         )}
-
-      {/* Conditional Input */}
-      {/* {currentConnectionType === "conditional" && (
-        <div className="mt-2 w-48">
-          <div className="relative">
-            <input
-              type="text"
-              value={agent.connection?.condition || ""}
-              onChange={(e) => handleConditionChange(e.target.value)}
-              placeholder="Enter condition..."
-              className={`w-full px-3 py-2 rounded-md text-xs ${STYLES.input}`}
-              onFocus={() => setShowConditionInput(true)}
-              onBlur={() => setTimeout(() => setShowConditionInput(false), 150)}
-            />
-
-            {showConditionInput &&
-              createPortal(
-                <div
-                  className={`${STYLES.modal} w-64 p-2`}
-                  style={{
-                    top: `${window.scrollY + 200}px`,
-                    left: `${Math.max(16, window.innerWidth / 2 - 128)}px`,
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-gray-300">
-                      Quick presets:
-                    </span>
-                    <button
-                      onClick={() => setShowConditionInput(false)}
-                      className="text-gray-400 hover:text-white text-xs hover:bg-gray-700/50 w-5 h-5 rounded flex items-center justify-center"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {CONDITION_PRESETS.map((preset, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handlePresetSelect(preset)}
-                        className="w-full px-2 py-1.5 text-left text-white hover:bg-gray-600/70 rounded text-xs transition-colors"
-                      >
-                        <div className="font-medium text-lavender-400">
-                          {preset.label}
-                        </div>
-                        <div className="text-gray-400 font-mono text-[10px]">
-                          {preset.placeholder}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>,
-                document.body
-              )}
-          </div>
-        </div>
-      )} */}
     </div>
   );
 };

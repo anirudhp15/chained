@@ -587,6 +587,7 @@ export function AgentInput({
                     type="text"
                     placeholder="Search models..."
                     className={`w-full pl-8 pr-3 py-1.5 rounded text-xs focus:ring-1 ${STYLES.input}`}
+                    style={{ fontSize: "16px" }}
                   />
                 </div>
               </div>
@@ -741,12 +742,13 @@ export function AgentInput({
           setTimeout(adjustTextareaHeight, 0);
         }}
         placeholder="Ask anything"
-        className="w-full p-4 h-auto rounded-t-xl min-h-12 md:min-h-16 max-h-32 md:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-sm overflow-y-auto"
+        className="w-full p-4 h-auto rounded-t-xl min-h-12 md:min-h-16 max-h-32 md:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-base md:text-sm overflow-y-auto"
         ref={textareaRef}
+        style={{ fontSize: "16px" }}
       />
 
       {/* Bottom controls container */}
-      <div className="relative h-full min-h-10 md:min-h-16 border-t border-gray-600/30">
+      <div className="relative h-full min-h-10 md:min-h-16">
         {/* Bottom controls - absolutely positioned */}
         <div className="absolute bottom-0 left-0 right-0 flex flex-row md:items-center justify-between px-2 md:px-4 py-1.5 md:py-3 overflow-hidden gap-1.5 md:gap-2">
           <div className="block md:hidden">
