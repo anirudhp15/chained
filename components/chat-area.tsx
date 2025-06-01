@@ -25,7 +25,7 @@ import { CopyButton } from "./ui/CopyButton";
 import { TruncatedText } from "./ui/TruncatedText";
 import { PerformanceMetrics } from "./PerformanceMetrics";
 import { ChainPerformanceSummary } from "./ChainPerformanceSummary";
-import { UserButton } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 
 interface ChatAreaProps {
   sessionId: Id<"chatSessions"> | null;
@@ -53,12 +53,31 @@ export function ChatArea({
     null
   );
 
+  // Get user information
+  const { user } = useUser();
+
   // Column resize state
   const [columnStates, setColumnStates] = useState<ColumnState[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Minimum column width in pixels
   const MIN_COLUMN_WIDTH = 256;
+
+  // Custom UserDisplay component
+  const UserDisplay = () => {
+    const displayName =
+      user?.fullName ||
+      `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+      user?.primaryEmailAddress?.emailAddress ||
+      "User";
+
+    return (
+      <div className="flex items-center gap-2 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+        <User size={14} className="text-blue-400" />
+        <span className="text-blue-400 text-xs font-medium">{displayName}</span>
+      </div>
+    );
+  };
 
   // Group steps by agent and calculate layout
   const agentGroups = useMemo(() => {
@@ -202,9 +221,7 @@ export function ChatArea({
           <div className="w-full">
             <div className="bg-gray-800/90 border border-gray-700/50 rounded-xl px-6 py-4">
               <div className="flex flex-row gap-3">
-                <span className="text-sm text-lavender-400/80 font-medium">
-                  Prompt
-                </span>
+                <UserDisplay />
                 {agent.connectionType && agent.index > 0 && (
                   <ConnectionBadge
                     type={agent.connectionType}
@@ -479,7 +496,7 @@ export function ChatArea({
                 <div className="w-full px-0.5">
                   <div className="bg-gray-800/90 border border-gray-700/50 rounded-lg p-4">
                     <div className="flex flex-row items-center gap-2 pb-2">
-                      <UserButton />
+                      <UserDisplay />
                       {agent.connectionType && agent.index > 0 && (
                         <ConnectionBadge
                           type={agent.connectionType}
