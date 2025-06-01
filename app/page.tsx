@@ -538,74 +538,14 @@ export default function LandingPage() {
             </div>
 
             {/* Chain Visualization */}
-            <div className="relative max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
-              <div className="bg-gray-900/30 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 sm:p-8 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-lavender-500/5 to-purple-500/5"></div>
-
-                <div className="relative flex flex-col items-center space-y-6">
-                  {/* Input Node */}
-                  <div className="group">
-                    <div className="bg-gray-800/50 border border-lavender-500/50 rounded-full px-6 py-3 text-lavender-400 font-medium shadow-lg shadow-lavender-500/10 group-hover:shadow-lavender-500/20 transition-all duration-300">
-                      User Input
-                    </div>
-                  </div>
-
-                  {/* Connecting Arrow */}
-                  <div className="flex items-center">
-                    <div className="w-px h-8 bg-gradient-to-b from-lavender-500 to-purple-500 animate-pulse"></div>
-                  </div>
-
-                  {/* Model Nodes */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-                    <div className="group animate-in fade-in slide-in-from-left-4 duration-700 delay-1000">
-                      <div className="bg-gray-800/50 border border-gray-600/50 rounded-xl p-4 text-center hover:border-lavender-500/50 transition-all duration-300 hover:bg-gray-800/70">
-                        <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-sm">
-                          G
-                        </div>
-                        <h4 className="text-white font-medium text-sm">
-                          GPT-4
-                        </h4>
-                        <p className="text-gray-400 text-xs">Analysis</p>
-                      </div>
-                    </div>
-
-                    <div className="group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-1200">
-                      <div className="bg-gray-800/50 border border-gray-600/50 rounded-xl p-4 text-center hover:border-lavender-500/50 transition-all duration-300 hover:bg-gray-800/70">
-                        <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-sm">
-                          C
-                        </div>
-                        <h4 className="text-white font-medium text-sm">
-                          Claude
-                        </h4>
-                        <p className="text-gray-400 text-xs">Refine</p>
-                      </div>
-                    </div>
-
-                    <div className="group animate-in fade-in slide-in-from-right-4 duration-700 delay-1400">
-                      <div className="bg-gray-800/50 border border-gray-600/50 rounded-xl p-4 text-center hover:border-lavender-500/50 transition-all duration-300 hover:bg-gray-800/70">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-sm">
-                          G
-                        </div>
-                        <h4 className="text-white font-medium text-sm">
-                          Gemini
-                        </h4>
-                        <p className="text-gray-400 text-xs">Format</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Connecting Arrow */}
-                  <div className="flex items-center">
-                    <div className="w-px h-8 bg-gradient-to-b from-purple-500 to-lavender-500 animate-pulse"></div>
-                  </div>
-
-                  {/* Output Node */}
-                  <div className="group">
-                    <div className="bg-gray-800/50 border border-lavender-500/50 rounded-full px-6 py-3 text-lavender-400 font-medium shadow-lg shadow-lavender-500/10 group-hover:shadow-lavender-500/20 transition-all duration-300">
-                      Final Output
-                    </div>
-                  </div>
-                </div>
+            <div className="relative max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
+              <div className="relative overflow-hidden rounded-2xl">
+                <img
+                  src="/chain_chat_interface.jpg"
+                  alt="Chain Chat Interface"
+                  className="w-full h-auto rounded-2xl opacity-80 shadow-2xl shadow-lavender-500/20 border border-gray-700/50"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/20 to-transparent rounded-2xl"></div>
               </div>
             </div>
           </div>
