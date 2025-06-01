@@ -61,11 +61,7 @@ export interface Agent {
 interface AgentInputProps {
   agent: Agent;
   onUpdate: (agent: Agent) => void;
-  onRemove: () => void;
-  canRemove: boolean;
   index: number;
-  onAddAgent?: () => void;
-  canAddAgent?: boolean;
   isLastAgent?: boolean;
   onSendChain?: () => void;
   canSend?: boolean;
@@ -403,100 +399,88 @@ const STYLES = {
   paddingSmall: "px-1.5 md:px-2 py-0.5 md:py-1",
   textResponsive: "text-xs md:text-sm",
   hoverButton: "transition-colors hover:bg-gray-700/50 rounded",
-  addAgentButton:
-    "flex items-center justify-center p-1.5 md:p-2 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-md text-lavender-400 hover:text-lavender-300 transition-all group backdrop-blur-sm",
 } as const;
 
 export function AgentInput({
   agent,
   onUpdate,
-  onRemove,
-  canRemove,
   index,
-  onAddAgent,
-  canAddAgent,
   isLastAgent,
   onSendChain,
   canSend,
   isLoading,
 }: AgentInputProps) {
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [tempName, setTempName] = useState(agent.name || "");
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"compact" | "detailed">("compact");
-  const [showConditionInput, setShowConditionInput] = useState(false);
-  const [isAddingAgent, setIsAddingAgent] = useState(false);
   const [buttonPositions, setButtonPositions] = useState<{
-    model?: DOMRect;
-    connection?: DOMRect;
-    condition?: DOMRect;
+    model?: DOMRect | null;
+    condition?: DOMRect | null;
   }>({});
+  const [showConditionInput, setShowConditionInput] = useState(false);
 
-  // Ref for textarea auto-resize
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea based on content
+  const getProviderKey = (modelValue: string): keyof ModelProviders => {
+    if (
+      modelValue.includes("gpt") ||
+      modelValue.includes("o1") ||
+      modelValue.includes("o3") ||
+      modelValue.includes("o4")
+    ) {
+      return "openai";
+    }
+    if (modelValue.includes("claude")) {
+      return "anthropic";
+    }
+    if (modelValue.includes("grok")) {
+      return "xai";
+    }
+    return "openai"; // Default fallback
+  };
+
+  const currentProvider = (() => {
+    const providerKey = getProviderKey(agent.model);
+    return MODEL_PROVIDERS[providerKey];
+  })();
+
+  const selectedModel = (() => {
+    const providerKey = getProviderKey(agent.model);
+    return MODEL_PROVIDERS[providerKey]?.models.find(
+      (m) => m.value === agent.model
+    );
+  })();
+
+  // Auto-resize textarea
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
     if (textarea) {
-      // Reset height to auto to get the correct scrollHeight
       textarea.style.height = "auto";
-
-      // Calculate the new height based on content
-      const scrollHeight = textarea.scrollHeight;
-      const minHeight = window.innerWidth >= 768 ? 64 : 40; // md:min-h-16 : min-h-10
-      const maxHeight = window.innerWidth >= 768 ? 256 : 128; // md:max-h-64 : max-h-32
-
-      // Set the height to the content height, but within min/max bounds
-      const newHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight);
-      textarea.style.height = `${newHeight}px`;
+      textarea.style.height = `${textarea.scrollHeight}px`;
     }
   };
 
-  // Adjust height when prompt changes
   useEffect(() => {
     adjustTextareaHeight();
   }, [agent.prompt]);
 
-  // Adjust height on window resize
   useEffect(() => {
     const handleResize = () => adjustTextareaHeight();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Get provider key from model, handling gpt-4o-mini case
-  const getProviderKey = (modelValue: string): keyof ModelProviders => {
-    if (modelValue.startsWith("gpt-")) return "openai";
-    if (modelValue.startsWith("claude-")) return "anthropic";
-    if (modelValue.startsWith("grok-")) return "xai";
-    return "openai"; // default fallback
-  };
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest("[data-dropdown]")) {
+        setIsModelDropdownOpen(false);
+        setShowConditionInput(false);
+      }
+    };
 
-  const providerKey = getProviderKey(agent.model);
-  const selectedModel = MODEL_PROVIDERS[providerKey]?.models.find(
-    (m: { value: string; label: string }) => m.value === agent.model
-  );
-
-  // Get the provider for the current model
-  const currentProvider = MODEL_PROVIDERS[providerKey];
-
-  // Filter models based on search query
-  const filteredProviders = Object.entries(MODEL_PROVIDERS)
-    .map(([key, provider]) => ({
-      key,
-      ...provider,
-      models: provider.models.filter(
-        (model) =>
-          model.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          model.description
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          provider.name.toLowerCase().includes(searchQuery.toLowerCase())
-      ),
-    }))
-    .filter((provider) => provider.models.length > 0);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Connection handling functions
   const handleConditionChange = (condition: string) => {
@@ -511,21 +495,6 @@ export function AgentInput({
     setShowConditionInput(false);
   };
 
-  // Current connection info
-  const currentConnectionType = agent.connection?.type || "direct";
-
-  const handleAddAgent = () => {
-    if (onAddAgent) {
-      setIsAddingAgent(true);
-      onAddAgent();
-
-      // Reset animation state after animation
-      setTimeout(() => {
-        setIsAddingAgent(false);
-      }, 200);
-    }
-  };
-
   const setButtonPosition = (
     key: keyof typeof buttonPositions,
     rect: DOMRect
@@ -534,136 +503,25 @@ export function AgentInput({
   };
 
   const getModalPosition = (buttonRect?: DOMRect, width = 200) => {
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      return {
-        top: `${(buttonRect?.top || 0) + window.scrollY - 8}px`,
-        left: "5vw",
-        right: "5vw",
-        transform: "translateY(-100%)",
-      };
-    }
+    if (!buttonRect) return {};
+
+    const spaceBelow = window.innerHeight - buttonRect.bottom;
+    const spaceAbove = buttonRect.top;
+    const shouldShowAbove = spaceBelow < 200 && spaceAbove > spaceBelow;
+
     return {
-      top: `${(buttonRect?.top || 0) + window.scrollY - 8}px`,
-      left: `${Math.max(16, Math.min(buttonRect?.left || 0, window.innerWidth - width))}px`,
-      transform: "translateY(-100%)",
+      [shouldShowAbove ? "bottom" : "top"]: shouldShowAbove
+        ? `${window.innerHeight - buttonRect.top + window.scrollY + 8}px`
+        : `${buttonRect.bottom + window.scrollY + 8}px`,
+      left: `${Math.max(
+        8,
+        Math.min(
+          buttonRect.left + window.scrollX,
+          window.innerWidth - width - 8
+        )
+      )}px`,
+      minWidth: `${Math.min(width, window.innerWidth - 16)}px`,
     };
-  };
-
-  const renderNameEditor = () => (
-    <div className={`flex items-center ${STYLES.gap} py-1.5`}>
-      {isEditingName ? (
-        <input
-          type="text"
-          value={tempName}
-          onChange={(e) => setTempName(e.target.value)}
-          onBlur={() => {
-            setIsEditingName(false);
-            if (tempName.trim()) {
-              onUpdate({ ...agent, name: tempName.trim() });
-            }
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              setIsEditingName(false);
-              if (tempName.trim()) {
-                onUpdate({ ...agent, name: tempName.trim() });
-              }
-            }
-          }}
-          className={`w-20 md:w-32 ${STYLES.paddingSmall} rounded text-xs focus:ring-1 ${STYLES.input}`}
-          placeholder={`Node ${index + 1}`}
-          autoFocus
-        />
-      ) : (
-        <button
-          onClick={() => {
-            setIsEditingName(true);
-            setTempName(agent.name || "");
-          }}
-          className="flex items-center gap-1 md:gap-2 text-xs font-medium text-lavender-400 hover:text-lavender-300 transition-colors group"
-        >
-          <span className="truncate max-w-16 md:max-w-none">
-            {agent.name || `Node ${index + 1}`}
-          </span>
-          <Pencil
-            size={8}
-            className={`opacity-50 group-hover:opacity-100 ${STYLES.iconSizeSmall} flex-shrink-0`}
-          />
-        </button>
-      )}
-    </div>
-  );
-
-  const renderConditionalInput = () => {
-    if (index === 0 || currentConnectionType !== "conditional") return null;
-
-    return (
-      <div className={`flex items-center ${STYLES.gap} relative`}>
-        <div className="relative">
-          <input
-            type="text"
-            value={agent.connection?.condition || ""}
-            onChange={(e) => handleConditionChange(e.target.value)}
-            placeholder="Enter condition..."
-            className={`w-24 md:w-40 ${STYLES.paddingSmall} rounded-md text-xs ${STYLES.input}`}
-            onFocus={(e) => {
-              setButtonPosition(
-                "condition",
-                e.currentTarget.getBoundingClientRect()
-              );
-              setShowConditionInput(true);
-            }}
-            onBlur={() => setTimeout(() => setShowConditionInput(false), 150)}
-          />
-
-          {showConditionInput &&
-            createPortal(
-              <div
-                className={`${STYLES.modal} w-[90vw] md:w-64 p-2`}
-                style={getModalPosition(buttonPositions.condition, 256)}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-300">
-                    Quick presets:
-                  </span>
-                  <button
-                    onClick={() => setShowConditionInput(false)}
-                    className="text-gray-400 hover:text-white text-xs hover:bg-gray-700/50 w-5 h-5 rounded flex items-center justify-center"
-                  >
-                    ×
-                  </button>
-                </div>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {CONDITION_PRESETS.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handlePresetSelect(preset)}
-                      className="w-full px-2 py-1.5 text-left text-white hover:bg-gray-600/70 rounded text-xs transition-colors"
-                    >
-                      <div className="font-medium text-lavender-400">
-                        {preset.label}
-                      </div>
-                      <div className="text-gray-400 font-mono text-[10px]">
-                        {preset.placeholder}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>,
-              document.body
-            )}
-        </div>
-
-        <button
-          onClick={() => setShowConditionInput(!showConditionInput)}
-          className={`p-0.5 md:p-1 text-gray-400 hover:text-lavender-400 ${STYLES.hoverButton}`}
-          title="Show condition presets"
-        >
-          <Zap size={10} className={STYLES.iconSizeSmall} />
-        </button>
-      </div>
-    );
   };
 
   const renderModelSelector = () => (
@@ -701,7 +559,7 @@ export function AgentInput({
             />
             <div
               className={`${STYLES.modal} w-[90vw] md:w-96 max-h-[80vh] flex flex-col`}
-              style={getModalPosition(buttonPositions.model, 384)}
+              style={getModalPosition(buttonPositions.model || undefined, 384)}
             >
               {/* Header with Search */}
               <div className="p-3 border-b border-gray-700/50 bg-gray-800/30">
@@ -713,23 +571,10 @@ export function AgentInput({
                   </h3>
                   <div className="flex gap-1 ml-auto">
                     <button
-                      onClick={() =>
-                        setViewMode(
-                          viewMode === "compact" ? "detailed" : "compact"
-                        )
-                      }
+                      onClick={() => setIsModelDropdownOpen(false)}
                       className={`p-1 text-gray-400 hover:text-white ${STYLES.hoverButton}`}
-                      title={
-                        viewMode === "compact"
-                          ? "Detailed view"
-                          : "Compact view"
-                      }
                     >
-                      {viewMode === "compact" ? (
-                        <Eye size={12} />
-                      ) : (
-                        <MessageSquare size={12} />
-                      )}
+                      <X size={12} />
                     </button>
                   </div>
                 </div>
@@ -741,8 +586,6 @@ export function AgentInput({
                   <input
                     type="text"
                     placeholder="Search models..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
                     className={`w-full pl-8 pr-3 py-1.5 rounded text-xs focus:ring-1 ${STYLES.input}`}
                   />
                 </div>
@@ -750,9 +593,9 @@ export function AgentInput({
 
               {/* Models List */}
               <div className="flex-1 overflow-y-auto">
-                {filteredProviders.map((provider) => (
+                {Object.entries(MODEL_PROVIDERS).map(([key, provider]) => (
                   <div
-                    key={provider.key}
+                    key={key}
                     className="border-b border-gray-700/50 last:border-0"
                   >
                     {/* Provider Header */}
@@ -796,12 +639,6 @@ export function AgentInput({
                                     </span>
                                   )}
                                 </div>
-                                {viewMode === "detailed" &&
-                                  model.description && (
-                                    <p className="text-xs text-gray-400 mt-0.5 truncate">
-                                      {model.description}
-                                    </p>
-                                  )}
                               </div>
 
                               {/* Modality Icons */}
@@ -828,7 +665,7 @@ export function AgentInput({
                               </div>
                             </div>
 
-                            {viewMode === "detailed" && model.capabilities && (
+                            {model.capabilities && (
                               <div className="mt-1 flex flex-wrap gap-1">
                                 {model.capabilities
                                   .slice(0, 3)
@@ -848,12 +685,6 @@ export function AgentInput({
                     </div>
                   </div>
                 ))}
-
-                {filteredProviders.length === 0 && (
-                  <div className="p-4 text-center text-gray-400 text-sm">
-                    No models found matching &quot;{searchQuery}&quot;
-                  </div>
-                )}
               </div>
             </div>
           </>,
@@ -901,59 +732,7 @@ export function AgentInput({
   };
 
   return (
-    <div className="relative flex flex-col mx-2 mb-2 md:mb-0 md:mx-0 rounded-2xl border border-gray-600/50">
-      {/* Header section */}
-      <div
-        className={`${STYLES.card} border-none rounded-t-2xl overflow-hidden`}
-      >
-        <div
-          className={`flex flex-row md:items-center justify-between px-2 py-2 ${STYLES.gap} md:gap-0`}
-        >
-          <div className={`flex flex-row md:items-center ${STYLES.gap}`}>
-            {renderNameEditor()}
-            {/* Left side controls */}
-            <div
-              className={`flex md:hidden items-center ${STYLES.gap} flex-wrap`}
-            >
-              {renderModelSelector()}
-
-              {/* Add Agent Button */}
-              {isLastAgent && canAddAgent && (
-                <button
-                  onClick={handleAddAgent}
-                  className={`${STYLES.addAgentButton} md:px-3 md:py-1.5 ${
-                    isAddingAgent ? "scale-95 bg-lavender-500/40" : ""
-                  }`}
-                  title="Add Agent"
-                >
-                  <Plus
-                    size={12}
-                    className={`${STYLES.iconSize} group-hover:scale-110 transition-transform ${
-                      isAddingAgent ? "rotate-90 scale-110" : ""
-                    }`}
-                  />
-                </button>
-              )}
-            </div>
-            <div
-              className={`flex flex-col md:flex-row items-center ${STYLES.gap}`}
-            >
-              {/* Hide connection selector on mobile, show on desktop */}
-              <div className={`hidden md:flex items-center ${STYLES.gap}`}>
-                {renderConditionalInput()}
-              </div>
-            </div>
-          </div>
-          {canRemove && (
-            <button
-              onClick={onRemove}
-              className={`text-gray-400 hover:text-red-400 transition-colors p-1.5 ${STYLES.hoverButton} self-end md:self-auto`}
-            >
-              <X size={12} className={STYLES.iconSize} />
-            </button>
-          )}
-        </div>
-      </div>
+    <div className="relative flex flex-col mx-2 md:mx-0 rounded-xl border hover:bg-gray-700/80 border-gray-500/50">
       <textarea
         value={agent.prompt}
         onChange={(e) => {
@@ -962,17 +741,17 @@ export function AgentInput({
           setTimeout(adjustTextareaHeight, 0);
         }}
         placeholder="Ask anything"
-        className={`w-full px-2 md:px-4 h-auto rounded-none min-h-10 md:min-h-16 max-h-32 md:max-h-64 ${STYLES.card} text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-sm overflow-y-auto`}
+        className={`w-full p-4 h-auto rounded-t-xl min-h-12 md:min-h-16 max-h-32 md:max-h-64 ${STYLES.card} text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-sm overflow-y-auto`}
         ref={textareaRef}
       />
 
       {/* Seamless input container */}
       <div
-        className={`relative h-full min-h-10 md:min-h-16 ${STYLES.card} border-none rounded-b-2xl`}
+        className={`relative h-full min-h-10 md:min-h-16 ${STYLES.card} border-none rounded-b-xl`}
       >
         {/* Bottom controls - absolutely positioned with gradient background */}
         <div
-          className={`absolute bottom-0 left-0 right-0 flex flex-row md:items-center rounded-b-2xl justify-between px-2 md:px-4 py-1.5 md:py-3 overflow-hidden ${STYLES.gap} md:gap-0`}
+          className={`absolute bottom-0 left-0 right-0 flex flex-row md:items-center rounded-b-xl justify-between px-2 md:px-4 py-1.5 md:py-3 overflow-hidden ${STYLES.gap} md:gap-0`}
         >
           <div className="block md:hidden">
             {/* Modality Icons */}
@@ -1008,23 +787,6 @@ export function AgentInput({
               isWebSearchEnabled={agent.webSearchEnabled}
               images={agent.images || []}
             />
-            {/* Add Agent Button */}
-            {isLastAgent && canAddAgent && (
-              <button
-                onClick={handleAddAgent}
-                className={`${STYLES.addAgentButton} ${
-                  isAddingAgent ? "scale-95 bg-lavender-500/40" : ""
-                }`}
-                title="Add Agent"
-              >
-                <Plus
-                  size={12}
-                  className={`${STYLES.iconSize} group-hover:scale-110 transition-transform ${
-                    isAddingAgent ? "rotate-90 scale-110" : ""
-                  }`}
-                />
-              </button>
-            )}
           </div>
 
           {/* Right side controls */}
@@ -1032,7 +794,7 @@ export function AgentInput({
             <button
               onClick={onSendChain}
               disabled={!canSend}
-              className={`flex items-center ${STYLES.gap} px-2 md:px-3 py-1 md:py-1.5 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 whitespace-nowrap rounded-lg font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm w-min justify-center`}
+              className={`flex items-center ${STYLES.gap} px-3 md:px-4 py-1.5 md:py-2 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 whitespace-nowrap rounded-lg font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm w-min justify-center`}
             >
               <span className="truncate">
                 {isLoading ? "Running..." : "Chain"}

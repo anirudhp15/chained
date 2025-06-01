@@ -521,7 +521,7 @@ export function Sidebar({
 
       {/* Mobile Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-full bg-gray-900/95 backdrop-blur-sm border-r border-gray-700 flex flex-col transform transition-transform duration-300 ease-out lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-[1000] w-full bg-gray-900/95 backdrop-blur-sm border-r border-gray-700 flex flex-col transform transition-transform duration-300 ease-out lg:hidden ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

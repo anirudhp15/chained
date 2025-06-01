@@ -242,7 +242,7 @@ export function SupervisorChatInput({
               <div className="absolute bottom-0 left-0 right-0 px-3 md:px-4 py-2 md:py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2 md:gap-3">
                   {/* Agent Count Display */}
-                  <div className="px-2 md:px-3 py-1 md:py-1.5 bg-gray-800/90 border border-gray-600/50 rounded-lg text-gray-300 text-xs backdrop-blur-sm">
+                  <div className="px-2 md:px-3 py-1 md:p-2 bg-gray-800/90 border border-gray-600/50 rounded-lg text-gray-300 text-xs backdrop-blur-sm">
                     <span className="font-medium">
                       {agentSteps.length} agent
                       {agentSteps.length !== 1 ? "s" : ""} available
@@ -259,7 +259,7 @@ export function SupervisorChatInput({
                 <button
                   onClick={handleSend}
                   disabled={!prompt.trim() || isLoading}
-                  className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 rounded-lg text-xs md:text-sm font-medium transition-all shadow-lg hover:shadow-emerald-500/25 disabled:shadow-none backdrop-blur-sm"
+                  className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 rounded-lg text-xs  font-medium transition-all shadow-lg hover:shadow-emerald-500/25 disabled:shadow-none backdrop-blur-sm"
                 >
                   {isLoading ? "Coordinating..." : "Send"}
                   <svg

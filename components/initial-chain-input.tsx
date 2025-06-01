@@ -12,6 +12,7 @@ import {
   type EnabledConnectionType,
 } from "@/lib/constants";
 import { useSidebar } from "@/lib/sidebar-context";
+import { NodePill } from "./ui/NodePill";
 
 // Mobile Connection Selector Component
 const MobileConnectionSelector = ({
@@ -572,16 +573,24 @@ export function InitialChainInput({
                         : ""
                     }`}
                   >
+                    <NodePill
+                      agent={agent}
+                      onUpdate={(updatedAgent) =>
+                        updateAgent(index, updatedAgent)
+                      }
+                      index={index}
+                      canAddAgent={agents.length < 3}
+                      onAddAgent={agents.length < 3 ? addAgent : undefined}
+                      isLastAgent={index === agents.length - 1}
+                      onRemove={() => removeAgent(index)}
+                      canRemove={canRemove}
+                    />
                     <AgentInput
                       agent={agent}
                       onUpdate={(updatedAgent) =>
                         updateAgent(index, updatedAgent)
                       }
-                      onRemove={() => removeAgent(index)}
-                      canRemove={canRemove}
                       index={index}
-                      onAddAgent={agents.length < 3 ? addAgent : undefined}
-                      canAddAgent={agents.length < 3}
                       isLastAgent={index === agents.length - 1}
                       onSendChain={
                         index === agents.length - 1

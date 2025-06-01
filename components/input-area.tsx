@@ -304,11 +304,7 @@ export function InputArea({
                       onUpdate={(updatedAgent) =>
                         updateAgent(index, updatedAgent)
                       }
-                      onRemove={() => removeAgent(index)}
-                      canRemove={canRemove}
                       index={index}
-                      onAddAgent={agents.length < 3 ? addAgent : undefined}
-                      canAddAgent={agents.length < 3}
                       isLastAgent={index === agents.length - 1}
                       onSendChain={
                         index === agents.length - 1
