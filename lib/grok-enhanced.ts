@@ -69,6 +69,9 @@ Your final response to the user goes here.
 Important: Always include the <thinking> tags when thinking mode is enabled.`;
   }
 
+  // Add general response length guidance
+  systemPrompt += `\n\nResponse Length Guidance: Keep responses conversational and appropriately sized. For simple questions, provide brief, natural answers (1-3 sentences). Only expand into detailed analysis when the user specifically requests comprehensive explanations, detailed reports, or step-by-step breakdowns.`;
+
   return systemPrompt;
 }
 

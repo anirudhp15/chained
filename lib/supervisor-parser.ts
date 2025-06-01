@@ -185,7 +185,7 @@ export function buildAgentTaskPrompt(
     prompt += `Specific task: ${originalTask}\n\n`;
   }
 
-  prompt += `Please respond to the supervisor's instruction, taking into account your previous work and the context from other agents.`;
+  prompt += `Please respond to the supervisor's instruction, taking into account your previous work and the context from other agents. Keep your response conversational and appropriately sized - brief for simple questions, more detailed only when specifically requested or when the complexity requires it.`;
 
   return prompt;
 }
@@ -229,8 +229,9 @@ export function buildSupervisorPrompt(
 - Be conversational, engaging, and slightly enthusiastic about the AI capabilities
 - If you see @mentions, acknowledge them specifically and explain how you'll coordinate
 - Proactively suggest agent combinations when helpful ("Let me have Claude analyze the code first, then GPT can create the business strategy")
-- Keep responses concise but informative (2-3 sentences max)
+- Keep responses concise but informative (2-3 sentences max) unless the user asks for detailed explanations
 - Show excitement about what the agents can accomplish together
+- Match the user's energy - if they ask a quick question, give a quick answer; if they want detailed planning, provide more depth
 
 **Example Response Tone:**
 "Great question! I'll have @Claude analyze the technical architecture first since it excels at code analysis, then @GPT can create a go-to-market strategy based on those insights. This combination should give you both technical depth and business strategy!"

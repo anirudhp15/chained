@@ -11,6 +11,12 @@ import {
   getProviderFromModel,
 } from "../../../lib/thinking-manager";
 import type { Id } from "../../../convex/_generated/dataModel";
+import {
+  ApiValidator,
+  sanitizeInput,
+  validateContentType,
+} from "../../../lib/api-validation";
+import { rateLimiters, checkUserTierLimits } from "../../../lib/rate-limiter";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -82,11 +88,62 @@ export async function POST(request: NextRequest) {
   const startTime = performance.now();
 
   try {
-    // Authenticate the request
-    const authData = await auth();
-    const { userId } = authData;
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // 1. Validate request size
+    const sizeValidation = ApiValidator.validateRequestSize(
+      request,
+      10 * 1024 * 1024
+    ); // 10MB limit
+    if (!sizeValidation.success) {
+      return NextResponse.json(
+        { error: sizeValidation.error },
+        { status: 413 }
+      );
+    }
+
+    // 2. Validate content type
+    const contentTypeValidation = validateContentType(request, [
+      "application/json",
+    ]);
+    if (!contentTypeValidation.success) {
+      return NextResponse.json(
+        { error: contentTypeValidation.error },
+        { status: 400 }
+      );
+    }
+
+    // 3. Validate authentication
+    const authValidation = await ApiValidator.validateAuth();
+    if (!authValidation.success) {
+      return NextResponse.json(
+        { error: authValidation.error },
+        { status: 401 }
+      );
+    }
+
+    const { userId } = authValidation;
+
+    // 4. Parse and validate request body
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      return NextResponse.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400 }
+      );
+    }
+
+    // 5. Validate required fields
+    const fieldValidation = ApiValidator.validateRequiredFields(body, [
+      "stepId",
+      "model",
+      "prompt",
+    ]);
+    if (!fieldValidation.success) {
+      return NextResponse.json(
+        { error: fieldValidation.error },
+        { status: 400 }
+      );
     }
 
     const {
@@ -98,13 +155,81 @@ export async function POST(request: NextRequest) {
       images,
       audioTranscription,
       webSearchResults,
-    } = await request.json();
+    } = body;
 
-    if (!stepId || !model || !prompt) {
+    // 6. Validate individual fields
+    const modelValidation = ApiValidator.validateModel(model);
+    if (!modelValidation.success) {
       return NextResponse.json(
-        { error: "Missing required fields: stepId, model, prompt" },
+        { error: modelValidation.error },
         { status: 400 }
       );
+    }
+
+    const promptValidation = ApiValidator.validatePrompt(prompt);
+    if (!promptValidation.success) {
+      return NextResponse.json(
+        { error: promptValidation.error },
+        { status: 400 }
+      );
+    }
+
+    const sessionValidation = ApiValidator.validateSessionId(stepId);
+    if (!sessionValidation.success) {
+      return NextResponse.json(
+        { error: sessionValidation.error },
+        { status: 400 }
+      );
+    }
+
+    // 7. Check user tier limits (get user tier from database)
+    // Note: You'll need to implement getUserTier function to get user's subscription tier
+    const userTier: "free" | "pro" = "free"; // Default to free, implement getUserTier(userId) to get actual tier
+    const tierLimit = await checkUserTierLimits(userId!, userTier);
+
+    if (!tierLimit.success) {
+      return NextResponse.json(
+        {
+          error: "Daily limit exceeded",
+          message:
+            "You have reached your daily limit. Upgrade to Pro for unlimited access.",
+          upgradeUrl: "/pricing",
+        },
+        { status: 429 }
+      );
+    }
+
+    // 8. Apply additional rate limiting for LLM calls
+    const llmRateLimit = await rateLimiters.llm.checkRateLimit(
+      `user:${userId}`
+    );
+    if (!llmRateLimit.success) {
+      const retryAfter = Math.ceil((llmRateLimit.reset - Date.now()) / 1000);
+      return NextResponse.json(
+        {
+          error: "Rate limit exceeded",
+          message: "Too many AI requests. Please wait before trying again.",
+          retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": retryAfter.toString(),
+            "X-RateLimit-Limit": llmRateLimit.limit.toString(),
+            "X-RateLimit-Remaining": llmRateLimit.remaining.toString(),
+            "X-RateLimit-Reset": llmRateLimit.reset.toString(),
+          },
+        }
+      );
+    }
+
+    // 9. Sanitize prompt input
+    const sanitizedPrompt = sanitizeInput(prompt);
+
+    // Continue with existing authentication and logic...
+    const authData = await auth();
+    if (!authData.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Set up authenticated Convex client
@@ -192,7 +317,7 @@ export async function POST(request: NextRequest) {
             try {
               // Stream from Grok enhanced
               for await (const chunk of streamGrokEnhanced(
-                [{ role: "user", content: prompt }],
+                [{ role: "user", content: sanitizedPrompt }],
                 {
                   realTimeData: grokOptions.realTimeData,
                   thinkingMode: grokOptions.thinkingMode,
@@ -344,7 +469,7 @@ export async function POST(request: NextRequest) {
     if (provider === "anthropic" && claudeOptions?.enableTools) {
       try {
         const response = await callClaudeWithTools(
-          [{ role: "user", content: prompt }],
+          [{ role: "user", content: sanitizedPrompt }],
           {
             model: model as any,
             fileAttachments: claudeOptions.fileAttachments,
@@ -454,7 +579,7 @@ export async function POST(request: NextRequest) {
           // Stream tokens from LLM with unified thinking manager
           for await (const chunk of callLLMStream({
             model,
-            prompt,
+            prompt: sanitizedPrompt,
             images,
             audioTranscription,
             webSearchResults,

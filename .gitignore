@@ -40,3 +40,5 @@ next-env.d.ts
 public/videos/*.mp4
 !public/videos/chained_demo.mp4
 public/videos/chained_demo.mp4
+
+.env.local

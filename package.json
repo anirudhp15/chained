@@ -31,6 +31,8 @@
     "next-video": "^2.2.0",
     "node-fetch": "^3.3.2",
     "openai": "^4.103.0",
+    "posthog-js": "^1.249.0",
+    "posthog-node": "^4.18.0",
     "react": "^18",
     "react-dom": "^18",
     "react-dropzone": "^14.3.8",

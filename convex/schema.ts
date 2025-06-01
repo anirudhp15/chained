@@ -16,9 +16,42 @@ export default defineSchema({
     website: v.optional(v.string()),
     timezone: v.optional(v.string()),
     profileImageUrl: v.optional(v.string()),
+
+    // Subscription fields
+    subscriptionTier: v.optional(v.union(v.literal("free"), v.literal("pro"))),
+    subscriptionStatus: v.optional(
+      v.union(
+        v.literal("active"),
+        v.literal("trial"),
+        v.literal("canceled"),
+        v.literal("past_due")
+      )
+    ),
+    stripeCustomerId: v.optional(v.string()),
+    stripeSubscriptionId: v.optional(v.string()),
+    subscriptionStartDate: v.optional(v.number()),
+    subscriptionEndDate: v.optional(v.number()),
+    trialEndDate: v.optional(v.number()),
+
+    // Usage tracking fields
+    dailyChainsUsed: v.optional(v.number()),
+    monthlyChainsUsed: v.optional(v.number()),
+    monthlyTokensUsed: v.optional(v.number()),
+    lastUsageResetDate: v.optional(v.number()),
+    totalChainsCreated: v.optional(v.number()),
+    totalTokensUsed: v.optional(v.number()),
+
+    // Feature access flags
+    maxChainsPerDay: v.optional(v.number()),
+    maxAgentsPerChain: v.optional(v.number()),
+    canUseAdvancedModels: v.optional(v.boolean()),
+    canSavePresets: v.optional(v.boolean()),
+    maxCustomPresets: v.optional(v.number()),
   })
     .index("by_token", ["tokenIdentifier"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_stripe_customer", ["stripeCustomerId"])
+    .index("by_subscription_status", ["subscriptionStatus"]),
 
   // User preferences
   userPreferences: defineTable({
@@ -48,7 +81,33 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_user", ["userId"]),
 
-  // Billing information (placeholder for Stripe integration)
+  // Subscription plans configuration
+  subscriptionPlans: defineTable({
+    planId: v.string(), // "free", "pro"
+    displayName: v.string(),
+    description: v.string(),
+    monthlyPrice: v.number(), // in cents
+    yearlyPrice: v.number(), // in cents
+    features: v.object({
+      maxChainsPerDay: v.number(),
+      maxAgentsPerChain: v.number(),
+      maxCustomPresets: v.number(),
+      canUseAdvancedModels: v.boolean(),
+      canUseParallelExecution: v.boolean(),
+      canExportConversations: v.boolean(),
+      prioritySupport: v.boolean(),
+      apiAccess: v.boolean(),
+    }),
+    stripePriceIdMonthly: v.optional(v.string()),
+    stripePriceIdYearly: v.optional(v.string()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_plan_id", ["planId"])
+    .index("by_active", ["isActive"]),
+
+  // Enhanced billing information with more comprehensive tracking
   userBilling: defineTable({
     userId: v.id("users"),
     stripeCustomerId: v.optional(v.string()),
@@ -80,6 +139,30 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_stripe_customer", ["stripeCustomerId"]),
+
+  // Detailed usage tracking history
+  usageHistory: defineTable({
+    userId: v.id("users"),
+    sessionId: v.optional(v.id("chatSessions")),
+    eventType: v.union(
+      v.literal("chain_created"),
+      v.literal("agent_executed"),
+      v.literal("tokens_consumed"),
+      v.literal("file_uploaded"),
+      v.literal("subscription_changed")
+    ),
+    metadata: v.object({
+      tokensUsed: v.optional(v.number()),
+      agentCount: v.optional(v.number()),
+      modelUsed: v.optional(v.string()),
+      executionDuration: v.optional(v.number()),
+      cost: v.optional(v.number()),
+    }),
+    timestamp: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_date", ["userId", "timestamp"])
+    .index("by_event_type", ["eventType"]),
 
   // Chat sessions associated with users
   chatSessions: defineTable({

@@ -3,6 +3,7 @@ import "./globals.css";
 import { ConvexProvider } from "./convex-provider";
 import { MathJaxContext } from "better-react-mathjax";
 import { SidebarProvider } from "@/lib/sidebar-context";
+import { PostHogProvider } from "./posthog-provider";
 
 // MathJax configuration for the entire app
 const mathJaxConfig = {
@@ -67,7 +68,7 @@ export const metadata: Metadata = {
     siteName: "Chained",
     images: [
       {
-        url: "/og-image.png", // We'll create this
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "Chained - AI Workflow Builder",
@@ -81,7 +82,7 @@ export const metadata: Metadata = {
     title: "Chained - Build Powerful AI Workflows",
     description:
       "Chain multiple AI models together to create sophisticated workflows. Connect GPT-4, Claude, Gemini, and more in powerful sequences.",
-    creator: "@chained_app", // Replace with your Twitter handle
+    creator: "@chained_app",
     images: ["/og-image.png"],
   },
   robots: {
@@ -115,7 +116,7 @@ export const metadata: Metadata = {
       {
         rel: "mask-icon",
         url: "/safari-pinned-tab.svg",
-        color: "#9333ea", // Lavender/purple color
+        color: "#9333ea",
       },
     ],
   },
@@ -142,13 +143,15 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-gray-950 min-h-screen overflow-x-hidden font-sans">
-        <MathJaxContext config={mathJaxConfig}>
-          <ConvexProvider>
-            <SidebarProvider>
-              <div className="min-h-screen bg-gray-950">{children}</div>
-            </SidebarProvider>
-          </ConvexProvider>
-        </MathJaxContext>
+        <PostHogProvider>
+          <MathJaxContext config={mathJaxConfig}>
+            <ConvexProvider>
+              <SidebarProvider>
+                <div className="min-h-screen bg-gray-950">{children}</div>
+              </SidebarProvider>
+            </ConvexProvider>
+          </MathJaxContext>
+        </PostHogProvider>
       </body>
     </html>
   );
