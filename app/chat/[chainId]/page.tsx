@@ -64,6 +64,7 @@ function ChatPageContent() {
   const createSession = useMutation(api.mutations.createSession);
   const addAgentStep = useMutation(api.mutations.addAgentStep);
   const updateAgentSkipped = useMutation(api.mutations.updateAgentSkipped);
+  const updateAgentStep = useMutation(api.mutations.updateAgentStep);
 
   // Verify session exists and user has access
   const session = useQuery(
@@ -201,8 +202,8 @@ function ChatPageContent() {
         sourceAgentIndex: undefined,
       });
 
-      // Stream the AI response
-      await streamAgentResponse(stepId, agent.model, agent.prompt);
+      // Stream the AI response with enhanced options
+      await streamAgentResponse(stepId, agent.model, agent.prompt, agent);
     } catch (error) {
       console.error("Failed to send focused agent:", error);
     }
@@ -294,7 +295,6 @@ function ChatPageContent() {
                         (prev[currentTurnId!] || "") + data.content,
                     }));
                   }
-                  setSupervisorStatus("thinking");
                   break;
 
                 case "mention_execution_start":
@@ -302,7 +302,8 @@ function ChatPageContent() {
                   break;
 
                 case "agent_execution_internal":
-                  // Option A: Log internal agent execution but don't show to user
+                  // Agent is executing internally - no new UI updates needed
+                  // The agent steps will update via the existing queries
                   console.log(
                     "Agent executing internally:",
                     data.agentName,
@@ -312,12 +313,20 @@ function ChatPageContent() {
                   break;
 
                 case "agent_execution_complete":
-                  // Keep orchestrating status until all agents complete
                   console.log(
                     "Agent completed:",
                     data.agentName,
                     "Preview:",
                     data.responsePreview
+                  );
+                  break;
+
+                case "agent_execution_error":
+                  console.error(
+                    "Agent execution failed:",
+                    data.agentName,
+                    "Error:",
+                    data.error
                   );
                   break;
 
@@ -544,8 +553,8 @@ function ChatPageContent() {
             : undefined,
         });
 
-        // Stream the AI response
-        await streamAgentResponse(stepId, agent.model, prompt);
+        // Stream the AI response with enhanced options
+        await streamAgentResponse(stepId, agent.model, prompt, agent);
       }
     } catch (error) {
       console.error("Failed to run chain:", error);
@@ -558,8 +567,17 @@ function ChatPageContent() {
   const streamAgentResponse = async (
     stepId: Id<"agentSteps">,
     model: string,
-    prompt: string
+    prompt: string,
+    agent?: Agent
   ) => {
+    // Prepare multimodal data
+    const images = agent?.images?.map((img) => ({
+      url: img.preview,
+      description: img.name,
+    }));
+
+    const webSearchResults = agent?.webSearchData?.results;
+
     const response = await fetch("/api/run-chain", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -567,6 +585,11 @@ function ChatPageContent() {
         stepId,
         model,
         prompt,
+        grokOptions: agent?.grokOptions,
+        claudeOptions: agent?.claudeOptions,
+        images,
+        audioTranscription: agent?.audioTranscription,
+        webSearchResults,
       }),
     });
 
@@ -602,7 +625,36 @@ function ChatPageContent() {
               const parsed = JSON.parse(data);
               if (parsed.type === "token" && parsed.content) {
                 // Token updates are handled by the backend
+              } else if (
+                parsed.type === "thinking" &&
+                parsed.thinking !== undefined
+              ) {
+                // Thinking process updates - update the agent step with thinking content
+                console.log("Thinking process streaming:", parsed.thinking);
+
+                // Update the agent step with thinking content
+                try {
+                  await updateAgentStep({
+                    stepId: stepId,
+                    thinking: parsed.thinking,
+                    isThinking: parsed.isThinking !== false, // Default to true if not specified
+                    isComplete: false,
+                    isStreaming: true,
+                  });
+                } catch (error) {
+                  console.error("Failed to update thinking:", error);
+                }
               } else if (parsed.type === "complete") {
+                // Log enhanced features if present
+                if (parsed.thinking) {
+                  console.log("Thinking process received:", parsed.thinking);
+                }
+                if (parsed.toolCalls) {
+                  console.log("Tool calls received:", parsed.toolCalls);
+                }
+                return;
+              } else if (parsed.type === "error") {
+                console.error("Streaming error:", parsed.error);
                 return;
               }
             } catch (e) {

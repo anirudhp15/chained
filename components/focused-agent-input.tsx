@@ -116,19 +116,13 @@ export function FocusedAgentInput({
                   onImagesChange={(images) =>
                     updateFocusedAgent({ ...focusedAgentState, images })
                   }
-                  onAudioRecording={(audioBlob, duration) =>
+                  onWebSearchToggle={(enabled) =>
                     updateFocusedAgent({
                       ...focusedAgentState,
-                      audioBlob,
-                      audioDuration: duration,
+                      webSearchEnabled: enabled,
                     })
                   }
-                  onWebSearch={(webSearchData) =>
-                    updateFocusedAgent({
-                      ...focusedAgentState,
-                      webSearchData,
-                    })
-                  }
+                  isWebSearchEnabled={focusedAgentState.webSearchEnabled}
                   images={focusedAgentState.images || []}
                 />
               </div>

@@ -74,7 +74,7 @@ export const CONDITION_PRESETS = [
 
 // Default agent configuration
 export const DEFAULT_AGENT_CONFIG = {
-  model: "gpt-4o-mini",
+  model: "claude-sonnet-4-20250514",
   name: "",
   prompt: "",
 };

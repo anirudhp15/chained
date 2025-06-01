@@ -63,13 +63,13 @@ const RESEARCH_PRESETS: PresetChain[] = [
         connection: undefined,
       },
       {
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         prompt:
           "Analyze the financial and operational data to assess investment viability. Calculate key ratios (P/E, ROE, debt-to-equity, current ratio), evaluate business model sustainability, identify competitive advantages/moats, and assess management quality. Flag any red flags or concerns.",
         connection: { type: "direct" },
       },
       {
-        model: "gpt-4o",
+        model: "o1",
         prompt:
           "Create a comprehensive investment thesis with clear buy/hold/sell recommendation. Include target price range, key catalysts to watch, major risks, comparable company analysis, and specific entry/exit criteria. Format as an executive summary suitable for investment committee review.",
         connection: {
@@ -94,7 +94,7 @@ const RESEARCH_PRESETS: PresetChain[] = [
         connection: undefined,
       },
       {
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         prompt:
           "Perform strategic analysis of competitive positioning. Create a detailed competitive matrix comparing features, pricing, target customers, and go-to-market strategies. Identify market gaps, white space opportunities, and potential partnership targets. Analyze each competitor's strengths, weaknesses, and likely next moves.",
         connection: { type: "direct" },
@@ -117,19 +117,19 @@ const RESEARCH_PRESETS: PresetChain[] = [
     bgGradient: "from-blue-500/10 to-cyan-500/10",
     agents: [
       {
-        model: "gpt-4o",
+        model: "o1",
         prompt:
           "Conduct comprehensive literature review on [TECHNICAL TOPIC]. Search for recent papers (2020-2024), identify key researchers and institutions, map the evolution of approaches, and summarize current state-of-the-art. Focus on methodologies, breakthrough results, and remaining challenges.",
         connection: undefined,
       },
       {
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         prompt:
           "Synthesize the research into a coherent technical framework. Identify patterns across studies, compare methodological approaches, highlight conflicting findings, and develop a unified understanding. Create a technology readiness assessment and identify the most promising research directions.",
         connection: { type: "direct" },
       },
       {
-        model: "gpt-4o",
+        model: "gpt-4.5-preview",
         prompt:
           "Generate novel insights and research directions. Based on the synthesis, identify unexplored angles, propose specific research questions, suggest experimental approaches, and outline potential applications. Create a research roadmap with timeline and resource requirements.",
         connection: {
@@ -152,13 +152,13 @@ const CODING_PRESETS: PresetChain[] = [
     bgGradient: "from-green-500/10 to-emerald-500/10",
     agents: [
       {
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         prompt:
           "Design the complete architecture for [FEATURE]. Define database schema, API endpoints, frontend components, and data flow. Specify technology choices, consider scalability and security implications, create detailed technical specifications, and break down implementation into logical phases.",
         connection: undefined,
       },
       {
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         prompt:
           "Implement the backend components with production-ready code. Include API routes, database models, validation logic, error handling, and security measures. Write clean, well-documented code following best practices with proper separation of concerns.",
         connection: { type: "direct" },
@@ -181,7 +181,7 @@ const CODING_PRESETS: PresetChain[] = [
     bgGradient: "from-green-500/10 to-emerald-500/10",
     agents: [
       {
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         prompt:
           "Perform thorough security audit of the provided codebase. Identify vulnerabilities including SQL injection, XSS, CSRF, authentication flaws, and insecure dependencies. Check for secrets in code, improper access controls, and data exposure risks. Prioritize findings by severity.",
         connection: undefined,
@@ -193,7 +193,7 @@ const CODING_PRESETS: PresetChain[] = [
         connection: { type: "direct" },
       },
       {
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         prompt:
           "Implement security fixes and performance optimizations. Provide refactored code with security vulnerabilities patched, performance improvements implemented, and code quality enhanced. Include updated tests and documentation for all changes made.",
         connection: {
@@ -213,13 +213,13 @@ const CODING_PRESETS: PresetChain[] = [
     bgGradient: "from-green-500/10 to-emerald-500/10",
     agents: [
       {
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         prompt:
           "Design RESTful API architecture for [APPLICATION]. Define resource models, endpoint structure, authentication strategy, rate limiting, and error handling patterns. Create OpenAPI specification with detailed schemas, response codes, and security requirements.",
         connection: undefined,
       },
       {
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         prompt:
           "Implement the API with production-ready code. Include request validation, error handling, logging, monitoring, and comprehensive test coverage. Implement caching strategies, database optimization, and security middleware. Follow REST best practices and include proper documentation.",
         connection: { type: "direct" },
@@ -251,13 +251,13 @@ const CREATIVE_PRESETS: PresetChain[] = [
         connection: undefined,
       },
       {
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         prompt:
           "Create integrated marketing strategy and content framework. Develop messaging hierarchy, content pillars, channel strategy, and campaign concepts. Design content calendar with specific tactics for each platform, including SEO strategy, social media approach, and email marketing sequences.",
         connection: { type: "direct" },
       },
       {
-        model: "gpt-4o",
+        model: "gpt-4.5-preview",
         prompt:
           "Execute creative campaign development with measurable outcomes. Write compelling copy for ads, landing pages, and email campaigns. Create social media content, blog post outlines, and campaign assets. Include A/B testing strategies, success metrics, and optimization recommendations.",
         connection: { type: "direct" },
@@ -280,7 +280,7 @@ const CREATIVE_PRESETS: PresetChain[] = [
         connection: undefined,
       },
       {
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         prompt:
           "Structure and write comprehensive technical content. Create detailed outlines, write clear explanations of complex concepts, include practical examples and code snippets where relevant. Ensure accuracy, logical flow, and appropriate technical depth for the target audience.",
         connection: { type: "direct" },
@@ -312,13 +312,13 @@ const CREATIVE_PRESETS: PresetChain[] = [
         connection: undefined,
       },
       {
-        model: "gpt-4o",
+        model: "gpt-4.5-preview",
         prompt:
           "Develop compelling narrative structure and key messages. Create logical flow from problem to solution, build persuasive arguments with supporting evidence, craft memorable opening and closing, and design clear call-to-action. Structure content for maximum impact and audience engagement.",
         connection: { type: "direct" },
       },
       {
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         prompt:
           "Create detailed slide-by-slide content with design specifications. Write concise, impactful text for each slide, suggest visual elements and layouts, include speaker notes and transition cues. Provide alternative versions for different time constraints and audiences.",
         connection: { type: "direct" },

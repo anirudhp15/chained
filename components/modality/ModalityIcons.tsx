@@ -1,36 +1,33 @@
 "use client";
 
 import React, { useState } from "react";
-import { Paperclip, Mic, Search, X } from "lucide-react";
+import { Paperclip, Mic, Search } from "lucide-react";
 import {
   supportsImageUpload,
   supportsAudioInput,
   supportsWebSearch,
+  validateImageFile,
+  compressImage,
 } from "../../lib/modality-utils";
-import { ImageUpload, UploadedImage } from "./ImageUpload";
-import { VoiceRecorder } from "./VoiceRecorder";
-import { WebSearch, WebSearchData } from "./WebSearch";
+import { UploadedImage } from "./ImageUpload";
+import { ModalityModal } from "../ui/ModalityModal";
 
 interface ModalityIconsProps {
   selectedModel: string;
   onImagesChange: (images: UploadedImage[]) => void;
-  onAudioRecording: (
-    audioBlob: Blob,
-    duration: number,
-    transcription: string
-  ) => void;
-  onWebSearch: (searchData: WebSearchData) => void;
+  onWebSearchToggle: (enabled: boolean) => void;
+  isWebSearchEnabled?: boolean;
   images: UploadedImage[];
   className?: string;
 }
 
-type ActiveModal = "image" | "audio" | "search" | null;
+type ActiveModal = "file" | "voice" | "search" | null;
 
 export function ModalityIcons({
   selectedModel,
   onImagesChange,
-  onAudioRecording,
-  onWebSearch,
+  onWebSearchToggle,
+  isWebSearchEnabled = false,
   images,
   className = "",
 }: ModalityIconsProps) {
@@ -46,116 +43,113 @@ export function ModalityIcons({
   const enabledClasses =
     "text-gray-400 hover:text-lavender-400 hover:bg-gray-600";
   const disabledClasses = "text-gray-600 cursor-not-allowed opacity-50";
+  const activeClasses = "text-lavender-400 bg-lavender-600/20";
+
+  // Handle file selection from modal
+  const handleFileSelect = async (files: FileList) => {
+    const newImages: UploadedImage[] = [];
+
+    for (let i = 0; i < Math.min(files.length, 3); i++) {
+      const file = files[i];
+      const validation = validateImageFile(file);
+
+      if (validation.valid) {
+        try {
+          // Compress image if needed
+          const processedFile = await compressImage(file);
+
+          const image: UploadedImage = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            file: processedFile,
+            preview: URL.createObjectURL(processedFile),
+            name: processedFile.name,
+            size: processedFile.size,
+            type: processedFile.type,
+            uploadProgress: 100,
+          };
+
+          newImages.push(image);
+        } catch (error) {
+          console.error("Error processing image:", error);
+        }
+      }
+    }
+
+    if (newImages.length > 0) {
+      onImagesChange([...images, ...newImages]);
+    }
+  };
 
   return (
     <>
       <div className={`flex items-center space-x-1 ${className}`}>
-        {/* Image Upload Icon */}
+        {/* File Upload Icon */}
         <button
-          onClick={() => imageSupported && setActiveModal("image")}
+          onClick={() => imageSupported && setActiveModal("file")}
           disabled={!imageSupported}
-          className={`${iconBaseClasses} ${imageSupported ? enabledClasses : disabledClasses}`}
+          className={`${iconBaseClasses} ${
+            imageSupported ? enabledClasses : disabledClasses
+          } ${images.length > 0 ? activeClasses : ""} relative`}
           title={
             imageSupported
-              ? "Upload images"
+              ? `Upload images${images.length > 0 ? ` (${images.length})` : ""}`
               : `Image upload not supported by ${selectedModel}`
           }
         >
           <Paperclip size={18} />
+          {images.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-lavender-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+              {images.length}
+            </span>
+          )}
         </button>
 
-        {/* Voice Recording Icon */}
+        {/* Voice Input Icon - Coming Soon */}
         <button
-          onClick={() => audioSupported && setActiveModal("audio")}
+          onClick={() => audioSupported && setActiveModal("voice")}
           disabled={!audioSupported}
-          className={`${iconBaseClasses} ${audioSupported ? enabledClasses : disabledClasses}`}
+          className={`${iconBaseClasses} ${
+            audioSupported ? enabledClasses : disabledClasses
+          } relative`}
           title={
             audioSupported
-              ? "Record voice message"
+              ? "Voice input (Coming Soon)"
               : `Voice input not supported by ${selectedModel}`
           }
         >
           <Mic size={18} />
         </button>
 
-        {/* Web Search Icon */}
+        {/* Web Search Toggle */}
         <button
           onClick={() => searchSupported && setActiveModal("search")}
           disabled={!searchSupported}
-          className={`${iconBaseClasses} ${searchSupported ? enabledClasses : disabledClasses}`}
+          className={`${iconBaseClasses} ${
+            searchSupported ? enabledClasses : disabledClasses
+          } ${isWebSearchEnabled ? activeClasses : ""} relative`}
           title={
             searchSupported
-              ? "Search the web"
+              ? `Web search ${isWebSearchEnabled ? "enabled" : "disabled"}`
               : `Web search not supported by ${selectedModel}`
           }
         >
           <Search size={18} />
+          {isWebSearchEnabled && (
+            <span className="absolute -top-1 -right-1 bg-lavender-500 text-white text-xs rounded-full h-3 w-3"></span>
+          )}
         </button>
       </div>
 
-      {/* Modal Overlays */}
-      {activeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-lg border border-gray-700 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-200">
-                {activeModal === "image" && "Upload Images"}
-                {activeModal === "audio" && "Record Voice Message"}
-                {activeModal === "search" && "Search the Web"}
-              </h3>
-              <button
-                onClick={closeModal}
-                className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-4">
-              {activeModal === "image" && (
-                <ImageUpload
-                  images={images}
-                  onImagesChange={onImagesChange}
-                  maxImages={3}
-                />
-              )}
-
-              {activeModal === "audio" && (
-                <VoiceRecorder
-                  onRecordingComplete={(audioBlob, duration, transcription) => {
-                    onAudioRecording(audioBlob, duration, transcription);
-                    closeModal();
-                  }}
-                  onRecordingCancel={closeModal}
-                />
-              )}
-
-              {activeModal === "search" && (
-                <WebSearch
-                  onSearchComplete={(searchData: WebSearchData) => {
-                    onWebSearch(searchData);
-                    closeModal();
-                  }}
-                />
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            {activeModal === "image" && (
-              <div className="p-4 border-t border-gray-700 flex justify-end">
-                <button
-                  onClick={closeModal}
-                  className="px-4 py-2 bg-lavender-600 hover:bg-lavender-700 text-white rounded-md transition-colors"
-                >
-                  Done
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Modal */}
+      <ModalityModal
+        isOpen={activeModal !== null}
+        onClose={closeModal}
+        type={activeModal || "file"}
+        onFileSelect={handleFileSelect}
+        onWebSearchToggle={onWebSearchToggle}
+        isWebSearchEnabled={isWebSearchEnabled}
+        selectedModel={selectedModel}
+      />
     </>
   );
 }

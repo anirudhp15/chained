@@ -189,14 +189,14 @@ export function Sidebar({
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
           onClick={onMobileToggle}
         />
       )}
 
       {/* Desktop Sidebar */}
       <div
-        className={`hidden md:flex bg-gray-900/90 border-r border-gray-700 flex-col h-full transition-all duration-300 ease-out ${
+        className={`hidden lg:flex bg-gray-900/90 border-r border-gray-700 flex-col h-full transition-all duration-300 ease-out ${
           isCollapsed ? "w-16" : "w-64"
         }`}
       >
@@ -521,7 +521,7 @@ export function Sidebar({
 
       {/* Mobile Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-full bg-gray-900/95 backdrop-blur-sm border-r border-gray-700 flex flex-col transform transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-full bg-gray-900/95 backdrop-blur-sm border-r border-gray-700 flex flex-col transform transition-transform duration-300 ease-out lg:hidden ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

@@ -25,6 +25,7 @@ import { CopyButton } from "./ui/CopyButton";
 import { TruncatedText } from "./ui/TruncatedText";
 import { PerformanceMetrics } from "./PerformanceMetrics";
 import { ChainPerformanceSummary } from "./ChainPerformanceSummary";
+import { ThinkingDropdown } from "./ui/ThinkingDropdown";
 import { useUser } from "@clerk/nextjs";
 
 interface ChatAreaProps {
@@ -213,6 +214,14 @@ function MobileAgentCard({
                   </div>
                 )}
 
+                {/* Thinking Dropdown */}
+                <ThinkingDropdown
+                  thinking={agent.thinking}
+                  isThinking={agent.isThinking}
+                  isStreaming={agent.isStreaming}
+                  className="my-2"
+                />
+
                 {/* Main Response */}
                 <div className="text-white text-sm break-words">
                   <MarkdownRenderer
@@ -225,8 +234,8 @@ function MobileAgentCard({
                   )}
                 </div>
 
-                {/* Reasoning Panel */}
-                {agent.reasoning && (
+                {/* Legacy Reasoning Panel (for backward compatibility) */}
+                {agent.reasoning && !agent.thinking && (
                   <div className="mt-3 border-t border-gray-600/50 pt-3">
                     <button
                       onClick={() => toggleReasoning(agent._id)}
@@ -347,6 +356,8 @@ export function ChatArea({
           streamedContent: null,
           isStreaming: false,
           reasoning: null,
+          thinking: null,
+          isThinking: false,
           tokenUsage: null,
           error: null,
           isComplete: false,
@@ -369,6 +380,8 @@ export function ChatArea({
       agent.streamedContent = step.streamedContent;
       agent.isStreaming = step.isStreaming;
       agent.reasoning = step.reasoning;
+      agent.thinking = step.thinking;
+      agent.isThinking = step.isThinking;
       agent.tokenUsage = step.tokenUsage;
       agent.error = step.error;
       agent.isComplete = step.isComplete;
@@ -585,6 +598,14 @@ export function ChatArea({
                       </div>
                     )}
 
+                    {/* Thinking Dropdown */}
+                    <ThinkingDropdown
+                      thinking={agent.thinking}
+                      isThinking={agent.isThinking}
+                      isStreaming={agent.isStreaming}
+                      className="my-2"
+                    />
+
                     {/* Main Response */}
                     <div className="text-white text-base break-words overflow-hidden">
                       <MarkdownRenderer
@@ -597,24 +618,24 @@ export function ChatArea({
                       )}
                     </div>
 
-                    {/* Reasoning Panel */}
-                    {agent.reasoning && (
-                      <div className="mt-4 border-t border-gray-600/50 pt-4">
+                    {/* Legacy Reasoning Panel (for backward compatibility) */}
+                    {agent.reasoning && !agent.thinking && (
+                      <div className="mt-3 border-t border-gray-600/50 pt-3">
                         <button
                           onClick={() => toggleReasoning(agent._id)}
-                          className="flex items-center gap-2 text-sm text-lavender-400/80 hover:text-lavender-300 transition-colors"
+                          className="flex items-center gap-2 text-xs text-lavender-400/80 hover:text-lavender-300 transition-colors"
                         >
                           {expandedReasoning === agent._id ? (
-                            <ChevronUp size={14} />
+                            <ChevronUp size={12} />
                           ) : (
-                            <ChevronDown size={14} />
+                            <ChevronDown size={12} />
                           )}
                           <span>Reasoning</span>
                         </button>
 
                         {expandedReasoning === agent._id && (
-                          <div className="mt-3 p-4 bg-gray-900/50 rounded-lg border border-gray-600/50 animate-in slide-in-from-top-2 duration-200">
-                            <div className="text-sm text-gray-400 mb-3">
+                          <div className="mt-2 p-3 bg-gray-900/50 rounded-lg border border-gray-600/50 animate-in slide-in-from-top-2 duration-200">
+                            <div className="text-xs text-gray-400 mb-2">
                               Model Reasoning:
                             </div>
                             <div className="text-base text-gray-300 break-words overflow-hidden">
@@ -876,6 +897,14 @@ export function ChatArea({
                               </div>
                             )}
 
+                            {/* Thinking Dropdown */}
+                            <ThinkingDropdown
+                              thinking={agent.thinking}
+                              isThinking={agent.isThinking}
+                              isStreaming={agent.isStreaming}
+                              className="my-2"
+                            />
+
                             {/* Main Response */}
                             <div className="text-white text-sm break-words">
                               <MarkdownRenderer
@@ -890,8 +919,8 @@ export function ChatArea({
                               )}
                             </div>
 
-                            {/* Reasoning Panel */}
-                            {agent.reasoning && (
+                            {/* Legacy Reasoning Panel (for backward compatibility) */}
+                            {agent.reasoning && !agent.thinking && (
                               <div className="mt-3 border-t border-gray-600/50 pt-3">
                                 <button
                                   onClick={() => toggleReasoning(agent._id)}

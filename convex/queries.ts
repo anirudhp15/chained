@@ -176,17 +176,12 @@ export const getAgentStep = query({
       throw new Error("User not found");
     }
 
-    const agentStep = await ctx.db.get(args.stepId);
-    if (!agentStep) {
-      return null;
-    }
-
-    // Verify user owns the agent step
-    if (agentStep.userId !== user._id) {
+    const step = await ctx.db.get(args.stepId);
+    if (!step || step.userId !== user._id) {
       throw new Error("Agent step not found or unauthorized");
     }
 
-    return agentStep;
+    return step;
   },
 });
 

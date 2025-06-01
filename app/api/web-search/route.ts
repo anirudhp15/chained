@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { searchWithTavily, type WebSearchData } from "@/lib/tavily-search";
 
 interface SearchResult {
   title: string;
@@ -16,50 +17,20 @@ interface WebSearchResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { query } = await request.json();
+    const { query, options } = await request.json();
 
     if (!query || typeof query !== "string") {
       return NextResponse.json({ error: "Query is required" }, { status: 400 });
     }
 
-    // For now, we'll simulate web search results
-    // In production, you would integrate with a real search API like:
-    // - Google Custom Search API
-    // - Bing Search API
-    // - SerpAPI
-    // - Tavily AI
+    // Use Tavily for real web search
+    const searchResults: WebSearchData = await searchWithTavily(query, {
+      searchDepth: options?.searchDepth || "basic",
+      includeAnswer: options?.includeAnswer !== false, // Default to true
+      maxResults: options?.maxResults || 10,
+    });
 
-    const mockResults: SearchResult[] = [
-      {
-        title: `Search results for: ${query}`,
-        snippet: `This is a simulated search result for the query "${query}". In a production environment, this would be replaced with real search results from a search API service.`,
-        url: `https://example.com/search?q=${encodeURIComponent(query)}`,
-        source: "Example.com",
-        publishedDate: new Date().toLocaleDateString(),
-      },
-      {
-        title: `Related information about ${query}`,
-        snippet: `Additional context and information related to your search query. This demonstrates how multiple search results would be displayed and processed.`,
-        url: `https://example.org/info/${encodeURIComponent(query)}`,
-        source: "Example.org",
-        publishedDate: new Date(Date.now() - 86400000).toLocaleDateString(), // Yesterday
-      },
-      {
-        title: `${query} - Comprehensive Guide`,
-        snippet: `A comprehensive guide covering all aspects of ${query}. This result shows how detailed information would be presented in search results.`,
-        url: `https://guide.example.net/${encodeURIComponent(query)}`,
-        source: "Guide.example.net",
-        publishedDate: new Date(Date.now() - 172800000).toLocaleDateString(), // 2 days ago
-      },
-    ];
-
-    const response: WebSearchResponse = {
-      query,
-      results: mockResults,
-      searchedAt: Date.now(),
-    };
-
-    return NextResponse.json(response);
+    return NextResponse.json(searchResults);
   } catch (error) {
     console.error("Web search failed:", error);
     return NextResponse.json(

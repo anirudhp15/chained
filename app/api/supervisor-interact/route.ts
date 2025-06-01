@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Parse user input for @mentions
-    const recentSteps = agentSteps.slice(-5); // Limit context for MVP
+    const recentSteps = agentSteps.slice(-5);
     const parsedPrompt = parseSupervisorPrompt(userInput, recentSteps);
     const { valid: validMentions, invalid: invalidMentions } =
       validateAgentMentions(parsedPrompt.mentions, recentSteps);
@@ -159,19 +159,6 @@ export async function POST(request: NextRequest) {
                   )
                 );
 
-                // Update agent step to show it's working (for UI feedback)
-                await convex.mutation(api.mutations.updateAgentStep, {
-                  stepId: agentStep._id,
-                  isStreaming: true,
-                  isComplete: false,
-                });
-
-                // Update streamed content to show working status
-                await convex.mutation(api.mutations.updateStreamedContent, {
-                  stepId: agentStep._id,
-                  content: "Working on supervisor task...",
-                });
-
                 // Build context for the agent
                 const chainContext = recentSteps
                   .filter((_, index) => index !== mention.agentIndex)
@@ -189,26 +176,14 @@ export async function POST(request: NextRequest) {
                   userInput
                 );
 
-                // Execute agent internally without creating new agentStep
+                // Execute agent internally with existing step updates
                 const agentResponse = await executeAgentInternally({
                   model: agentStep.model,
                   prompt: agentPrompt,
                   sessionId: sessionId as Id<"chatSessions">,
                   agentIndex: mention.agentIndex,
-                });
-
-                // Update the existing agent step with the new response
-                await convex.mutation(api.mutations.updateAgentStep, {
-                  stepId: agentStep._id,
-                  response: agentResponse,
-                  isComplete: true,
-                  isStreaming: false,
-                });
-
-                // Clear the working status from streamed content
-                await convex.mutation(api.mutations.updateStreamedContent, {
-                  stepId: agentStep._id,
-                  content: "",
+                  stepId: agentStep._id, // Update existing step
+                  convexClient: convex, // Pass authenticated client
                 });
 
                 // Update agent's conversation history directly
@@ -227,46 +202,36 @@ export async function POST(request: NextRequest) {
                   responsePreview: agentResponse.slice(0, 200),
                 });
 
-                // Send agent completion signal
-                const agentCompleteData = JSON.stringify({
-                  type: "agent_execution_complete",
-                  agentName: mention.agentName,
-                  agentIndex: mention.agentIndex,
-                  responsePreview: agentResponse.slice(0, 100),
-                });
+                // Signal completion to client
                 controller.enqueue(
-                  new TextEncoder().encode(`data: ${agentCompleteData}\n\n`)
+                  new TextEncoder().encode(
+                    `data: ${JSON.stringify({
+                      type: "agent_execution_complete",
+                      agentName: mention.agentName,
+                      agentIndex: mention.agentIndex,
+                      responsePreview: agentResponse.slice(0, 200),
+                    })}\n\n`
+                  )
                 );
               } catch (agentError) {
                 console.error(
-                  `Error executing agent ${mention.agentName}:`,
+                  `Agent execution failed for ${mention.agentName}:`,
                   agentError
                 );
 
-                // Update agent step with error
-                const agentStep = recentSteps[mention.agentIndex];
-                await convex.mutation(api.mutations.updateAgentStep, {
-                  stepId: agentStep._id,
-                  error:
-                    agentError instanceof Error
-                      ? agentError.message
-                      : "Unknown error",
-                  isComplete: true,
-                  isStreaming: false,
-                });
-
-                // Send agent error signal
-                const agentErrorData = JSON.stringify({
-                  type: "agent_execution_error",
-                  agentName: mention.agentName,
-                  agentIndex: mention.agentIndex,
-                  error:
-                    agentError instanceof Error
-                      ? agentError.message
-                      : "Unknown error",
-                });
+                // Signal agent execution error to client
                 controller.enqueue(
-                  new TextEncoder().encode(`data: ${agentErrorData}\n\n`)
+                  new TextEncoder().encode(
+                    `data: ${JSON.stringify({
+                      type: "agent_execution_error",
+                      agentName: mention.agentName,
+                      agentIndex: mention.agentIndex,
+                      error:
+                        agentError instanceof Error
+                          ? agentError.message
+                          : "Unknown error",
+                    })}\n\n`
+                  )
                 );
               }
             }
@@ -277,7 +242,7 @@ export async function POST(request: NextRequest) {
             turnId,
             supervisorResponse,
             parsedMentions: validMentions,
-            executedStepIds: [], // No visible agent steps created
+            executedStepIds: [], // No new agent steps created, existing ones updated
             isComplete: true,
             isStreaming: false,
           });
@@ -330,7 +295,7 @@ export async function POST(request: NextRequest) {
 
     return new Response(stream, {
       headers: {
-        "Content-Type": "text/event-stream",
+        "Content-Type": "text/stream",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
       },
@@ -338,7 +303,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Supervisor API error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
+      {
+        error: error instanceof Error ? error.message : "Internal server error",
+      },
       { status: 500 }
     );
   }

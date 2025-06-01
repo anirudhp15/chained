@@ -1,600 +1,281 @@
-import { type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { streamText } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { xai } from "@ai-sdk/xai";
+import { callGrokEnhanced, streamGrokEnhanced } from "@/lib/grok-enhanced";
+import { streamClaudeWithTools, type ClaudeModel } from "@/lib/claude-enhanced";
+import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import OpenAI from "openai";
-import Anthropic from "@anthropic-ai/sdk";
-import { encode } from "gpt-tokenizer";
-import { calculateCost } from "../../../lib/pricing";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
-interface TokenUsage {
-  promptTokens: number;
-  completionTokens: number;
-  totalTokens: number;
+interface StreamAgentRequest {
+  messages: Array<{ role: string; content: string }>;
+  agentId: string;
+  model: string;
+  provider: string;
+  stepId?: string; // Add stepId to store thinking content
+  webSearchEnabled?: boolean; // New field for web search toggle
+  grokOptions?: {
+    realTimeData: boolean;
+    thinkingMode: boolean;
+  };
+  claudeOptions?: {
+    enableTools: boolean;
+    toolSet: string;
+    fileAttachments?: Array<{
+      name: string;
+      content: string;
+      mimeType: string;
+    }>;
+  };
 }
 
-// Token estimation utility for OpenAI models
-function estimateTokens(text: string): number {
-  try {
-    // Use tiktoken-style estimation for OpenAI models
-    return encode(text).length;
-  } catch {
-    // Fallback: rough estimation (1 token ≈ 4 characters for English)
-    return Math.ceil(text.length / 4);
-  }
+interface StreamChunk {
+  type: string;
+  content?: string;
+  toolCall?: {
+    name: string;
+    input: unknown;
+  };
+  usage?: unknown;
 }
 
-export async function POST(request: NextRequest) {
+// Utility function to convert Grok AsyncGenerator to streaming response
+async function createGrokStreamingResponse(
+  stream: AsyncGenerator<StreamChunk, void, unknown>
+) {
+  const encoder = new TextEncoder();
+
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const chunk of stream) {
+          // Convert chunk to AI SDK format
+          let data: string = "";
+
+          if (chunk.type === "thinking") {
+            data = JSON.stringify({
+              type: "text-delta",
+              textDelta: "", // Don't stream thinking content in this format
+            });
+          } else if (chunk.type === "content") {
+            data = JSON.stringify({
+              type: "text-delta",
+              textDelta: chunk.content || "",
+            });
+          } else if (chunk.type === "complete") {
+            data = JSON.stringify({
+              type: "finish",
+              finishReason: "stop",
+              usage: chunk.usage,
+            });
+            controller.enqueue(encoder.encode(`0:${data}\n`));
+            controller.close();
+            return;
+          }
+
+          if (data) {
+            controller.enqueue(encoder.encode(`0:${data}\n`));
+          }
+        }
+      } catch (error) {
+        console.error("Grok streaming error:", error);
+        const errorData = JSON.stringify({
+          type: "error",
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        controller.enqueue(encoder.encode(`0:${errorData}\n`));
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(readableStream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "x-vercel-ai-data-stream": "v1",
+    },
+  });
+}
+
+// Utility function to convert Claude AsyncGenerator to streaming response
+async function createClaudeStreamingResponse(
+  stream: AsyncGenerator<StreamChunk, void, unknown>
+) {
+  const encoder = new TextEncoder();
+
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const chunk of stream) {
+          // Convert chunk to AI SDK format
+          let data: string = "";
+
+          if (chunk.type === "thinking") {
+            data = JSON.stringify({
+              type: "text-delta",
+              textDelta: "", // Don't stream thinking content in this format
+            });
+          } else if (chunk.type === "content") {
+            data = JSON.stringify({
+              type: "text-delta",
+              textDelta: chunk.content || "",
+            });
+          } else if (chunk.type === "tool_call") {
+            data = JSON.stringify({
+              type: "tool-call-delta",
+              toolCallId: chunk.toolCall?.name || "",
+              toolName: chunk.toolCall?.name || "",
+              argsTextDelta: JSON.stringify(chunk.toolCall?.input || {}),
+            });
+          } else if (chunk.type === "complete") {
+            data = JSON.stringify({
+              type: "finish",
+              finishReason: "stop",
+              usage: chunk.usage,
+            });
+            controller.enqueue(encoder.encode(`0:${data}\n`));
+            controller.close();
+            return;
+          }
+
+          if (data) {
+            controller.enqueue(encoder.encode(`0:${data}\n`));
+          }
+        }
+      } catch (error) {
+        console.error("Claude streaming error:", error);
+        const errorData = JSON.stringify({
+          type: "error",
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        controller.enqueue(encoder.encode(`0:${errorData}\n`));
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(readableStream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "x-vercel-ai-data-stream": "v1",
+    },
+  });
+}
+
+export async function POST(req: NextRequest) {
   try {
     const {
-      stepId,
+      messages,
       model,
-      prompt,
-      images,
-      audioTranscription,
-      webSearchResults,
-    } = await request.json();
+      provider,
+      stepId,
+      webSearchEnabled, // TODO: Integrate with web search API when enabled
+      grokOptions,
+      claudeOptions,
+    }: StreamAgentRequest = await req.json();
 
-    // Create a readable stream
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          // Start performance tracking
-          await convex.mutation(api.mutations.startAgentExecution, {
+    // Set up authenticated Convex client if stepId is provided
+    let authenticatedConvex: ConvexHttpClient | null = null;
+    if (stepId) {
+      const authData = await auth();
+      const { userId } = authData;
+      if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const token = await authData.getToken({ template: "convex" });
+      if (!token) {
+        return NextResponse.json(
+          { error: "Failed to get auth token" },
+          { status: 401 }
+        );
+      }
+
+      authenticatedConvex = new ConvexHttpClient(
+        process.env.NEXT_PUBLIC_CONVEX_URL!
+      );
+      authenticatedConvex.setAuth(token);
+    }
+
+    // Handle Grok enhanced features
+    if (provider === "xai" && grokOptions) {
+      if (grokOptions.thinkingMode) {
+        // For thinking mode, use non-streaming to get the thinking process
+        const response = await callGrokEnhanced(messages, {
+          realTimeData: grokOptions.realTimeData,
+          thinkingMode: true,
+        });
+
+        // Store thinking content in database if stepId is provided
+        if (stepId && authenticatedConvex && response.thinking) {
+          await authenticatedConvex.mutation(api.mutations.updateAgentStep, {
             stepId: stepId as Id<"agentSteps">,
-          });
-
-          // Build enhanced prompt with multimodal context
-          const enhancedPrompt = buildEnhancedPrompt({
-            prompt,
-            images,
-            audioTranscription,
-            webSearchResults,
-          });
-
-          // Stream the response based on model provider
-          if (model.startsWith("gpt-") || model.includes("openai")) {
-            await streamOpenAI(
-              model,
-              enhancedPrompt,
-              images,
-              controller,
-              stepId as Id<"agentSteps">
-            );
-          } else if (model.includes("claude")) {
-            await streamAnthropic(
-              model,
-              enhancedPrompt,
-              images,
-              controller,
-              stepId as Id<"agentSteps">
-            );
-          } else if (model.startsWith("grok-") || model.includes("xai")) {
-            await streamXAI(
-              model,
-              enhancedPrompt,
-              images,
-              controller,
-              stepId as Id<"agentSteps">
-            );
-          } else {
-            throw new Error(`Unsupported model: ${model}`);
-          }
-        } catch (error) {
-          console.error("Streaming failed:", error);
-
-          await convex.mutation(api.mutations.updateAgentError, {
-            stepId: stepId as Id<"agentSteps">,
-            error:
-              error instanceof Error
-                ? error.message
-                : "Unknown streaming error",
+            reasoning: response.thinking,
+            response: response.content,
             isComplete: true,
             isStreaming: false,
+            tokenUsage: response.usage,
           });
-
-          controller.enqueue(
-            new TextEncoder().encode(
-              `data: ${JSON.stringify({
-                type: "error",
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : "Unknown streaming error",
-              })}\n\n`
-            )
-          );
-          controller.close();
         }
-      },
-    });
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
-    });
-  } catch (error) {
-    console.error("Stream setup failed:", error);
-    return new Response(JSON.stringify({ error: "Failed to setup stream" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-}
-
-function buildEnhancedPrompt(input: {
-  prompt: string;
-  images?: Array<{ url: string; description?: string }>;
-  audioTranscription?: string;
-  webSearchResults?: Array<{
-    title: string;
-    snippet: string;
-    url: string;
-    source?: string;
-  }>;
-}): string {
-  let enhancedPrompt = input.prompt;
-
-  // Add audio transcription context
-  if (input.audioTranscription) {
-    enhancedPrompt = `[Audio Transcription]: "${input.audioTranscription}"\n\n${enhancedPrompt}`;
-  }
-
-  // Add web search context
-  if (input.webSearchResults && input.webSearchResults.length > 0) {
-    const searchContext = input.webSearchResults
-      .map(
-        (result, index) =>
-          `${index + 1}. ${result.title}\n   ${result.snippet}\n   Source: ${result.source || new URL(result.url).hostname}`
-      )
-      .join("\n\n");
-
-    enhancedPrompt = `[Web Search Results]:\n${searchContext}\n\n[User Query]: ${enhancedPrompt}`;
-  }
-
-  return enhancedPrompt;
-}
-
-async function streamOpenAI(
-  model: string,
-  prompt: string,
-  images: Array<{ url: string; description?: string }> | undefined,
-  controller: ReadableStreamDefaultController,
-  stepId: Id<"agentSteps">
-) {
-  try {
-    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
-
-    if (images && images.length > 0) {
-      // For vision-capable models, include images
-      const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
-        { type: "text", text: prompt },
-      ];
-
-      images.forEach((image) => {
-        content.push({
-          type: "image_url",
-          image_url: {
-            url: image.url,
-            detail: "high",
+        // Return streaming response with the content
+        return new Response(response.content, {
+          headers: {
+            "Content-Type": "text/plain",
           },
         });
-      });
-
-      messages.push({
-        role: "user",
-        content: content,
-      });
-    } else {
-      messages.push({
-        role: "user",
-        content: prompt,
-      });
-    }
-
-    const stream = await openai.chat.completions.create({
-      model: model.replace("openai-", ""),
-      messages,
-      stream: true,
-      max_tokens: 4000,
-    });
-
-    let fullResponse = "";
-    let tokenUsage: TokenUsage | null = null;
-    let chunkCount = 0;
-    const updateFrequency = 5; // Update database every 5 chunks for better performance
-
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta;
-
-      if (delta?.content) {
-        const content = delta.content;
-        fullResponse += content;
-        chunkCount++;
-
-        // Send chunk to client immediately for fast streaming
-        controller.enqueue(
-          new TextEncoder().encode(
-            `data: ${JSON.stringify({
-              type: "chunk",
-              content: content,
-              fullContent: fullResponse,
-            })}\n\n`
-          )
-        );
-
-        // Update database less frequently to improve performance
-        if (chunkCount % updateFrequency === 0) {
-          await convex.mutation(api.mutations.updateStreamedContent, {
-            stepId,
-            content: fullResponse,
-          });
-        }
-      }
-
-      // Handle usage information
-      if (chunk.usage) {
-        tokenUsage = {
-          promptTokens: chunk.usage.prompt_tokens || 0,
-          completionTokens: chunk.usage.completion_tokens || 0,
-          totalTokens: chunk.usage.total_tokens || 0,
-        };
-      }
-    }
-
-    // Estimate tokens if not provided by API
-    if (!tokenUsage) {
-      const promptTokens = estimateTokens(prompt);
-      const completionTokens = estimateTokens(fullResponse);
-
-      tokenUsage = {
-        promptTokens,
-        completionTokens,
-        totalTokens: promptTokens + completionTokens,
-      };
-
-      console.log(`Estimated tokens for ${model}:`, tokenUsage);
-    }
-
-    // Calculate cost
-    const estimatedCost = tokenUsage
-      ? calculateCost(
-          model,
-          tokenUsage.promptTokens,
-          tokenUsage.completionTokens
-        )
-      : 0;
-
-    // Final update to database with performance metrics
-    await convex.mutation(api.mutations.completeAgentExecution, {
-      stepId,
-      response: fullResponse,
-      tokenUsage: tokenUsage || undefined,
-      estimatedCost,
-    });
-
-    // Send completion signal
-    controller.enqueue(
-      new TextEncoder().encode(
-        `data: ${JSON.stringify({
-          type: "complete",
-          response: fullResponse,
-          tokenUsage: tokenUsage || undefined,
-        })}\n\n`
-      )
-    );
-
-    controller.close();
-  } catch (error) {
-    throw new Error(
-      `OpenAI streaming failed: ${error instanceof Error ? error.message : "Unknown error"}`
-    );
-  }
-}
-
-async function streamAnthropic(
-  model: string,
-  prompt: string,
-  images: Array<{ url: string; description?: string }> | undefined,
-  controller: ReadableStreamDefaultController,
-  stepId: Id<"agentSteps">
-) {
-  try {
-    const content: Anthropic.MessageParam["content"] = [];
-
-    // Add text content
-    content.push({
-      type: "text",
-      text: prompt,
-    });
-
-    // Add images if provided and model supports vision
-    if (images && images.length > 0) {
-      for (const image of images) {
-        // For Anthropic, we need to fetch the image and convert to base64
-        try {
-          const response = await fetch(image.url);
-          const arrayBuffer = await response.arrayBuffer();
-          const base64 = Buffer.from(arrayBuffer).toString("base64");
-          const mimeType = response.headers.get("content-type") || "image/jpeg";
-
-          content.push({
-            type: "image",
-            source: {
-              type: "base64",
-              media_type: mimeType as
-                | "image/jpeg"
-                | "image/png"
-                | "image/gif"
-                | "image/webp",
-              data: base64,
-            },
-          });
-        } catch (error) {
-          console.error("Failed to process image for Anthropic:", error);
-        }
-      }
-    }
-
-    const stream = await anthropic.messages.create({
-      model: model.replace("anthropic-", ""),
-      max_tokens: 4000,
-      messages: [
-        {
-          role: "user",
-          content: content,
-        },
-      ],
-      stream: true,
-    });
-
-    let fullResponse = "";
-    let tokenUsage: TokenUsage | null = null;
-    let chunkCount = 0;
-    const updateFrequency = 5; // Update database every 5 chunks for better performance
-
-    for await (const chunk of stream) {
-      if (
-        chunk.type === "content_block_delta" &&
-        chunk.delta.type === "text_delta"
-      ) {
-        const content = chunk.delta.text;
-        fullResponse += content;
-        chunkCount++;
-
-        // Send chunk to client immediately for fast streaming
-        controller.enqueue(
-          new TextEncoder().encode(
-            `data: ${JSON.stringify({
-              type: "chunk",
-              content: content,
-              fullContent: fullResponse,
-            })}\n\n`
-          )
-        );
-
-        // Update database less frequently to improve performance
-        if (chunkCount % updateFrequency === 0) {
-          await convex.mutation(api.mutations.updateStreamedContent, {
-            stepId,
-            content: fullResponse,
-          });
-        }
-      }
-
-      // Handle usage information
-      if (chunk.type === "message_delta" && chunk.usage) {
-        tokenUsage = {
-          promptTokens: chunk.usage.input_tokens || 0,
-          completionTokens: chunk.usage.output_tokens || 0,
-          totalTokens:
-            (chunk.usage.input_tokens || 0) + (chunk.usage.output_tokens || 0),
-        };
-      }
-    }
-
-    // Estimate tokens if not provided by API
-    if (!tokenUsage) {
-      const promptTokens = estimateTokens(prompt);
-      const completionTokens = estimateTokens(fullResponse);
-
-      tokenUsage = {
-        promptTokens,
-        completionTokens,
-        totalTokens: promptTokens + completionTokens,
-      };
-
-      console.log(`Estimated tokens for ${model}:`, tokenUsage);
-    }
-
-    // Calculate cost
-    const estimatedCost = tokenUsage
-      ? calculateCost(
-          model,
-          tokenUsage.promptTokens,
-          tokenUsage.completionTokens
-        )
-      : 0;
-
-    // Final update to database with performance metrics
-    await convex.mutation(api.mutations.completeAgentExecution, {
-      stepId,
-      response: fullResponse,
-      tokenUsage: tokenUsage || undefined,
-      estimatedCost,
-    });
-
-    // Send completion signal
-    controller.enqueue(
-      new TextEncoder().encode(
-        `data: ${JSON.stringify({
-          type: "complete",
-          response: fullResponse,
-          tokenUsage: tokenUsage || undefined,
-        })}\n\n`
-      )
-    );
-
-    controller.close();
-  } catch (error) {
-    throw new Error(
-      `Anthropic streaming failed: ${error instanceof Error ? error.message : "Unknown error"}`
-    );
-  }
-}
-
-async function streamXAI(
-  model: string,
-  prompt: string,
-  images: Array<{ url: string; description?: string }> | undefined,
-  controller: ReadableStreamDefaultController,
-  stepId: Id<"agentSteps">
-) {
-  try {
-    // xAI client setup
-    const xai = new OpenAI({
-      apiKey: process.env.XAI_API_KEY,
-      baseURL: "https://api.x.ai/v1",
-    });
-
-    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
-
-    if (images && images.length > 0) {
-      // For vision-capable models, include images
-      const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
-        { type: "text", text: prompt },
-      ];
-
-      images.forEach((image) => {
-        content.push({
-          type: "image_url",
-          image_url: {
-            url: image.url,
-            detail: "high",
-          },
+      } else if (grokOptions.realTimeData) {
+        // For real-time data without thinking, use enhanced streaming
+        const stream = streamGrokEnhanced(messages, {
+          realTimeData: true,
+          thinkingMode: false,
         });
-      });
-
-      messages.push({
-        role: "user",
-        content: content,
-      });
-    } else {
-      messages.push({
-        role: "user",
-        content: prompt,
-      });
-    }
-
-    const stream = await xai.chat.completions.create({
-      model: model.replace("xai-", ""),
-      messages,
-      stream: true,
-      max_tokens: 4000,
-    });
-
-    let fullResponse = "";
-    let tokenUsage: TokenUsage | null = null;
-    let chunkCount = 0;
-    const updateFrequency = 5; // Update database every 5 chunks for better performance
-
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta;
-
-      if (delta?.content) {
-        const content = delta.content;
-        fullResponse += content;
-        chunkCount++;
-
-        // Send chunk to client immediately for fast streaming
-        controller.enqueue(
-          new TextEncoder().encode(
-            `data: ${JSON.stringify({
-              type: "chunk",
-              content: content,
-              fullContent: fullResponse,
-            })}\n\n`
-          )
-        );
-
-        // Update database less frequently to improve performance
-        if (chunkCount % updateFrequency === 0) {
-          await convex.mutation(api.mutations.updateStreamedContent, {
-            stepId,
-            content: fullResponse,
-          });
-        }
-      }
-
-      // Handle usage information
-      if (chunk.usage) {
-        tokenUsage = {
-          promptTokens: chunk.usage.prompt_tokens || 0,
-          completionTokens: chunk.usage.completion_tokens || 0,
-          totalTokens: chunk.usage.total_tokens || 0,
-        };
+        return createGrokStreamingResponse(stream);
       }
     }
 
-    // Estimate tokens if not provided by API
-    if (!tokenUsage) {
-      const promptTokens = estimateTokens(prompt);
-      const completionTokens = estimateTokens(fullResponse);
-
-      tokenUsage = {
-        promptTokens,
-        completionTokens,
-        totalTokens: promptTokens + completionTokens,
-      };
-
-      console.log(`Estimated tokens for ${model}:`, tokenUsage);
+    // Handle Claude enhanced features
+    if (provider === "anthropic" && claudeOptions?.enableTools) {
+      const stream = streamClaudeWithTools(messages, {
+        model: model as ClaudeModel,
+        fileAttachments: claudeOptions.fileAttachments,
+      });
+      return createClaudeStreamingResponse(stream);
     }
 
-    // Calculate cost
-    const estimatedCost = tokenUsage
-      ? calculateCost(
-          model,
-          tokenUsage.promptTokens,
-          tokenUsage.completionTokens
-        )
-      : 0;
+    // Default streaming for all providers
+    let modelInstance;
+    switch (provider) {
+      case "openai":
+        modelInstance = openai(model);
+        break;
+      case "anthropic":
+        modelInstance = anthropic(model);
+        break;
+      case "xai":
+        modelInstance = xai(model);
+        break;
+      default:
+        throw new Error(`Unsupported provider: ${provider}`);
+    }
 
-    // Final update to database with performance metrics
-    await convex.mutation(api.mutations.completeAgentExecution, {
-      stepId,
-      response: fullResponse,
-      tokenUsage: tokenUsage || undefined,
-      estimatedCost,
-    });
-
-    // Send completion signal
-    controller.enqueue(
-      new TextEncoder().encode(
-        `data: ${JSON.stringify({
-          type: "complete",
-          response: fullResponse,
-          tokenUsage: tokenUsage || undefined,
-        })}\n\n`
-      )
-    );
-
-    controller.close();
+    return streamText({
+      model: modelInstance,
+      messages: messages as Array<{
+        role: "user" | "assistant" | "system";
+        content: string;
+      }>,
+    }).toDataStreamResponse();
   } catch (error) {
-    throw new Error(
-      `XAI streaming failed: ${error instanceof Error ? error.message : "Unknown error"}`
+    console.error("Stream agent error:", error);
+    return NextResponse.json(
+      { error: "Failed to process request" },
+      { status: 500 }
     );
   }
 }

@@ -123,6 +123,8 @@ export const updateAgentStep = mutation({
     stepId: v.id("agentSteps"),
     response: v.optional(v.string()),
     reasoning: v.optional(v.string()),
+    thinking: v.optional(v.string()),
+    isThinking: v.optional(v.boolean()),
     isComplete: v.boolean(),
     isStreaming: v.optional(v.boolean()),
     tokenUsage: v.optional(
@@ -154,6 +156,8 @@ export const updateAgentStep = mutation({
 
     if (args.response !== undefined) updateData.response = args.response;
     if (args.reasoning !== undefined) updateData.reasoning = args.reasoning;
+    if (args.thinking !== undefined) updateData.thinking = args.thinking;
+    if (args.isThinking !== undefined) updateData.isThinking = args.isThinking;
     if (args.tokenUsage !== undefined) updateData.tokenUsage = args.tokenUsage;
     if (args.error !== undefined) updateData.error = args.error;
     if (args.provider !== undefined) updateData.provider = args.provider;
@@ -520,6 +524,7 @@ export const completeAgentExecution = mutation({
   args: {
     stepId: v.id("agentSteps"),
     response: v.string(),
+    thinking: v.optional(v.string()),
     tokenUsage: v.optional(
       v.object({
         promptTokens: v.number(),
@@ -553,6 +558,7 @@ export const completeAgentExecution = mutation({
 
     await ctx.db.patch(args.stepId, {
       response: args.response,
+      thinking: args.thinking,
       tokenUsage: args.tokenUsage,
       estimatedCost: args.estimatedCost,
       tokensPerSecond,

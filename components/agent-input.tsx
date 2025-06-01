@@ -15,13 +15,9 @@ import {
   Zap,
   Brain,
   Globe,
-  ChevronUp,
-  GitCommitHorizontal,
-  GitFork,
   Pencil,
 } from "lucide-react";
 import { SiOpenai, SiClaude } from "react-icons/si";
-import { IoGitBranchOutline } from "react-icons/io5";
 import { UploadedImage } from "./modality/ImageUpload";
 import { WebSearchData } from "./modality/WebSearch";
 import { ModalityIcons } from "./modality/ModalityIcons";
@@ -30,6 +26,7 @@ import {
   CONDITION_PRESETS,
   type EnabledConnectionType,
 } from "@/lib/constants";
+import { ToolButton } from "./ui/ToolButton";
 
 export interface Agent {
   id: string;
@@ -46,6 +43,23 @@ export interface Agent {
   audioDuration?: number;
   audioTranscription?: string;
   webSearchData?: WebSearchData;
+  // New simplified toggles
+  webSearchEnabled?: boolean;
+  // Enhanced options for Grok
+  grokOptions?: {
+    realTimeData?: boolean;
+    thinkingMode?: boolean;
+  };
+  // Enhanced options for Claude
+  claudeOptions?: {
+    enableTools?: boolean;
+    toolSet?: "webSearch" | "fileAnalysis" | "computerUse" | "full";
+    fileAttachments?: Array<{
+      name: string;
+      content: string;
+      mimeType: string;
+    }>;
+  };
 }
 
 interface AgentInputProps {
@@ -137,142 +151,238 @@ const MODEL_PROVIDERS: ModelProviders = {
     iconColor: "text-white",
     bgColor: "bg-[#000000]",
     models: [
+      // Reasoning Models (High Priority)
+      {
+        value: "o1",
+        label: "o1",
+        modalities: ["text", "reasoning"],
+        description: "Most advanced reasoning model for complex problems",
+        capabilities: [
+          "Advanced reasoning",
+          "Mathematical analysis",
+          "Complex problem solving",
+        ],
+      },
+      {
+        value: "o1-mini",
+        label: "o1 Mini",
+        modalities: ["text", "reasoning", "fast"],
+        description: "Cost-effective reasoning model",
+        capabilities: [
+          "Logical reasoning",
+          "Cost-efficient",
+          "Faster responses",
+        ],
+      },
+      {
+        value: "o1-pro",
+        label: "o1 Pro",
+        modalities: ["text", "reasoning"],
+        description: "Premium reasoning model with enhanced capabilities",
+        capabilities: [
+          "Premium reasoning",
+          "Extended thinking",
+          "Complex analysis",
+        ],
+      },
+
+      // Flagship Models
       {
         value: "gpt-4o",
         label: "GPT-4o",
         modalities: ["text", "vision", "audio", "code"],
-        description: "Multimodal flagship model with real-time capabilities",
+        description: "Flagship multimodal model with real-time capabilities",
         capabilities: [
           "Real-time reasoning",
           "Voice interaction",
-          "Image generation",
+          "Image analysis",
         ],
       },
       {
         value: "gpt-4o-mini",
         label: "GPT-4o Mini",
-        modalities: ["text", "audio"],
-        description: "Lightweight model optimized for speech-to-text",
-        capabilities: ["Enhanced transcription", "Language recognition"],
+        modalities: ["text", "vision", "fast"],
+        description: "Fast and cost-effective multimodal model",
+        capabilities: ["Quick responses", "Vision analysis", "Cost-efficient"],
+      },
+
+      // Latest Models
+      {
+        value: "gpt-4.5-preview",
+        label: "GPT-4.5 Preview",
+        modalities: ["text", "vision", "code"],
+        description: "Latest preview model with cutting-edge capabilities",
+        capabilities: [
+          "Latest features",
+          "Enhanced performance",
+          "Advanced reasoning",
+        ],
       },
       {
-        value: "gpt-4-turbo",
-        label: "GPT-4 Turbo",
-        modalities: ["text", "fast"],
-        description: "High-speed processing with extended context",
-        capabilities: ["128K tokens", "Large-scale processing"],
+        value: "gpt-4.1",
+        label: "GPT-4.1",
+        modalities: ["text", "vision", "code"],
+        description: "Enhanced GPT-4 with improved capabilities",
+        capabilities: [
+          "Improved reasoning",
+          "Better code generation",
+          "Enhanced accuracy",
+        ],
       },
+
+      // Specialized Models
       {
-        value: "gpt-4",
-        label: "GPT-4",
+        value: "o3-mini-2025-01-31",
+        label: "o3 Mini",
         modalities: ["text", "reasoning"],
-        description: "Advanced reasoning and creative writing",
-        capabilities: ["Complex reasoning", "Technical writing"],
+        description: "Next-generation reasoning model",
+        capabilities: [
+          "Advanced reasoning",
+          "Efficient processing",
+          "Mathematical expertise",
+        ],
       },
       {
-        value: "gpt-3.5-turbo",
-        label: "GPT-3.5 Turbo",
-        modalities: ["text", "fast"],
-        description: "Efficient performance for general tasks",
-        capabilities: ["Cost-effective", "General purpose"],
+        value: "o4-mini-2025-04-16",
+        label: "o4 Mini",
+        modalities: ["text", "reasoning", "fast"],
+        description: "Latest generation reasoning model",
+        capabilities: [
+          "State-of-the-art reasoning",
+          "Optimized performance",
+          "Complex analysis",
+        ],
       },
     ],
   },
+
   anthropic: {
     name: "Anthropic",
     icon: SiClaude,
     iconColor: "text-[#da7756]",
     bgColor: "bg-[#000000]",
     models: [
+      // Claude 4 Series (Latest)
+      {
+        value: "claude-sonnet-4-20250514",
+        label: "Claude Sonnet 4",
+        modalities: ["text", "vision", "code", "reasoning"],
+        description: "High-performance model with exceptional reasoning",
+        capabilities: [
+          "Advanced coding",
+          "Complex reasoning",
+          "Vision analysis",
+        ],
+      },
+      {
+        value: "claude-opus-4-20250514",
+        label: "Claude Opus 4",
+        modalities: ["text", "vision", "code", "reasoning"],
+        description: "Most capable and intelligent Claude model",
+        capabilities: [
+          "Superior reasoning",
+          "Advanced analysis",
+          "Complex problem solving",
+        ],
+      },
+
+      // Claude 3.7 Series
+      {
+        value: "claude-3-7-sonnet-20250219",
+        label: "Claude Sonnet 3.7",
+        modalities: ["text", "vision", "reasoning"],
+        description: "Enhanced model with extended thinking capabilities",
+        capabilities: [
+          "Extended thinking",
+          "Deep analysis",
+          "Thoughtful responses",
+        ],
+      },
+
+      // Claude 3.5 Series (Proven)
       {
         value: "claude-3-5-sonnet-20241022",
         label: "Claude 3.5 Sonnet",
         modalities: ["text", "vision", "code", "reasoning"],
-        description: "Advanced reasoning with computer use capabilities",
-        capabilities: ["Code generation", "Vision analysis", "UI navigation"],
+        description: "Proven high-performance model for complex tasks",
+        capabilities: ["Code generation", "Vision analysis", "Tool use"],
       },
       {
         value: "claude-3-5-haiku-20241022",
         label: "Claude 3.5 Haiku",
         modalities: ["text", "vision", "fast"],
-        description: "Fast and cost-effective with strong coding",
-        capabilities: ["Rapid responses", "Coding tasks", "Cost-efficient"],
-      },
-      {
-        value: "claude-3-sonnet-20240229",
-        label: "Claude 3 Sonnet",
-        modalities: ["text", "vision"],
-        description: "Superior instruction following and tool use",
+        description: "Fast and efficient model for quick tasks",
         capabilities: [
-          "Tool selection",
-          "Error correction",
-          "Complex workflows",
+          "Rapid responses",
+          "Cost-effective",
+          "Reliable performance",
         ],
-      },
-      {
-        value: "claude-3-haiku-20240307",
-        label: "Claude 3 Haiku",
-        modalities: ["text", "fast"],
-        description: "Fast response times for real-time applications",
-        capabilities: ["Real-time", "Interactive", "Lightweight"],
       },
     ],
   },
+
   xai: {
     name: "xAI",
     icon: GrokIcon,
     iconColor: "text-white",
     bgColor: "bg-[#000000]",
     models: [
+      // Grok 3 Series (Latest)
       {
         value: "grok-3",
         label: "Grok 3",
-        modalities: ["text", "vision", "audio", "reasoning", "web"],
-        description: "Flagship model with Think and DeepSearch modes",
+        modalities: ["text", "reasoning", "web"],
+        description: "Flagship model with real-time data access",
         capabilities: [
           "Real-time data",
-          "Voice interaction",
-          "Advanced reasoning",
+          "Market analysis",
+          "Deep domain knowledge",
         ],
       },
       {
         value: "grok-3-mini",
         label: "Grok 3 Mini",
         modalities: ["text", "reasoning"],
-        description: "Cost-efficient reasoning for lightweight apps",
-        capabilities: ["Cost-effective", "Lightweight", "Reasoning"],
+        description: "Lightweight model with strong reasoning",
+        capabilities: [
+          "Cost-effective",
+          "Quick reasoning",
+          "Reliable analysis",
+        ],
       },
       {
         value: "grok-3-fast",
         label: "Grok 3 Fast",
         modalities: ["text", "fast"],
         description: "Optimized for speed and real-time applications",
-        capabilities: ["High speed", "Real-time", "Interactive"],
+        capabilities: ["High speed", "Real-time processing", "Low latency"],
       },
       {
         value: "grok-3-mini-fast",
         label: "Grok 3 Mini Fast",
         modalities: ["text", "fast"],
-        description: "Combines cost-efficiency with speed",
-        capabilities: ["Cost-effective", "Fast", "Lightweight"],
+        description: "Balance of speed and cost-effectiveness",
+        capabilities: ["Fast responses", "Cost-efficient", "Reliable"],
       },
-      {
-        value: "grok-2-1212",
-        label: "Grok 2",
-        modalities: ["text", "vision", "image"],
-        description: "Multimodal with image generation via FLUX",
-        capabilities: ["Image generation", "Creative tasks", "Vision analysis"],
-      },
+
+      // Grok 2 Series (Multimodal)
       {
         value: "grok-2-vision-1212",
         label: "Grok 2 Vision",
         modalities: ["vision", "image"],
-        description: "Enhanced image understanding and generation",
+        description: "Advanced image understanding and analysis",
         capabilities: [
           "Visual analysis",
-          "Image generation",
-          "Creative applications",
+          "Image processing",
+          "Multimodal reasoning",
         ],
+      },
+      {
+        value: "grok-2-1212",
+        label: "Grok 2",
+        modalities: ["text", "reasoning"],
+        description: "Proven model for text analysis and reasoning",
+        capabilities: ["Text analysis", "Logical reasoning", "Problem solving"],
       },
     ],
   },
@@ -304,13 +414,9 @@ export function AgentInput({
   canSend,
   isLoading,
 }: AgentInputProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(agent.name || "");
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-  const [isConnectionDropdownOpen, setIsConnectionDropdownOpen] =
-    useState(false);
-  const [isConditionDropdownOpen, setIsConditionDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"compact" | "detailed">("compact");
   const [showConditionInput, setShowConditionInput] = useState(false);
@@ -399,7 +505,6 @@ export function AgentInput({
 
     onUpdate({ ...agent, connection: newConnection });
     setShowConditionInput(type === "conditional");
-    setIsConnectionDropdownOpen(false);
   };
 
   const handleConditionChange = (condition: string) => {
@@ -502,97 +607,6 @@ export function AgentInput({
     </div>
   );
 
-  const renderConnectionSelector = () => {
-    if (index === 0) return null;
-
-    return (
-      <div className="relative">
-        <button
-          onClick={(e) => {
-            setButtonPosition(
-              "connection",
-              e.currentTarget.getBoundingClientRect()
-            );
-            setIsConnectionDropdownOpen(!isConnectionDropdownOpen);
-          }}
-          className={`flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1 rounded-md group ${STYLES.button}`}
-        >
-          {CurrentConnectionIcon && (
-            <span
-              className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""}`}
-            >
-              <CurrentConnectionIcon size={12} className="md:w-3.5 md:h-3.5" />
-            </span>
-          )}
-          <span className="font-medium text-xs truncate max-w-12 md:max-w-none">
-            {currentConnection?.label}
-          </span>
-          <ChevronUp
-            size={8}
-            className={`md:w-2.5 md:h-2.5 text-gray-400 group-hover:text-lavender-400 transition-all ${
-              isConnectionDropdownOpen ? "rotate-0" : "rotate-90"
-            }`}
-          />
-        </button>
-
-        {isConnectionDropdownOpen &&
-          createPortal(
-            <>
-              <div
-                className={STYLES.backdrop}
-                onClick={() => setIsConnectionDropdownOpen(false)}
-              />
-              <div
-                className={`${STYLES.modal} min-w-48 w-max max-w-[90vw]`}
-                style={getModalPosition(buttonPositions.connection)}
-              >
-                {CONNECTION_TYPES.map((type) => {
-                  const TypeIcon = type.Icon;
-                  const isSelected = currentConnectionType === type.type;
-                  return (
-                    <button
-                      key={type.type}
-                      onClick={() =>
-                        !type.disabled && handleConnectionTypeChange(type.type)
-                      }
-                      disabled={type.disabled}
-                      className={`w-full px-3 py-2 text-left hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed first:rounded-t-lg last:rounded-b-lg flex items-center gap-3 transition-colors text-xs ${
-                        isSelected
-                          ? "bg-lavender-500/10 text-lavender-400"
-                          : "text-white"
-                      }`}
-                    >
-                      <span
-                        className={`${type.color} ${type.iconRotate || ""}`}
-                      >
-                        <TypeIcon size={14} />
-                      </span>
-                      <div className="flex-1">
-                        <div
-                          className={`font-medium ${isSelected ? "text-lavender-400" : ""}`}
-                        >
-                          {type.label}
-                          {isSelected && (
-                            <span className="ml-2 text-xs opacity-60">
-                              Selected
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-gray-400 text-xs">
-                          {type.description}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </>,
-            document.body
-          )}
-      </div>
-    );
-  };
-
   const renderConditionalInput = () => {
     if (index === 0 || currentConnectionType !== "conditional") return null;
 
@@ -671,7 +685,7 @@ export function AgentInput({
           setButtonPosition("model", e.currentTarget.getBoundingClientRect());
           setIsModelDropdownOpen(!isModelDropdownOpen);
         }}
-        className={`flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-md group ${STYLES.button}`}
+        className={`flex items-center gap-1.5 md:gap-2 p-1.5 md:p-2 rounded-md group ${STYLES.button}`}
       >
         {currentProvider && (
           <currentProvider.icon
@@ -679,7 +693,7 @@ export function AgentInput({
             className={`md:w-3.5 md:h-3.5 ${currentProvider.iconColor} flex-shrink-0`}
           />
         )}
-        <span className="font-medium truncate max-w-16 md:max-w-20 text-xs">
+        <span className="font-medium truncate max-w-16 md:max-w-24 text-xs">
           {selectedModel?.label}
         </span>
         <ChevronDown
@@ -854,6 +868,44 @@ export function AgentInput({
     </div>
   );
 
+  const renderEnhancedOptions = () => {
+    const providerKey = getProviderKey(agent.model);
+
+    // Only show enhanced options for Grok and Claude models
+    if (providerKey !== "xai" && providerKey !== "anthropic") {
+      return null;
+    }
+
+    return (
+      <ToolButton
+        provider={providerKey}
+        grokOptions={agent.grokOptions}
+        claudeOptions={agent.claudeOptions}
+        onGrokOptionsChange={(options) =>
+          onUpdate({
+            ...agent,
+            grokOptions: options,
+          })
+        }
+        onClaudeOptionsChange={(options) =>
+          onUpdate({
+            ...agent,
+            claudeOptions: {
+              ...agent.claudeOptions,
+              enableTools: options.enableTools,
+              toolSet: options.toolSet as
+                | "webSearch"
+                | "fileAnalysis"
+                | "computerUse"
+                | "full",
+            },
+          })
+        }
+        className="ml-2"
+      />
+    );
+  };
+
   return (
     <div className="relative flex flex-col mx-2 mb-2 md:mb-0 md:mx-0 rounded-2xl border border-gray-600/50">
       {/* Header section */}
@@ -895,7 +947,7 @@ export function AgentInput({
           {canRemove && (
             <button
               onClick={onRemove}
-              className="text-gray-400 hover:text-red-400 transition-colors p-1 hover:bg-gray-700/50 rounded-md self-end md:self-auto"
+              className="text-gray-400 hover:text-red-400 transition-colors p-1.5 hover:bg-gray-700/50 rounded-md self-end md:self-auto"
             >
               <X size={12} className="md:w-3.5 md:h-3.5" />
             </button>
@@ -922,48 +974,41 @@ export function AgentInput({
         <div className="absolute bottom-0 left-0 right-0 flex flex-row md:items-center rounded-b-2xl justify-between px-2 md:px-4 py-1.5 md:py-3 overflow-hidden gap-1.5 md:gap-0">
           <div className="block md:hidden">
             {/* Modality Icons */}
-            <ModalityIcons
-              selectedModel={agent.model}
-              onImagesChange={(images) => onUpdate({ ...agent, images })}
-              onAudioRecording={(audioBlob, duration, transcription) =>
-                onUpdate({
-                  ...agent,
-                  audioBlob,
-                  audioDuration: duration,
-                  audioTranscription: transcription,
-                })
-              }
-              onWebSearch={(webSearchData) =>
-                onUpdate({ ...agent, webSearchData })
-              }
-              images={agent.images || []}
-            />
+            <div className="flex items-center gap-1.5">
+              <ModalityIcons
+                selectedModel={agent.model}
+                onImagesChange={(images) => onUpdate({ ...agent, images })}
+                onWebSearchToggle={(enabled) =>
+                  onUpdate({ ...agent, webSearchEnabled: enabled })
+                }
+                isWebSearchEnabled={agent.webSearchEnabled}
+                images={agent.images || []}
+              />
+
+              {/* Tool Button for mobile */}
+              {renderEnhancedOptions()}
+            </div>
           </div>
           {/* Left side controls */}
           <div className="hidden md:flex items-center gap-1.5 md:gap-2 flex-wrap">
             {renderModelSelector()}
+            {/* Tool Button */}
+            {renderEnhancedOptions()}
             {/* Modality Icons */}
             <ModalityIcons
               selectedModel={agent.model}
               onImagesChange={(images) => onUpdate({ ...agent, images })}
-              onAudioRecording={(audioBlob, duration, transcription) =>
-                onUpdate({
-                  ...agent,
-                  audioBlob,
-                  audioDuration: duration,
-                  audioTranscription: transcription,
-                })
+              onWebSearchToggle={(enabled) =>
+                onUpdate({ ...agent, webSearchEnabled: enabled })
               }
-              onWebSearch={(webSearchData) =>
-                onUpdate({ ...agent, webSearchData })
-              }
+              isWebSearchEnabled={agent.webSearchEnabled}
               images={agent.images || []}
             />
             {/* Add Agent Button */}
             {isLastAgent && canAddAgent && (
               <button
                 onClick={handleAddAgent}
-                className={`flex items-center justify-center px-1.5 md:px-3 py-1 md:py-1.5 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-md text-lavender-400 hover:text-lavender-300 transition-all group backdrop-blur-sm ${
+                className={`flex items-center justify-center p-1.5 md:p-2 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-md text-lavender-400 hover:text-lavender-300 transition-all group backdrop-blur-sm ${
                   isAddingAgent ? "scale-95 bg-lavender-500/40" : ""
                 }`}
                 title="Add Agent"

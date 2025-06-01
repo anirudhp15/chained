@@ -304,13 +304,13 @@ const DesktopConnectionSelector = ({
   };
 
   return (
-    <div className="hidden md:flex flex-col items-center justify-center px-2">
+    <div className="hidden md:flex flex-col items-center justify-center ">
       <button
         onClick={(e) => {
           setButtonPosition(e.currentTarget.getBoundingClientRect());
           setIsDropdownOpen(!isDropdownOpen);
         }}
-        className="flex items-center justify-center p-2 hover:bg-gray-700/50 rounded-lg transition-all group"
+        className="flex items-center justify-center p-2 hover:bg-gray-700/50 border border-gray-600/50 bg-gray-800/25 backdrop-blur-sm rounded-lg transition-all group"
         title={`Connection: ${currentConnection?.label}`}
       >
         {CurrentConnectionIcon && (

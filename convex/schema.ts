@@ -101,6 +101,8 @@ export default defineSchema({
     name: v.optional(v.string()), // Custom name for the step
     response: v.optional(v.string()),
     reasoning: v.optional(v.string()), // For models that support reasoning
+    thinking: v.optional(v.string()), // For streaming thinking process
+    isThinking: v.optional(v.boolean()), // Whether currently thinking
     timestamp: v.number(),
     isComplete: v.boolean(),
     isStreaming: v.optional(v.boolean()),

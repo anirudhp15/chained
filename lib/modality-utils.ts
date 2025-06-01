@@ -12,7 +12,39 @@ export interface ModelCapabilities {
 
 // Model providers and their capabilities
 export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
-  // OpenAI Models
+  // OpenAI Models - Reasoning Models (High Priority)
+  o1: {
+    text: true,
+    vision: false,
+    audio: false,
+    image: false,
+    code: true,
+    fast: false,
+    reasoning: true,
+    web: false,
+  },
+  "o1-mini": {
+    text: true,
+    vision: false,
+    audio: false,
+    image: false,
+    code: true,
+    fast: true,
+    reasoning: true,
+    web: false,
+  },
+  "o1-pro": {
+    text: true,
+    vision: false,
+    audio: false,
+    image: false,
+    code: true,
+    fast: false,
+    reasoning: true,
+    web: false,
+  },
+
+  // OpenAI Flagship Models
   "gpt-4o": {
     text: true,
     vision: true,
@@ -25,25 +57,39 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   },
   "gpt-4o-mini": {
     text: true,
-    vision: false,
-    audio: true,
+    vision: true,
+    audio: false,
     image: false,
     code: true,
     fast: true,
     reasoning: false,
     web: false,
   },
-  "gpt-4-turbo": {
+
+  // OpenAI Latest Models
+  "gpt-4.5-preview": {
     text: true,
-    vision: false,
+    vision: true,
     audio: false,
     image: false,
     code: true,
-    fast: true,
+    fast: false,
     reasoning: true,
     web: false,
   },
-  "gpt-4": {
+  "gpt-4.1": {
+    text: true,
+    vision: true,
+    audio: false,
+    image: false,
+    code: true,
+    fast: false,
+    reasoning: true,
+    web: false,
+  },
+
+  // OpenAI Specialized Models
+  "o3-mini-2025-01-31": {
     text: true,
     vision: false,
     audio: false,
@@ -53,18 +99,52 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     reasoning: true,
     web: false,
   },
-  "gpt-3.5-turbo": {
+  "o4-mini-2025-04-16": {
     text: true,
     vision: false,
     audio: false,
     image: false,
     code: true,
     fast: true,
-    reasoning: false,
+    reasoning: true,
     web: false,
   },
 
-  // Anthropic Models
+  // Anthropic Claude 4 Series
+  "claude-opus-4-20250514": {
+    text: true,
+    vision: true,
+    audio: false,
+    image: false,
+    code: true,
+    fast: false,
+    reasoning: true,
+    web: false,
+  },
+  "claude-sonnet-4-20250514": {
+    text: true,
+    vision: true,
+    audio: false,
+    image: false,
+    code: true,
+    fast: false,
+    reasoning: true,
+    web: false,
+  },
+
+  // Anthropic Claude 3.7 Series
+  "claude-3-7-sonnet-20250219": {
+    text: true,
+    vision: true,
+    audio: false,
+    image: false,
+    code: true,
+    fast: false,
+    reasoning: true,
+    web: false,
+  },
+
+  // Anthropic Claude 3.5 Series (Proven)
   "claude-3-5-sonnet-20241022": {
     text: true,
     vision: true,
@@ -85,32 +165,12 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     reasoning: false,
     web: false,
   },
-  "claude-3-sonnet-20240229": {
-    text: true,
-    vision: true,
-    audio: false,
-    image: false,
-    code: true,
-    fast: false,
-    reasoning: true,
-    web: false,
-  },
-  "claude-3-haiku-20240307": {
+
+  // xAI Grok 3 Series
+  "grok-3": {
     text: true,
     vision: false,
     audio: false,
-    image: false,
-    code: true,
-    fast: true,
-    reasoning: false,
-    web: false,
-  },
-
-  // xAI Models
-  "grok-3": {
-    text: true,
-    vision: true,
-    audio: true,
     image: false,
     code: true,
     fast: false,
@@ -147,16 +207,8 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     reasoning: false,
     web: false,
   },
-  "grok-2-1212": {
-    text: true,
-    vision: true,
-    audio: false,
-    image: true,
-    code: true,
-    fast: false,
-    reasoning: false,
-    web: false,
-  },
+
+  // xAI Grok 2 Series
   "grok-2-vision-1212": {
     text: true,
     vision: true,
@@ -165,6 +217,16 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     code: false,
     fast: false,
     reasoning: false,
+    web: false,
+  },
+  "grok-2-1212": {
+    text: true,
+    vision: false,
+    audio: false,
+    image: false,
+    code: true,
+    fast: false,
+    reasoning: true,
     web: false,
   },
 };
