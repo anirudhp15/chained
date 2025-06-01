@@ -202,7 +202,7 @@ export function InputArea({
                     })
                   }
                   placeholder={`Continue conversation with ${focusedAgentState.model}...`}
-                  className="w-full h-32 px-4 py-4 pb-16 bg-gray-800/70 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 focus:border-lavender-400/50 resize-none transition-all text-base"
+                  className="w-full h-32 px-4 py-4 pb-16 bg-gray-800/70 border border-gray-600/50 text-white placeholder-gray-400 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 focus:border-lavender-400/50 resize-none transition-all text-base"
                 />
 
                 {/* Bottom controls */}

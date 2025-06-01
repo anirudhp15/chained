@@ -21,11 +21,7 @@ import { SiOpenai, SiClaude } from "react-icons/si";
 import { UploadedImage } from "./modality/ImageUpload";
 import { WebSearchData } from "./modality/WebSearch";
 import { ModalityIcons } from "./modality/ModalityIcons";
-import {
-  CONNECTION_TYPES,
-  CONDITION_PRESETS,
-  type EnabledConnectionType,
-} from "@/lib/constants";
+import { CONDITION_PRESETS } from "@/lib/constants";
 import { ToolButton } from "./ui/ToolButton";
 
 export interface Agent {
@@ -104,7 +100,7 @@ const ModalityIcon = ({
   type: string;
   className?: string;
 }) => {
-  const iconProps = { size: 12, className: `${className}` };
+  const iconProps = { size: 12, className };
 
   const icons = {
     text: MessageSquare,
@@ -396,9 +392,19 @@ const STYLES = {
   modal:
     "fixed bg-gray-800/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-[999999] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200",
   backdrop: "fixed inset-0 z-[999999] bg-black/20",
-  backdropBlur: "fixed inset-0 z-[999999] bg-black/30 ",
+  backdropBlur: "fixed inset-0 z-[999999] bg-black/30",
   input:
     "bg-gray-800/90 border border-gray-600/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400/50",
+  // New consolidated styles
+  iconSize: "md:w-3.5 md:h-3.5",
+  iconSizeSmall: "md:w-3 md:h-3",
+  gap: "gap-1.5 md:gap-2",
+  padding: "p-1.5 md:p-2",
+  paddingSmall: "px-1.5 md:px-2 py-0.5 md:py-1",
+  textResponsive: "text-xs md:text-sm",
+  hoverButton: "transition-colors hover:bg-gray-700/50 rounded",
+  addAgentButton:
+    "flex items-center justify-center p-1.5 md:p-2 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-md text-lavender-400 hover:text-lavender-300 transition-all group backdrop-blur-sm",
 } as const;
 
 export function AgentInput({
@@ -493,20 +499,6 @@ export function AgentInput({
     .filter((provider) => provider.models.length > 0);
 
   // Connection handling functions
-  const handleConnectionTypeChange = (type: EnabledConnectionType) => {
-    const baseConnection = {
-      type,
-      sourceAgentId: agent.connection?.sourceAgentId,
-    };
-    const newConnection =
-      type === "conditional"
-        ? { ...baseConnection, condition: agent.connection?.condition || "" }
-        : baseConnection;
-
-    onUpdate({ ...agent, connection: newConnection });
-    setShowConditionInput(type === "conditional");
-  };
-
   const handleConditionChange = (condition: string) => {
     onUpdate({
       ...agent,
@@ -521,10 +513,6 @@ export function AgentInput({
 
   // Current connection info
   const currentConnectionType = agent.connection?.type || "direct";
-  const currentConnection = CONNECTION_TYPES.find(
-    (c) => c.type === currentConnectionType
-  );
-  const CurrentConnectionIcon = currentConnection?.Icon;
 
   const handleAddAgent = () => {
     if (onAddAgent) {
@@ -563,7 +551,7 @@ export function AgentInput({
   };
 
   const renderNameEditor = () => (
-    <div className="flex items-center gap-2 py-1.5">
+    <div className={`flex items-center ${STYLES.gap} py-1.5`}>
       {isEditingName ? (
         <input
           type="text"
@@ -583,7 +571,7 @@ export function AgentInput({
               }
             }
           }}
-          className={`w-20 md:w-32 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs focus:ring-1 ${STYLES.input}`}
+          className={`w-20 md:w-32 ${STYLES.paddingSmall} rounded text-xs focus:ring-1 ${STYLES.input}`}
           placeholder={`Node ${index + 1}`}
           autoFocus
         />
@@ -600,7 +588,7 @@ export function AgentInput({
           </span>
           <Pencil
             size={8}
-            className="opacity-50 group-hover:opacity-100 md:w-3 md:h-3 flex-shrink-0"
+            className={`opacity-50 group-hover:opacity-100 ${STYLES.iconSizeSmall} flex-shrink-0`}
           />
         </button>
       )}
@@ -611,14 +599,14 @@ export function AgentInput({
     if (index === 0 || currentConnectionType !== "conditional") return null;
 
     return (
-      <div className="flex items-center gap-1.5 md:gap-2 relative">
+      <div className={`flex items-center ${STYLES.gap} relative`}>
         <div className="relative">
           <input
             type="text"
             value={agent.connection?.condition || ""}
             onChange={(e) => handleConditionChange(e.target.value)}
             placeholder="Enter condition..."
-            className={`w-24 md:w-40 px-1.5 md:px-2 py-0.5 md:py-1 rounded-md text-xs ${STYLES.input}`}
+            className={`w-24 md:w-40 ${STYLES.paddingSmall} rounded-md text-xs ${STYLES.input}`}
             onFocus={(e) => {
               setButtonPosition(
                 "condition",
@@ -669,10 +657,10 @@ export function AgentInput({
 
         <button
           onClick={() => setShowConditionInput(!showConditionInput)}
-          className="p-0.5 md:p-1 text-gray-400 hover:text-lavender-400 transition-colors hover:bg-gray-700/50 rounded"
+          className={`p-0.5 md:p-1 text-gray-400 hover:text-lavender-400 ${STYLES.hoverButton}`}
           title="Show condition presets"
         >
-          <Zap size={10} className="md:w-3 md:h-3" />
+          <Zap size={10} className={STYLES.iconSizeSmall} />
         </button>
       </div>
     );
@@ -685,12 +673,12 @@ export function AgentInput({
           setButtonPosition("model", e.currentTarget.getBoundingClientRect());
           setIsModelDropdownOpen(!isModelDropdownOpen);
         }}
-        className={`flex items-center gap-1.5 md:gap-2 p-1.5 md:p-2 rounded-md group ${STYLES.button}`}
+        className={`flex items-center ${STYLES.gap} ${STYLES.padding} rounded-md group ${STYLES.button}`}
       >
         {currentProvider && (
           <currentProvider.icon
             size={12}
-            className={`md:w-3.5 md:h-3.5 ${currentProvider.iconColor} flex-shrink-0`}
+            className={`${STYLES.iconSize} ${currentProvider.iconColor} flex-shrink-0`}
           />
         )}
         <span className="font-medium truncate max-w-16 md:max-w-24 text-xs">
@@ -698,7 +686,7 @@ export function AgentInput({
         </span>
         <ChevronDown
           size={10}
-          className={`md:w-3 md:h-3 text-gray-400 flex-shrink-0 transition-transform duration-200 ${
+          className={`${STYLES.iconSizeSmall} text-gray-400 flex-shrink-0 transition-transform duration-200 ${
             isModelDropdownOpen ? "rotate-180" : ""
           }`}
         />
@@ -717,8 +705,10 @@ export function AgentInput({
             >
               {/* Header with Search */}
               <div className="p-3 border-b border-gray-700/50 bg-gray-800/30">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="text-xs md:text-sm font-medium text-white">
+                <div className={`flex items-center ${STYLES.gap} mb-2`}>
+                  <h3
+                    className={`${STYLES.textResponsive} font-medium text-white`}
+                  >
                     Select Model
                   </h3>
                   <div className="flex gap-1 ml-auto">
@@ -728,7 +718,7 @@ export function AgentInput({
                           viewMode === "compact" ? "detailed" : "compact"
                         )
                       }
-                      className="p-1 text-gray-400 hover:text-white transition-colors rounded"
+                      className={`p-1 text-gray-400 hover:text-white ${STYLES.hoverButton}`}
                       title={
                         viewMode === "compact"
                           ? "Detailed view"
@@ -766,9 +756,11 @@ export function AgentInput({
                     className="border-b border-gray-700/50 last:border-0"
                   >
                     {/* Provider Header */}
-                    <div className="flex items-center gap-2 px-3 py-2 text-gray-400 bg-gray-800/30 sticky top-0">
+                    <div
+                      className={`flex items-center ${STYLES.gap} px-3 py-2 text-gray-400 bg-gray-800/30 sticky top-0`}
+                    >
                       <provider.icon size={14} className={provider.iconColor} />
-                      <span className="text-xs md:text-sm font-medium">
+                      <span className={`${STYLES.textResponsive} font-medium`}>
                         {provider.name}
                       </span>
                     </div>
@@ -784,7 +776,7 @@ export function AgentInput({
                               onUpdate({ ...agent, model: model.value });
                               setIsModelDropdownOpen(false);
                             }}
-                            className={`w-full px-3 py-2 text-left text-xs md:text-sm transition-colors hover:bg-gray-700/50 ${
+                            className={`w-full px-3 py-2 text-left ${STYLES.textResponsive} transition-colors hover:bg-gray-700/50 ${
                               isSelected
                                 ? "bg-lavender-500/10 text-lavender-400"
                                 : "text-white"
@@ -792,7 +784,9 @@ export function AgentInput({
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
+                                <div
+                                  className={`flex items-center ${STYLES.gap}`}
+                                >
                                   <span className="font-medium truncate">
                                     {model.label}
                                   </span>
@@ -912,34 +906,40 @@ export function AgentInput({
       <div
         className={`${STYLES.card} border-none rounded-t-2xl overflow-hidden`}
       >
-        <div className="flex flex-row md:items-center justify-between px-2 py-2 gap-1.5 md:gap-0">
-          <div className="flex flex-row md:items-center gap-2">
+        <div
+          className={`flex flex-row md:items-center justify-between px-2 py-2 ${STYLES.gap} md:gap-0`}
+        >
+          <div className={`flex flex-row md:items-center ${STYLES.gap}`}>
             {renderNameEditor()}
             {/* Left side controls */}
-            <div className="flex md:hidden items-center gap-2 flex-wrap">
+            <div
+              className={`flex md:hidden items-center ${STYLES.gap} flex-wrap`}
+            >
               {renderModelSelector()}
 
               {/* Add Agent Button */}
               {isLastAgent && canAddAgent && (
                 <button
                   onClick={handleAddAgent}
-                  className={`flex items-center justify-center p-1.5 md:px-3 md:py-1.5 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-md text-lavender-400 hover:text-lavender-300 transition-all group backdrop-blur-sm ${
+                  className={`${STYLES.addAgentButton} md:px-3 md:py-1.5 ${
                     isAddingAgent ? "scale-95 bg-lavender-500/40" : ""
                   }`}
                   title="Add Agent"
                 >
                   <Plus
                     size={12}
-                    className={`md:w-3.5 md:h-3.5 group-hover:scale-110 transition-transform ${
+                    className={`${STYLES.iconSize} group-hover:scale-110 transition-transform ${
                       isAddingAgent ? "rotate-90 scale-110" : ""
                     }`}
                   />
                 </button>
               )}
             </div>
-            <div className="flex flex-col md:flex-row items-center gap-1.5 md:gap-2">
+            <div
+              className={`flex flex-col md:flex-row items-center ${STYLES.gap}`}
+            >
               {/* Hide connection selector on mobile, show on desktop */}
-              <div className="hidden md:flex items-center gap-1.5 md:gap-2">
+              <div className={`hidden md:flex items-center ${STYLES.gap}`}>
                 {renderConditionalInput()}
               </div>
             </div>
@@ -947,9 +947,9 @@ export function AgentInput({
           {canRemove && (
             <button
               onClick={onRemove}
-              className="text-gray-400 hover:text-red-400 transition-colors p-1.5 hover:bg-gray-700/50 rounded-md self-end md:self-auto"
+              className={`text-gray-400 hover:text-red-400 transition-colors p-1.5 ${STYLES.hoverButton} self-end md:self-auto`}
             >
-              <X size={12} className="md:w-3.5 md:h-3.5" />
+              <X size={12} className={STYLES.iconSize} />
             </button>
           )}
         </div>
@@ -962,7 +962,7 @@ export function AgentInput({
           setTimeout(adjustTextareaHeight, 0);
         }}
         placeholder="Ask anything"
-        className={`w-full px-2 md:px-4 h-auto min-h-10 md:min-h-16 max-h-32 md:max-h-64 ${STYLES.card} text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 resize-none transition-all text-sm overflow-y-auto`}
+        className={`w-full px-2 md:px-4 h-auto rounded-none min-h-10 md:min-h-16 max-h-32 md:max-h-64 ${STYLES.card} text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-sm overflow-y-auto`}
         ref={textareaRef}
       />
 
@@ -971,7 +971,9 @@ export function AgentInput({
         className={`relative h-full min-h-10 md:min-h-16 ${STYLES.card} border-none rounded-b-2xl`}
       >
         {/* Bottom controls - absolutely positioned with gradient background */}
-        <div className="absolute bottom-0 left-0 right-0 flex flex-row md:items-center rounded-b-2xl justify-between px-2 md:px-4 py-1.5 md:py-3 overflow-hidden gap-1.5 md:gap-0">
+        <div
+          className={`absolute bottom-0 left-0 right-0 flex flex-row md:items-center rounded-b-2xl justify-between px-2 md:px-4 py-1.5 md:py-3 overflow-hidden ${STYLES.gap} md:gap-0`}
+        >
           <div className="block md:hidden">
             {/* Modality Icons */}
             <div className="flex items-center gap-1.5">
@@ -990,7 +992,9 @@ export function AgentInput({
             </div>
           </div>
           {/* Left side controls */}
-          <div className="hidden md:flex items-center gap-1.5 md:gap-2 flex-wrap">
+          <div
+            className={`hidden md:flex items-center ${STYLES.gap} flex-wrap`}
+          >
             {renderModelSelector()}
             {/* Tool Button */}
             {renderEnhancedOptions()}
@@ -1008,14 +1012,14 @@ export function AgentInput({
             {isLastAgent && canAddAgent && (
               <button
                 onClick={handleAddAgent}
-                className={`flex items-center justify-center p-1.5 md:p-2 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-md text-lavender-400 hover:text-lavender-300 transition-all group backdrop-blur-sm ${
+                className={`${STYLES.addAgentButton} ${
                   isAddingAgent ? "scale-95 bg-lavender-500/40" : ""
                 }`}
                 title="Add Agent"
               >
                 <Plus
                   size={12}
-                  className={`md:w-3.5 md:h-3.5 group-hover:scale-110 transition-transform ${
+                  className={`${STYLES.iconSize} group-hover:scale-110 transition-transform ${
                     isAddingAgent ? "rotate-90 scale-110" : ""
                   }`}
                 />
@@ -1028,10 +1032,10 @@ export function AgentInput({
             <button
               onClick={onSendChain}
               disabled={!canSend}
-              className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 whitespace-nowrap rounded-lg font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm w-min justify-center"
+              className={`flex items-center ${STYLES.gap} px-2 md:px-3 py-1 md:py-1.5 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 whitespace-nowrap rounded-lg font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm w-min justify-center`}
             >
               <span className="truncate">
-                {isLoading ? "Running..." : "Run Chain"}
+                {isLoading ? "Running..." : "Chain"}
               </span>
 
               <svg
@@ -1043,7 +1047,7 @@ export function AgentInput({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="md:w-3.5 md:h-3.5 flex-shrink-0"
+                className={`${STYLES.iconSize} flex-shrink-0`}
               >
                 <path d="m22 2-7 20-4-9-9-4Z" />
                 <path d="M22 2 11 13" />

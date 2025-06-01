@@ -105,7 +105,7 @@ export function ModalityIcons({
         </button>
 
         {/* Voice Input Icon - Coming Soon */}
-        <button
+        {/* <button
           onClick={() => audioSupported && setActiveModal("voice")}
           disabled={!audioSupported}
           className={`${iconBaseClasses} ${
@@ -118,10 +118,10 @@ export function ModalityIcons({
           }
         >
           <Mic size={18} />
-        </button>
+        </button> */}
 
         {/* Web Search Toggle */}
-        <button
+        {/* <button
           onClick={() => searchSupported && setActiveModal("search")}
           disabled={!searchSupported}
           className={`${iconBaseClasses} ${
@@ -137,7 +137,7 @@ export function ModalityIcons({
           {isWebSearchEnabled && (
             <span className="absolute -top-1 -right-1 bg-lavender-500 text-white text-xs rounded-full h-3 w-3"></span>
           )}
-        </button>
+        </button> */}
       </div>
 
       {/* Modal */}

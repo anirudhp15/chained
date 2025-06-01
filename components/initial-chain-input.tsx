@@ -545,7 +545,7 @@ export function InitialChainInput({
       }}
     >
       <div className="w-full flex justify-center">
-        <div className="w-full flex items-end justify-center px-1 md:px-0 py-2 md:py-6">
+        <div className="w-full flex items-end justify-center px-1 md:px-0 py-2 ">
           <div className="w-full max-w-7xl">
             {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
             <div className="flex flex-col md:flex-row md:items-end md:justify-center gap-1.5 md:gap-0">
