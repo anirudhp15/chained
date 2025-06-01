@@ -32,6 +32,7 @@ import {
   Timer,
   CheckCircle,
 } from "lucide-react";
+import Image from "next/image";
 
 // Feature data structure matching welcome screen pattern
 interface FeatureDetail {
@@ -540,10 +541,13 @@ export default function LandingPage() {
             {/* Chain Interface Preview */}
             <div className="relative max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
               <div className="relative overflow-hidden rounded-2xl">
-                <img
+                <Image
                   src="/images/chain_chat_interface.jpg"
-                  alt="Chain Chat Interface"
-                  className="w-full h-auto rounded-2xl opacity-80 hover:opacity-90 transition-opacity duration-300 shadow-2xl shadow-lavender-500/10 hover:shadow-lavender-500/20"
+                  alt="Chain Chat Interface Preview"
+                  width={1200}
+                  height={800}
+                  className="w-full h-auto rounded-2xl opacity-80 hover:opacity-90 transition-opacity duration-300"
+                  priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900/20 to-transparent rounded-2xl"></div>
               </div>
