@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from "uuid";
 import { ModalityIcons } from "./modality/ModalityIcons";
 import { CONNECTION_TYPES, DEFAULT_AGENT_CONFIG } from "@/lib/constants";
 import { useSidebar } from "@/lib/sidebar-context";
+import { usePerformance } from "@/lib/performance-context";
+import { BarChart3 } from "lucide-react";
 
 // Simple connection icon component
 const ConnectionIcon = ({ connectionType }: { connectionType?: string }) => {
@@ -66,6 +68,9 @@ export function InputArea({
 
   // Get sidebar state for positioning
   const { sidebarWidth } = useSidebar();
+
+  // Get performance state
+  const { showDetailedPerformance, togglePerformance } = usePerformance();
 
   // Calculate margin for desktop centering
   const getContainerStyle = () => {
@@ -209,6 +214,23 @@ export function InputArea({
                 {/* Bottom controls */}
                 <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    {/* Performance Toggle */}
+                    <button
+                      onClick={togglePerformance}
+                      className={`flex items-center justify-center p-2 rounded-md transition-all ${
+                        showDetailedPerformance
+                          ? "text-lavender-400 bg-lavender-500/20 hover:bg-lavender-500/30"
+                          : "text-gray-400 hover:text-lavender-400 hover:bg-gray-700/50"
+                      }`}
+                      title={
+                        showDetailedPerformance
+                          ? "Hide detailed performance"
+                          : "Show detailed performance"
+                      }
+                    >
+                      <BarChart3 size={18} />
+                    </button>
+
                     {/* Model Display */}
                     <div className="px-3 py-1.5 bg-gray-900/90 border border-gray-600/50 rounded-lg text-gray-300 text-sm backdrop-blur-sm">
                       <span className="font-medium">

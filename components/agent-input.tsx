@@ -16,6 +16,7 @@ import {
   Brain,
   Globe,
   Pencil,
+  BarChart3,
 } from "lucide-react";
 import { SiOpenai, SiClaude } from "react-icons/si";
 import { UploadedImage } from "./modality/ImageUpload";
@@ -23,6 +24,7 @@ import { WebSearchData } from "./modality/WebSearch";
 import { ModalityIcons } from "./modality/ModalityIcons";
 import { CONDITION_PRESETS } from "@/lib/constants";
 import { ToolButton } from "./ui/ToolButton";
+import { usePerformance } from "@/lib/performance-context";
 
 export interface Agent {
   id: string;
@@ -732,6 +734,8 @@ export function AgentInput({
     );
   };
 
+  const { showDetailedPerformance, togglePerformance } = usePerformance();
+
   return (
     <div className="relative flex flex-col mx-2 md:mx-0 rounded-xl border border-gray-600/50 bg-gray-800/70 backdrop-blur-sm hover:bg-gray-800/90 hover:border-lavender-400/20 transition-all duration-200">
       <textarea
@@ -786,32 +790,51 @@ export function AgentInput({
           </div>
 
           {/* Right side controls */}
-          {isLastAgent && onSendChain && (
+          <div className="flex items-center gap-1.5">
+            {/* Performance Toggle */}
             <button
-              onClick={onSendChain}
-              disabled={!canSend}
-              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 whitespace-nowrap rounded-lg font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm w-min justify-center"
+              onClick={togglePerformance}
+              className={`flex items-center justify-center p-1.5 md:p-2 rounded-md transition-all ${
+                showDetailedPerformance
+                  ? "text-lavender-400 bg-lavender-500/20 hover:bg-lavender-500/30"
+                  : "text-gray-400 hover:text-lavender-400 hover:bg-gray-700/50"
+              }`}
+              title={
+                showDetailedPerformance
+                  ? "Hide detailed performance"
+                  : "Show detailed performance"
+              }
             >
-              <span className="truncate">
-                {isLoading ? "Running..." : "Chain"}
-              </span>
-
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="md:w-3.5 md:h-3.5 flex-shrink-0"
-              >
-                <path d="m22 2-7 20-4-9-9-4Z" />
-                <path d="M22 2 11 13" />
-              </svg>
+              <BarChart3 size={16} className="md:w-4 md:h-4" />
             </button>
-          )}
+
+            {isLastAgent && onSendChain && (
+              <button
+                onClick={onSendChain}
+                disabled={!canSend}
+                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 whitespace-nowrap rounded-lg font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm w-min justify-center"
+              >
+                <span className="truncate">
+                  {isLoading ? "Running..." : "Chain"}
+                </span>
+
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="md:w-3.5 md:h-3.5 flex-shrink-0"
+                >
+                  <path d="m22 2-7 20-4-9-9-4Z" />
+                  <path d="M22 2 11 13" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

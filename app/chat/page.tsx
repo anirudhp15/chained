@@ -14,6 +14,7 @@ import { Sidebar } from "../../components/sidebar";
 import { MobileSidebarToggle } from "../../components/MobileSidebarToggle";
 import { WelcomeScreen } from "../../components/welcome-screen";
 import { InputAreaContainer } from "@/components/input-area-container";
+import { PerformanceProvider } from "../../lib/performance-context";
 import type { Agent } from "../../components/agent-input";
 
 function ChatLandingContent() {
@@ -123,7 +124,9 @@ export default function ChatPage() {
         </div>
       </Unauthenticated>
       <Authenticated>
-        <ChatLandingContent />
+        <PerformanceProvider>
+          <ChatLandingContent />
+        </PerformanceProvider>
       </Authenticated>
     </>
   );

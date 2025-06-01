@@ -23,6 +23,7 @@ import { SupervisorConversation } from "../../../components/supervisor-conversat
 import type { Agent } from "../../../components/agent-input";
 import { evaluateCondition } from "../../../lib/condition-evaluator";
 import { SupervisorModal } from "@/components/supervisor-modal";
+import { PerformanceProvider } from "../../../lib/performance-context";
 import Link from "next/link";
 import { ArrowLeft, Bot, MessageSquare } from "lucide-react";
 
@@ -796,7 +797,9 @@ export default function ChainPage() {
         </div>
       </Unauthenticated>
       <Authenticated>
-        <ChatPageContent />
+        <PerformanceProvider>
+          <ChatPageContent />
+        </PerformanceProvider>
       </Authenticated>
     </>
   );

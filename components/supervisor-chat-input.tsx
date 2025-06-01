@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, ChangeEvent } from "react";
 import type { Id } from "../convex/_generated/dataModel";
 import { useSidebar } from "@/lib/sidebar-context";
+import { usePerformance } from "@/lib/performance-context";
+import { BarChart3 } from "lucide-react";
 
 interface AgentStep {
   _id: Id<"agentSteps">;
@@ -44,6 +46,9 @@ export function SupervisorChatInput({
 
   // Get sidebar state for positioning
   const { sidebarWidth } = useSidebar();
+
+  // Get performance state for performance toggle
+  const { showDetailedPerformance, togglePerformance } = usePerformance();
 
   // Available agents for @mention autocomplete
   const availableAgents: AgentOption[] = agentSteps.map((step, index) => ({
@@ -257,27 +262,46 @@ export function SupervisorChatInput({
                 </div>
 
                 {/* Send Button */}
-                <button
-                  onClick={handleSend}
-                  disabled={!prompt.trim() || isLoading}
-                  className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 rounded-lg text-xs  font-medium transition-all shadow-lg hover:shadow-emerald-500/25 disabled:shadow-none backdrop-blur-sm"
-                >
-                  {isLoading ? "Coordinating..." : "Send"}
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="md:w-4 md:h-4"
+                <div className="flex items-center gap-1.5">
+                  {/* Performance Toggle */}
+                  <button
+                    onClick={togglePerformance}
+                    className={`flex items-center justify-center p-1.5 md:p-2 rounded-md transition-all ${
+                      showDetailedPerformance
+                        ? "text-lavender-400 bg-lavender-500/20 hover:bg-lavender-500/30"
+                        : "text-gray-400 hover:text-lavender-400 hover:bg-gray-700/50"
+                    }`}
+                    title={
+                      showDetailedPerformance
+                        ? "Hide detailed performance"
+                        : "Show detailed performance"
+                    }
                   >
-                    <path d="m22 2-7 20-4-9-9-4Z" />
-                    <path d="M22 2 11 13" />
-                  </svg>
-                </button>
+                    <BarChart3 size={16} className="md:w-4 md:h-4" />
+                  </button>
+
+                  <button
+                    onClick={handleSend}
+                    disabled={!prompt.trim() || isLoading}
+                    className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 rounded-lg text-xs  font-medium transition-all shadow-lg hover:shadow-emerald-500/25 disabled:shadow-none backdrop-blur-sm"
+                  >
+                    {isLoading ? "Coordinating..." : "Send"}
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="md:w-4 md:h-4"
+                    >
+                      <path d="m22 2-7 20-4-9-9-4Z" />
+                      <path d="M22 2 11 13" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

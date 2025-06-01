@@ -27,6 +27,7 @@ import { PerformanceMetrics } from "./PerformanceMetrics";
 import { ChainPerformanceSummary } from "./ChainPerformanceSummary";
 import { ThinkingDropdown } from "./ui/ThinkingDropdown";
 import { useUser } from "@clerk/nextjs";
+import { usePerformance } from "@/lib/performance-context";
 
 interface ChatAreaProps {
   sessionId: Id<"chatSessions"> | null;
@@ -61,6 +62,9 @@ function MobileAgentCard({
   UserDisplay,
 }: MobileAgentCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Get performance state
+  const { showDetailedPerformance } = usePerformance();
 
   return (
     <div className="bg-gray-950/50 border border-gray-700/50 rounded-xl overflow-hidden">
@@ -201,18 +205,19 @@ function MobileAgentCard({
                 </div>
 
                 {/* Performance Metrics */}
-                {(agent.tokenUsage || agent.executionDuration) && (
-                  <div className="my-2">
-                    <PerformanceMetrics
-                      tokenUsage={agent.tokenUsage}
-                      executionDuration={agent.executionDuration}
-                      tokensPerSecond={agent.tokensPerSecond}
-                      estimatedCost={agent.estimatedCost}
-                      model={agent.model}
-                      size="sm"
-                    />
-                  </div>
-                )}
+                {showDetailedPerformance &&
+                  (agent.tokenUsage || agent.executionDuration) && (
+                    <div className="my-2">
+                      <PerformanceMetrics
+                        tokenUsage={agent.tokenUsage}
+                        executionDuration={agent.executionDuration}
+                        tokensPerSecond={agent.tokensPerSecond}
+                        estimatedCost={agent.estimatedCost}
+                        model={agent.model}
+                        size="sm"
+                      />
+                    </div>
+                  )}
 
                 {/* Thinking Dropdown */}
                 <ThinkingDropdown
@@ -317,6 +322,9 @@ export function ChatArea({
 
   // Get user information
   const { user } = useUser();
+
+  // Get performance state
+  const { showDetailedPerformance } = usePerformance();
 
   // Column resize state
   const [columnStates, setColumnStates] = useState<ColumnState[]>([]);
@@ -585,18 +593,19 @@ export function ChatArea({
                     </div>
 
                     {/* Performance Metrics */}
-                    {(agent.tokenUsage || agent.executionDuration) && (
-                      <div className="my-2">
-                        <PerformanceMetrics
-                          tokenUsage={agent.tokenUsage}
-                          executionDuration={agent.executionDuration}
-                          tokensPerSecond={agent.tokensPerSecond}
-                          estimatedCost={agent.estimatedCost}
-                          model={agent.model}
-                          size="sm"
-                        />
-                      </div>
-                    )}
+                    {showDetailedPerformance &&
+                      (agent.tokenUsage || agent.executionDuration) && (
+                        <div className="my-2">
+                          <PerformanceMetrics
+                            tokenUsage={agent.tokenUsage}
+                            executionDuration={agent.executionDuration}
+                            tokensPerSecond={agent.tokensPerSecond}
+                            estimatedCost={agent.estimatedCost}
+                            model={agent.model}
+                            size="sm"
+                          />
+                        </div>
+                      )}
 
                     {/* Thinking Dropdown */}
                     <ThinkingDropdown
@@ -884,18 +893,19 @@ export function ChatArea({
                             </div>
 
                             {/* Performance Metrics */}
-                            {(agent.tokenUsage || agent.executionDuration) && (
-                              <div className="my-2">
-                                <PerformanceMetrics
-                                  tokenUsage={agent.tokenUsage}
-                                  executionDuration={agent.executionDuration}
-                                  tokensPerSecond={agent.tokensPerSecond}
-                                  estimatedCost={agent.estimatedCost}
-                                  model={agent.model}
-                                  size="sm"
-                                />
-                              </div>
-                            )}
+                            {showDetailedPerformance &&
+                              (agent.tokenUsage || agent.executionDuration) && (
+                                <div className="my-2">
+                                  <PerformanceMetrics
+                                    tokenUsage={agent.tokenUsage}
+                                    executionDuration={agent.executionDuration}
+                                    tokensPerSecond={agent.tokensPerSecond}
+                                    estimatedCost={agent.estimatedCost}
+                                    model={agent.model}
+                                    size="sm"
+                                  />
+                                </div>
+                              )}
 
                             {/* Thinking Dropdown */}
                             <ThinkingDropdown
