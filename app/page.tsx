@@ -537,13 +537,13 @@ export default function LandingPage() {
               </button>
             </div>
 
-            {/* Chain Visualization */}
-            <div className="relative max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
+            {/* Chain Interface Preview */}
+            <div className="relative max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
               <div className="relative overflow-hidden rounded-2xl">
                 <img
-                  src="/chain_chat_interface.jpg"
+                  src="/images/chain_chat_interface.jpg"
                   alt="Chain Chat Interface"
-                  className="w-full h-auto rounded-2xl opacity-80 shadow-2xl shadow-lavender-500/20 border border-gray-700/50"
+                  className="w-full h-auto rounded-2xl opacity-80 hover:opacity-90 transition-opacity duration-300 shadow-2xl shadow-lavender-500/10 hover:shadow-lavender-500/20"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900/20 to-transparent rounded-2xl"></div>
               </div>
