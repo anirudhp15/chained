@@ -626,11 +626,11 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2 group">
             <div className="relative">
-              <Link2 className="h-6 w-6 text-lavender-400 group-hover:text-lavender-300 transition-all duration-200 group-hover:-rotate-45" />
+              <Link2 className="h-6 w-6 text-lavender-400/80 group-hover:text-lavender-400 transition-all duration-200 group-hover:-rotate-45" />
               <div className="absolute inset-0 bg-lavender-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
-            <span className="text-xl font-bold text-white group-hover:text-lavender-300 transition-colors duration-300">
-              Chained
+            <span className="text-xl font-bold text-lavender-400 group-hover:text-white transition-colors duration-300">
+              Ch<span className="text-lavender-400">ai</span>ned
             </span>
           </Link>
 
@@ -638,21 +638,21 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center space-x-8">
             <Link
               href="#features"
-              className="text-gray-400 hover:text-lavender-300 transition-all duration-300 relative group"
+              className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
             >
               Features
               <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
             </Link>
             <Link
               href="#demo"
-              className="text-gray-400 hover:text-lavender-300 transition-all duration-300 relative group"
+              className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
             >
               Demo
               <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
             </Link>
             <Link
               href="#workflow"
-              className="text-gray-400 hover:text-lavender-300 transition-all duration-300 relative group"
+              className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
             >
               Workflow
               <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
@@ -688,21 +688,21 @@ export default function LandingPage() {
             <div className="px-4 py-6 space-y-4">
               <Link
                 href="#features"
-                className="block text-gray-400 hover:text-lavender-300 transition-colors duration-300 py-2"
+                className="block text-gray-400 hover:text-lavender-400 transition-colors duration-300 py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Features
               </Link>
               <Link
                 href="#demo"
-                className="block text-gray-400 hover:text-lavender-300 transition-colors duration-300 py-2"
+                className="block text-gray-400 hover:text-lavender-400 transition-colors duration-300 py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Demo
               </Link>
               <Link
                 href="#workflow"
-                className="block text-gray-400 hover:text-lavender-300 transition-colors duration-300 py-2"
+                className="block text-gray-400 hover:text-lavender-400 transition-colors duration-300 py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Workflow
@@ -770,7 +770,7 @@ export default function LandingPage() {
             <div className="relative max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
               <div className="bg-gray-800/50 p-1 rounded-2xl overflow-hidden">
                 <video
-                  src="/videos/chained_demo.mp4"
+                  src="/videos/chained_demo_v2.mp4"
                   controls
                   autoPlay
                   muted
@@ -820,7 +820,7 @@ export default function LandingPage() {
                 {/* Eye Button */}
                 <button
                   onClick={(e) => handleFeatureInfo(feature.id, e)}
-                  className="absolute top-4 right-4 p-2 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-300 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100 hover:scale-110"
+                  className="absolute top-4 right-4 p-2 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-400 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100 hover:scale-110"
                 >
                   <Eye size={16} />
                 </button>
@@ -842,7 +842,7 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-semibold text-white mb-4 group-hover:text-lavender-300 transition-colors duration-300">
+                  <h3 className="text-xl font-semibold text-white mb-4 group-hover:text-lavender-400 transition-colors duration-300">
                     {feature.title}
                   </h3>
                   <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors duration-300">
@@ -1052,7 +1052,7 @@ export default function LandingPage() {
             {/* Demo Video Placeholder */}
             <div className="relative rounded-xl animate-in fade-in slide-in-from-right-8 duration-700 delay-300">
               <video
-                src="/videos/chained_demo.mp4"
+                src="/videos/chained_demo_v2.mp4"
                 controls
                 autoPlay
                 muted
@@ -1226,7 +1226,7 @@ export default function LandingPage() {
                 <li>
                   <Link
                     href="#features"
-                    className="hover:text-lavender-300 transition-colors duration-300"
+                    className="hover:text-lavender-400 transition-colors duration-300"
                   >
                     Features
                   </Link>
@@ -1234,7 +1234,7 @@ export default function LandingPage() {
                 <li>
                   <Link
                     href="#demo"
-                    className="hover:text-lavender-300 transition-colors duration-300"
+                    className="hover:text-lavender-400 transition-colors duration-300"
                   >
                     Demo
                   </Link>
@@ -1242,7 +1242,7 @@ export default function LandingPage() {
                 <li>
                   <Link
                     href="#workflow"
-                    className="hover:text-lavender-300 transition-colors duration-300"
+                    className="hover:text-lavender-400 transition-colors duration-300"
                   >
                     Workflow
                   </Link>
@@ -1250,7 +1250,7 @@ export default function LandingPage() {
                 <li>
                   <Link
                     href="/chat"
-                    className="hover:text-lavender-300 transition-colors duration-300"
+                    className="hover:text-lavender-400 transition-colors duration-300"
                   >
                     Get Started
                   </Link>
@@ -1264,7 +1264,7 @@ export default function LandingPage() {
                 <li>
                   <Link
                     href="#about"
-                    className="hover:text-lavender-300 transition-colors duration-300"
+                    className="hover:text-lavender-400 transition-colors duration-300"
                   >
                     About
                   </Link>
@@ -1272,7 +1272,7 @@ export default function LandingPage() {
                 <li>
                   <Link
                     href="#contact"
-                    className="hover:text-lavender-300 transition-colors duration-300"
+                    className="hover:text-lavender-400 transition-colors duration-300"
                   >
                     Contact
                   </Link>
@@ -1280,7 +1280,7 @@ export default function LandingPage() {
                 <li>
                   <Link
                     href="#privacy"
-                    className="hover:text-lavender-300 transition-colors duration-300"
+                    className="hover:text-lavender-400 transition-colors duration-300"
                   >
                     Privacy
                   </Link>
@@ -1288,7 +1288,7 @@ export default function LandingPage() {
                 <li>
                   <Link
                     href="#terms"
-                    className="hover:text-lavender-300 transition-colors duration-300"
+                    className="hover:text-lavender-400 transition-colors duration-300"
                   >
                     Terms
                   </Link>
@@ -1304,13 +1304,13 @@ export default function LandingPage() {
             <div className="flex space-x-6 mt-4 sm:mt-0">
               <Link
                 href="#privacy"
-                className="text-gray-400 text-sm hover:text-lavender-300 transition-colors duration-300"
+                className="text-gray-400 text-sm hover:text-lavender-400 transition-colors duration-300"
               >
                 Privacy Policy
               </Link>
               <Link
                 href="#terms"
-                className="text-gray-400 text-sm hover:text-lavender-300 transition-colors duration-300"
+                className="text-gray-400 text-sm hover:text-lavender-400 transition-colors duration-300"
               >
                 Terms of Service
               </Link>

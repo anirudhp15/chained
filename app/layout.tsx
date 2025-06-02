@@ -14,13 +14,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Chained - Build Powerful AI Workflows",
+  title: "Chained",
   description:
     "Chain multiple AI models together to create sophisticated workflows. Connect GPT-4, Claude, Gemini, and more in powerful sequences.",
   keywords: [
     "AI workflow",
     "AI chaining",
-    "GPT-4",
+    "ChatGPT",
     "Claude",
     "Gemini",
     "AI automation",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://chained.app"), // Replace with your actual domain
+  metadataBase: new URL("https://chained.chat"), // Replace with your actual domain
   alternates: {
     canonical: "/",
   },
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     title: "Chained - Build Powerful AI Workflows",
     description:
       "Chain multiple AI models together to create sophisticated workflows. Connect GPT-4, Claude, Gemini, and more in powerful sequences.",
-    url: "https://chained.app",
+    url: "https://chained.chat",
     siteName: "Chained",
     images: [
       {
@@ -83,18 +83,18 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon-16x16.svg", sizes: "16x16", type: "image/svg+xml" },
-      { url: "/favicon-32x32.svg", sizes: "32x32", type: "image/svg+xml" },
+      { url: "/favicon-16x16.ico", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.ico", sizes: "32x32", type: "image/png" },
       { url: "/favicon.ico", sizes: "any" },
     ],
     shortcut: "/favicon.ico",
     apple: [
-      { url: "/apple-touch-icon.svg", sizes: "180x180", type: "image/svg+xml" },
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
     other: [
       {
         rel: "mask-icon",
-        url: "/safari-pinned-tab.svg",
+        url: "/safari-pinned-tab.png",
         color: "#9333ea",
       },
     ],

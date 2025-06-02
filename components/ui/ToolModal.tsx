@@ -351,7 +351,7 @@ export function ToolModal({
                           key={index}
                           className={`px-2 py-0.5 rounded text-xs transition-colors ${
                             isSelected
-                              ? "bg-lavender-500/20 text-lavender-300"
+                              ? "bg-lavender-500/20 text-lavender-400"
                               : "bg-gray-700/50 text-gray-400"
                           }`}
                         >

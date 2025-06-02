@@ -43,5 +43,6 @@ next-env.d.ts
 # public/videos/*.mov
 # public/videos/*.avi
 # !public/videos/chained_demo.mp4
+# !public/videos/chained_demo_v2.mp4
 
 .env.local

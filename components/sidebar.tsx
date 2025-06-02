@@ -307,7 +307,7 @@ export function Sidebar({
             // Collapsed state - just the link icon
             <button
               onClick={() => setIsCollapsed(false)}
-              className="m-4 text-lavender-400 hover:text-lavender-300 transition-all duration-200 hover:scale-110"
+              className="m-4 text-lavender-400/80 hover:text-lavender-400 transition-all duration-200 hover:scale-110"
               onMouseEnter={() => setIsLinkHovered(true)}
               onMouseLeave={() => setIsLinkHovered(false)}
             >
@@ -320,17 +320,17 @@ export function Sidebar({
             </button>
           ) : (
             // Expanded state - full header
-            <div className="p-4 w-full flex items-center justify-between">
+            <div className="p-4 w-full flex items-center justify-between ">
               <Link href="/">
-                <h1 className="text-xl font-medium text-white flex items-center hover:text-lavender-300 transition-colors duration-200">
+                <h1 className="text-xl group font-medium text-lavender-400 hover:text-white flex items-center transition-colors duration-200">
                   <span
-                    className="mx-1 text-lavender-400 transition-transform duration-200 hover:scale-110"
+                    className="mx-1 text-lavender-400  transition-transform duration-200 hover:scale-110"
                     onMouseEnter={() => setIsLinkHovered(true)}
                     onMouseLeave={() => setIsLinkHovered(false)}
                   >
                     <Link2
                       size={24}
-                      className="rotate-0 hover:-rotate-45 transition-transform duration-200 ease-out"
+                      className="rotate-0 group-hover:-rotate-45 transition-transform duration-200 ease-out"
                     />
                   </span>
                   Ch<span className="text-lavender-400">ai</span>ned
@@ -440,7 +440,7 @@ export function Sidebar({
                       </p>
                       <button
                         onClick={clearSearch}
-                        className="mt-3 text-xs text-lavender-400 hover:text-lavender-300 transition-colors duration-200"
+                        className="mt-3 text-xs text-lavender-400/80 hover:text-lavender-400 transition-colors duration-200"
                       >
                         Clear search
                       </button>
@@ -613,7 +613,7 @@ export function Sidebar({
                     }}
                   />
                   <div className="flex-1 text-left">
-                    <div className="text-sm font-medium text-white transition-colors duration-200 group-hover:text-lavender-300">
+                    <div className="text-sm font-medium text-white transition-colors duration-200 group-hover:text-lavender-400">
                       {user?.firstName || user?.username || "User"}{" "}
                       {user?.lastName}
                     </div>
@@ -704,11 +704,11 @@ export function Sidebar({
         {/* Mobile Header */}
         <div className="border-b border-gray-700/50 flex items-center justify-between p-4 bg-[#17181D] backdrop-blur-sm">
           <Link href="/" onClick={onMobileToggle}>
-            <h1 className="text-lg font-semibold text-white flex items-center hover:text-lavender-300 transition-colors duration-200">
+            <h1 className="text-lg group font-semibold text-lavender-400 flex items-center hover:text-white transition-colors duration-200">
               <span className="mr-2 text-lavender-400">
                 <Link2
                   size={20}
-                  className="hover:-rotate-45 transition-transform duration-200 ease-out"
+                  className="group-hover:-rotate-45 transition-transform duration-200 ease-out"
                 />
               </span>
               Ch<span className="text-lavender-400">ai</span>ned
@@ -843,7 +843,7 @@ export function Sidebar({
                         onClick={() => handleMobileChatClick(chat._id)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 text-sm ${
                           currentSessionId === chat._id
-                            ? "bg-lavender-500/20 text-lavender-300 border border-lavender-500/30 shadow-sm"
+                            ? "bg-lavender-500/20 text-lavender-400 border border-lavender-500/30 shadow-sm"
                             : "text-gray-300 hover:bg-gray-800/60 hover:text-white border border-transparent"
                         }`}
                       >

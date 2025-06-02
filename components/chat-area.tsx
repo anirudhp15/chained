@@ -244,7 +244,7 @@ function MobileAgentCard({
                   <div className="mt-3 border-t border-gray-600/50 pt-3">
                     <button
                       onClick={() => toggleReasoning(agent._id)}
-                      className="flex items-center gap-2 text-xs text-lavender-400/80 hover:text-lavender-300 transition-colors"
+                      className="flex items-center gap-2 text-xs text-lavender-400/80 hover:text-lavender-400 transition-colors"
                     >
                       {expandedReasoning === agent._id ? (
                         <ChevronUp size={12} />
@@ -632,7 +632,7 @@ export function ChatArea({
                       <div className="mt-3 border-t border-gray-600/50 pt-3">
                         <button
                           onClick={() => toggleReasoning(agent._id)}
-                          className="flex items-center gap-2 text-xs text-lavender-400/80 hover:text-lavender-300 transition-colors"
+                          className="flex items-center gap-2 text-xs text-lavender-400/80 hover:text-lavender-400 transition-colors"
                         >
                           {expandedReasoning === agent._id ? (
                             <ChevronUp size={12} />
@@ -934,7 +934,7 @@ export function ChatArea({
                               <div className="mt-3 border-t border-gray-600/50 pt-3">
                                 <button
                                   onClick={() => toggleReasoning(agent._id)}
-                                  className="flex items-center gap-2 text-xs text-lavender-400/80 hover:text-lavender-300 transition-colors"
+                                  className="flex items-center gap-2 text-xs text-lavender-400/80 hover:text-lavender-400 transition-colors"
                                 >
                                   {expandedReasoning === agent._id ? (
                                     <ChevronUp size={12} />

@@ -406,7 +406,7 @@ export default function BillingPage() {
                     <p className="text-gray-400 text-sm mb-3">
                       No payment methods added
                     </p>
-                    <button className="text-lavender-400 hover:text-lavender-300 text-sm font-medium">
+                    <button className="text-lavender-400 hover:text-lavender-400 text-sm font-medium">
                       Add Payment Method
                     </button>
                   </div>
