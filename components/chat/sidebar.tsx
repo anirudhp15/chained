@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../convex/_generated/api";
+import { api } from "../../convex/_generated/api";
 import {
   Plus,
   MessageSquare,
@@ -21,7 +21,7 @@ import {
   Command,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
-import type { Id } from "../convex/_generated/dataModel";
+import type { Id } from "../../convex/_generated/dataModel";
 import Link from "next/link";
 import { useUser, UserButton, SignOutButton, UserProfile } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";

@@ -10,12 +10,12 @@ import {
 } from "convex/react";
 import { SignInButton } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
-import { Sidebar } from "../../components/sidebar";
+import { Sidebar } from "../../components/chat/sidebar";
 import { MobileSidebarToggle } from "../../components/MobileSidebarToggle";
-import { WelcomeScreen } from "../../components/welcome-screen";
-import { InputAreaContainer } from "@/components/input-area-container";
+import { WelcomeScreen } from "../../components/chat/welcome-screen";
+import { InputAreaContainer } from "@/components/input/input-area-container";
 import { PerformanceProvider } from "../../lib/performance-context";
-import type { Agent } from "../../components/agent-input";
+import type { Agent } from "../../components/input/agent-input";
 
 function ChatLandingContent() {
   const router = useRouter();

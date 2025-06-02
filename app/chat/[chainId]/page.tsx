@@ -12,20 +12,20 @@ import {
 import { SignInButton } from "@clerk/nextjs";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { Sidebar } from "../../../components/sidebar";
+import { Sidebar } from "../../../components/chat/sidebar";
 import { MobileSidebarToggle } from "../../../components/MobileSidebarToggle";
-import { ChatArea } from "../../../components/chat-area";
+import { ChatArea } from "../../../components/chat/chat-area";
 import {
   InputAreaContainer,
   type InputMode,
-} from "../../../components/input-area-container";
-import { SupervisorConversation } from "../../../components/supervisor-conversation";
-import type { Agent } from "../../../components/agent-input";
+} from "../../../components/input/input-area-container";
+import { SupervisorConversation } from "../../../components/supervisor/supervisor-conversation";
+import type { Agent } from "../../../components/input/agent-input";
 import { evaluateCondition } from "../../../lib/condition-evaluator";
 import { PerformanceProvider } from "../../../lib/performance-context";
 import Link from "next/link";
 import { ArrowLeft, Bot, MessageSquare } from "lucide-react";
-import { SupervisorInterface } from "../../../components/supervisor-interface";
+import { SupervisorInterface } from "../../../components/supervisor/supervisor-interface";
 
 function ChatPageContent() {
   const params = useParams();

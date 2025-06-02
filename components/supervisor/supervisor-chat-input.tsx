@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, ChangeEvent } from "react";
-import type { Id } from "../convex/_generated/dataModel";
+import type { Id } from "../../convex/_generated/dataModel";
 import { useSidebar } from "@/lib/sidebar-context";
 import { usePerformance } from "@/lib/performance-context";
 import { BarChart3 } from "lucide-react";

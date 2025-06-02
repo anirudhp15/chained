@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { AgentInput, type Agent } from "./agent-input";
 import { v4 as uuidv4 } from "uuid";
-import { ModalityIcons } from "./modality/ModalityIcons";
+import { ModalityIcons } from "../modality/ModalityIcons";
 import { CONNECTION_TYPES, DEFAULT_AGENT_CONFIG } from "@/lib/constants";
 import { useSidebar } from "@/lib/sidebar-context";
 import { usePerformance } from "@/lib/performance-context";

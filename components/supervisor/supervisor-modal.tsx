@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
-import type { Id } from "../convex/_generated/dataModel";
-import { MarkdownRenderer } from "./markdown-renderer";
-import { ChainProgress } from "./chain-progress";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { MarkdownRenderer } from "../chat/markdown-renderer";
+import { ChainProgress } from "../performance/chain-progress";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import {
   Bot,

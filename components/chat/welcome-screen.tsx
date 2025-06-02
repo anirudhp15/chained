@@ -22,7 +22,7 @@ import {
   Eye,
   X,
 } from "lucide-react";
-import type { Agent } from "./agent-input";
+import type { Agent } from "../input/agent-input";
 import { v4 as uuidv4 } from "uuid";
 import { createPortal } from "react-dom";
 

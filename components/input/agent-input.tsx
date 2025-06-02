@@ -19,11 +19,11 @@ import {
   BarChart3,
 } from "lucide-react";
 import { SiOpenai, SiClaude } from "react-icons/si";
-import { UploadedImage } from "./modality/ImageUpload";
-import { WebSearchData } from "./modality/WebSearch";
-import { ModalityIcons } from "./modality/ModalityIcons";
+import { UploadedImage } from "../modality/ImageUpload";
+import { WebSearchData } from "../modality/WebSearch";
+import { ModalityIcons } from "../modality/ModalityIcons";
 import { CONDITION_PRESETS } from "@/lib/constants";
-import { ToolButton } from "./ui/ToolButton";
+import { ToolButton } from "../ui/ToolButton";
 import { usePerformance } from "@/lib/performance-context";
 
 export interface Agent {

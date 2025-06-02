@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { InitialChainInput } from "./initial-chain-input";
 import { FocusedAgentInput } from "./focused-agent-input";
 import type { Agent } from "./agent-input";
-import type { Id } from "../convex/_generated/dataModel";
+import type { Id } from "../../convex/_generated/dataModel";
 
 export type InputMode = "initial" | "focused" | "supervisor";
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { type Agent } from "./agent-input";
-import { ModalityIcons } from "./modality/ModalityIcons";
+import { ModalityIcons } from "../modality/ModalityIcons";
 import { useSidebar } from "@/lib/sidebar-context";
 
 interface FocusedAgentInputProps {

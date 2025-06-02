@@ -368,7 +368,7 @@ const AnimatedBackground = () => {
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {/* Morphing Gradient Orbs */}
       <motion.div
-        className="absolute w-[800px] h-[800px] rounded-full opacity-40"
+        className="absolute w-[800px] h-[800px] rounded-full opacity-10 md:opacity-40"
         style={{
           background:
             "radial-gradient(circle, rgba(147,112,219,0.5) 0%, rgba(138,43,226,0.3) 50%, transparent 100%)",
@@ -391,7 +391,7 @@ const AnimatedBackground = () => {
       />
 
       <motion.div
-        className="absolute w-[600px] h-[600px] rounded-full opacity-35"
+        className="absolute w-[600px] h-[600px] rounded-full opacity-[0.08] md:opacity-35"
         style={{
           background:
             "radial-gradient(circle, rgba(64,224,208,0.4) 0%, rgba(0,255,127,0.2) 50%, transparent 100%)",
@@ -411,13 +411,13 @@ const AnimatedBackground = () => {
           ease: "easeInOut",
         }}
         initial={{
-          x: window?.innerWidth || 1200,
-          y: window?.innerHeight || 800,
+          x: typeof window !== "undefined" ? window.innerWidth : 1200,
+          y: typeof window !== "undefined" ? window.innerHeight : 800,
         }}
       />
 
       <motion.div
-        className="absolute w-[400px] h-[400px] rounded-full opacity-40"
+        className="absolute w-[400px] h-[400px] rounded-full opacity-[0.08] md:opacity-40"
         style={{
           background:
             "radial-gradient(circle, rgba(255,20,147,0.3) 0%, rgba(138,43,226,0.2) 50%, transparent 100%)",
@@ -438,66 +438,76 @@ const AnimatedBackground = () => {
         initial={{ x: 400, y: 300 }}
       />
 
-      {/* Floating Particles */}
-      {particles.map((particle) => (
-        <motion.div
-          key={particle}
-          className="absolute w-1 h-1 bg-lavender-400/40 rounded-full"
-          style={{
-            boxShadow:
-              "0 0 4px rgba(147,112,219,0.4), 0 0 8px rgba(147,112,219,0.2)",
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            y: [-20, -100, -20],
-            x: [
-              Math.random() * 50 - 25,
-              Math.random() * 100 - 50,
-              Math.random() * 50 - 25,
-            ],
-            opacity: [0, 1, 0],
-            scale: [0, 1, 0],
-          }}
-          transition={{
-            duration: Math.random() * 10 + 10,
-            repeat: Infinity,
-            delay: Math.random() * 5,
-            ease: "easeOut",
-          }}
-        />
-      ))}
+      {/* Floating Particles - reduced on mobile */}
+      {particles
+        .slice(
+          0,
+          typeof window !== "undefined" && window.innerWidth < 768 ? 20 : 50
+        )
+        .map((particle) => (
+          <motion.div
+            key={particle}
+            className="absolute w-1 h-1 rounded-full bg-lavender-400/15 md:bg-lavender-400/40"
+            style={{
+              boxShadow:
+                "0 0 4px rgba(147,112,219,0.4), 0 0 8px rgba(147,112,219,0.2)",
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: [-20, -100, -20],
+              x: [
+                Math.random() * 50 - 25,
+                Math.random() * 100 - 50,
+                Math.random() * 50 - 25,
+              ],
+              opacity: [0, 1, 0],
+              scale: [0, 1, 0],
+            }}
+            transition={{
+              duration: Math.random() * 10 + 10,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+              ease: "easeOut",
+            }}
+          />
+        ))}
 
-      {/* Geometric Shapes */}
-      {geometricShapes.map((shape) => (
-        <motion.div
-          key={shape}
-          className="absolute border border-lavender-400/20"
-          style={{
-            width: Math.random() * 100 + 50,
-            height: Math.random() * 100 + 50,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            borderRadius: Math.random() > 0.5 ? "50%" : "0%",
-            boxShadow:
-              "0 0 10px rgba(147,112,219,0.15), inset 0 0 10px rgba(147,112,219,0.05)",
-          }}
-          animate={{
-            rotate: [0, 360],
-            scale: [1, 1.2, 1],
-            opacity: [0.1, 0.4, 0.1],
-          }}
-          transition={{
-            duration: Math.random() * 20 + 15,
-            repeat: Infinity,
-            ease: "linear",
-            delay: Math.random() * 5,
-          }}
-        />
-      ))}
+      {/* Geometric Shapes - reduced on mobile */}
+      {geometricShapes
+        .slice(
+          0,
+          typeof window !== "undefined" && window.innerWidth < 768 ? 3 : 8
+        )
+        .map((shape) => (
+          <motion.div
+            key={shape}
+            className="absolute border border-lavender-400/[0.08] md:border-lavender-400/20"
+            style={{
+              width: Math.random() * 100 + 50,
+              height: Math.random() * 100 + 50,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              borderRadius: Math.random() > 0.5 ? "50%" : "0%",
+              boxShadow:
+                "0 0 10px rgba(147,112,219,0.15), inset 0 0 10px rgba(147,112,219,0.05)",
+            }}
+            animate={{
+              rotate: [0, 360],
+              scale: [1, 1.2, 1],
+              opacity: [0.1, 0.4, 0.1],
+            }}
+            transition={{
+              duration: Math.random() * 20 + 15,
+              repeat: Infinity,
+              ease: "linear",
+              delay: Math.random() * 5,
+            }}
+          />
+        ))}
 
-      {/* Flowing Lines */}
-      <svg className="absolute inset-0 w-full h-full">
+      {/* Flowing Lines - reduced on mobile */}
+      <svg className="absolute inset-0 w-full h-full opacity-30 md:opacity-100">
         <defs>
           <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="rgba(147,112,219,0.1)" />
@@ -512,87 +522,104 @@ const AnimatedBackground = () => {
             </feMerge>
           </filter>
         </defs>
-        {Array.from({ length: 6 }, (_, i) => (
-          <motion.path
-            key={i}
-            d={`M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`}
-            stroke="url(#lineGradient)"
-            strokeWidth="2"
-            fill="none"
-            filter="url(#glow)"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{
-              pathLength: [0, 1, 0],
-              opacity: [0, 0.7, 0],
-              d: [
-                `M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`,
-                `M${Math.random() * 200 + 100},${Math.random() * 200 + 100} Q${Math.random() * 400 + 300},${Math.random() * 400 + 300} ${Math.random() * 200 + 700},${Math.random() * 200 + 500}`,
-                `M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`,
-              ],
-            }}
-            transition={{
-              duration: Math.random() * 15 + 10,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: i * 2,
-            }}
-          />
-        ))}
+        {Array.from(
+          {
+            length:
+              typeof window !== "undefined" && window.innerWidth < 768 ? 3 : 6,
+          },
+          (_, i) => (
+            <motion.path
+              key={i}
+              d={`M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`}
+              stroke="url(#lineGradient)"
+              strokeWidth="2"
+              fill="none"
+              filter="url(#glow)"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{
+                pathLength: [0, 1, 0],
+                opacity: [0, 0.7, 0],
+                d: [
+                  `M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`,
+                  `M${Math.random() * 200 + 100},${Math.random() * 200 + 100} Q${Math.random() * 400 + 300},${Math.random() * 400 + 300} ${Math.random() * 200 + 700},${Math.random() * 200 + 500}`,
+                  `M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`,
+                ],
+              }}
+              transition={{
+                duration: Math.random() * 15 + 10,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 2,
+              }}
+            />
+          )
+        )}
       </svg>
 
-      {/* Neural Network Pattern */}
+      {/* Neural Network Pattern - reduced on mobile */}
       <motion.div
-        className="absolute inset-0"
+        className="absolute inset-0 opacity-20 md:opacity-100"
         initial={{ opacity: 0 }}
         animate={{ opacity: [0, 0.15, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       >
         <svg className="w-full h-full">
-          {Array.from({ length: 20 }, (_, i) => (
-            <g key={i}>
-              <motion.circle
-                cx={`${(i % 5) * 25 + 10}%`}
-                cy={`${Math.floor(i / 5) * 25 + 10}%`}
-                r="2"
-                fill="rgba(147,112,219,0.4)"
-                filter="url(#glow)"
-                animate={{
-                  r: [1, 3, 1],
-                  opacity: [0.3, 0.8, 0.3],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                }}
-              />
-              {i < 19 && (
-                <motion.line
-                  x1={`${(i % 5) * 25 + 10}%`}
-                  y1={`${Math.floor(i / 5) * 25 + 10}%`}
-                  x2={`${((i + 1) % 5) * 25 + 10}%`}
-                  y2={`${Math.floor((i + 1) / 5) * 25 + 10}%`}
-                  stroke="rgba(147,112,219,0.2)"
-                  strokeWidth="0.5"
+          {Array.from(
+            {
+              length:
+                typeof window !== "undefined" && window.innerWidth < 768
+                  ? 10
+                  : 20,
+            },
+            (_, i) => (
+              <g key={i}>
+                <motion.circle
+                  cx={`${(i % 5) * 25 + 10}%`}
+                  cy={`${Math.floor(i / 5) * 25 + 10}%`}
+                  r="2"
+                  fill="rgba(147,112,219,0.4)"
                   filter="url(#glow)"
                   animate={{
-                    opacity: [0, 0.4, 0],
+                    r: [1, 3, 1],
+                    opacity: [0.3, 0.8, 0.3],
                   }}
                   transition={{
-                    duration: 4,
+                    duration: 3,
                     repeat: Infinity,
-                    delay: i * 0.3,
+                    delay: i * 0.2,
                   }}
                 />
-              )}
-            </g>
-          ))}
+                {i <
+                  (typeof window !== "undefined" && window.innerWidth < 768
+                    ? 9
+                    : 19) && (
+                  <motion.line
+                    x1={`${(i % 5) * 25 + 10}%`}
+                    y1={`${Math.floor(i / 5) * 25 + 10}%`}
+                    x2={`${((i + 1) % 5) * 25 + 10}%`}
+                    y2={`${Math.floor((i + 1) / 5) * 25 + 10}%`}
+                    stroke="rgba(147,112,219,0.2)"
+                    strokeWidth="0.5"
+                    filter="url(#glow)"
+                    animate={{
+                      opacity: [0, 0.4, 0],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      delay: i * 0.3,
+                    }}
+                  />
+                )}
+              </g>
+            )
+          )}
         </svg>
       </motion.div>
 
-      {/* Subtle Grid Animation */}
+      {/* Subtle Grid Animation - reduced on mobile */}
       <motion.div
-        className="absolute inset-0 opacity-3"
+        className="absolute inset-0 opacity-[0.1] md:opacity-[0.5]"
         style={{
           backgroundImage: `
             linear-gradient(rgba(147,112,219,0.15) 1px, transparent 1px),
@@ -734,93 +761,67 @@ export default function LandingPage() {
               </motion.div>
 
               {/* Mobile Menu Button */}
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="md:hidden p-2 rounded-lg hover:bg-gray-800/50 transition-colors duration-300"
-              >
-                {isMenuOpen ? (
-                  <X className="h-5 w-5 text-gray-400" />
-                ) : (
-                  <Menu className="h-5 w-5 text-gray-400" />
-                )}
-              </button>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Mobile Menu Overlay */}
-        <motion.div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 md:hidden"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isMenuOpen ? 1 : 0 }}
-          transition={{ duration: 0.2 }}
-          style={{ pointerEvents: isMenuOpen ? "auto" : "none" }}
-        />
-
-        {/* Mobile Menu Panel */}
-        <motion.div
-          className="fixed right-0 top-0 w-80 h-full bg-gray-950/95 backdrop-blur-xl border-l border-gray-800/50 z-40 md:hidden"
-          initial={{ x: "100%" }}
-          animate={{ x: isMenuOpen ? 0 : "100%" }}
-          transition={{ type: "spring", damping: 25, stiffness: 150 }}
-        >
-          <div className="flex h-16 items-center justify-between px-6 border-b border-gray-800/50">
-            <span className="font-semibold text-white">Menu</span>
-            <button
-              onClick={() => setIsMenuOpen(false)}
-              className="p-2 rounded-lg hover:bg-gray-800/50 transition-colors duration-300"
-            >
-              <X className="h-5 w-5 text-gray-400" />
-            </button>
-          </div>
-
-          <nav className="p-6 flex flex-col justify-between h-[calc(100%-4rem)]">
-            <div className="flex flex-col space-y-6 pt-4">
-              {[
-                { name: "Features", href: "#features" },
-                { name: "Demo", href: "#demo" },
-                { name: "Workflow", href: "#workflow" },
-              ].map((item, index) => (
-                <motion.div
-                  key={item.name}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{
-                    opacity: isMenuOpen ? 1 : 0,
-                    y: isMenuOpen ? 0 : 10,
-                  }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
+              <div className="md:hidden relative">
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="p-2 rounded-lg hover:bg-gray-800/50 transition-colors duration-300"
                 >
-                  <Link
-                    href={item.href}
-                    className="block py-3 text-xl font-medium text-gray-300 hover:text-lavender-400 transition-colors duration-300"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
+                  {isMenuOpen ? (
+                    <X className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Menu className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
 
-            <motion.div
-              className="mt-auto pb-8"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: isMenuOpen ? 1 : 0, y: isMenuOpen ? 0 : 10 }}
-              transition={{ duration: 0.3, delay: 0.3 }}
-            >
-              <Link
-                href="/chat"
-                onClick={() => setIsMenuOpen(false)}
-                className="w-full inline-flex items-center justify-center bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white px-6 py-3 rounded-full font-medium transition-all duration-300"
-              >
-                Start Building
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </motion.div>
-          </nav>
+                {/* Simple Dropdown Menu */}
+                {isMenuOpen && (
+                  <motion.div
+                    className="absolute right-0 top-12 w-48 bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-lg shadow-xl z-50"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="py-2">
+                      <Link
+                        href="#features"
+                        className="block px-4 py-2 text-gray-300 hover:text-lavender-400 hover:bg-gray-800/50 transition-colors duration-200"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Features
+                      </Link>
+                      <Link
+                        href="#demo"
+                        className="block px-4 py-2 text-gray-300 hover:text-lavender-400 hover:bg-gray-800/50 transition-colors duration-200"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Demo
+                      </Link>
+                      <Link
+                        href="#workflow"
+                        className="block px-4 py-2 text-gray-300 hover:text-lavender-400 hover:bg-gray-800/50 transition-colors duration-200"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Workflow
+                      </Link>
+                      <div className="border-t border-gray-700/50 my-2"></div>
+                      <Link
+                        href="/chat"
+                        className="block px-4 py-2 text-lavender-400 hover:text-white hover:bg-lavender-600/20 transition-colors duration-200"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Start Building
+                      </Link>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          </div>
         </motion.div>
       </header>
       {/* Hero Section */}
-      <main className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
+      <main className="relative z-10 px-4 sm:px-6 py-24 sm:py-32 mt-16 sm:mt-0">
         <div className="max-w-8xl mx-auto">
           <div className="text-center max-w-7xl mx-auto">
             {/* Hero Badge */}
@@ -869,11 +870,14 @@ export default function LandingPage() {
               <div className="bg-gray-800/50 p-1 rounded-2xl overflow-hidden">
                 <video
                   src="/videos/chained_demo_v2.mp4"
-                  controls
                   autoPlay
                   muted
                   loop
-                  className="w-full h-auto rounded-xl opacity-90 hover:opacity-100 transition-opacity duration-300"
+                  playsInline
+                  disablePictureInPicture
+                  controlsList="nodownload nofullscreen noremoteplayback"
+                  onContextMenu={(e) => e.preventDefault()}
+                  className="w-full h-auto rounded-xl opacity-90 hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                 />
               </div>
             </div>
@@ -1149,11 +1153,14 @@ export default function LandingPage() {
             <div className="relative rounded-xl animate-in fade-in slide-in-from-right-8 duration-700 delay-300">
               <video
                 src="/videos/chained_demo_v2.mp4"
-                controls
                 autoPlay
                 muted
                 loop
-                className="w-full h-auto rounded-xl opacity-90 hover:opacity-100 transition-opacity duration-300"
+                playsInline
+                disablePictureInPicture
+                controlsList="nodownload nofullscreen noremoteplayback"
+                onContextMenu={(e) => e.preventDefault()}
+                className="w-full h-auto rounded-xl opacity-90 hover:opacity-100 transition-opacity duration-300 pointer-events-none"
               />
             </div>
           </div>

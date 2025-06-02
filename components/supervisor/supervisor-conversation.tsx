@@ -2,10 +2,10 @@
 
 import React from "react";
 import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
-import type { Id } from "../convex/_generated/dataModel";
-import { MarkdownRenderer } from "./markdown-renderer";
-import { ModelAvatar } from "./model-avatar";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { MarkdownRenderer } from "../chat/markdown-renderer";
+import { ModelAvatar } from "../chat/model-avatar";
 import { CheckCircle, AlertCircle, Clock } from "lucide-react";
 
 interface SupervisorConversationProps {

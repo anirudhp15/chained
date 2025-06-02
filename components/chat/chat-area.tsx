@@ -2,8 +2,8 @@
 
 import React from "react";
 import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
-import type { Id } from "../convex/_generated/dataModel";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 import {
   ChevronDown,
   ChevronUp,
@@ -19,13 +19,13 @@ import { useState, useMemo, useRef, useCallback } from "react";
 import { ModelAvatar } from "./model-avatar";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { WelcomeScreen } from "./welcome-screen";
-import { ConnectionBadge } from "./connection-selector";
-import { AttachmentDisplay } from "./ui/AttachmentDisplay";
-import { CopyButton } from "./ui/CopyButton";
-import { TruncatedText } from "./ui/TruncatedText";
-import { PerformanceMetrics } from "./PerformanceMetrics";
-import { ChainPerformanceSummary } from "./ChainPerformanceSummary";
-import { ThinkingDropdown } from "./ui/ThinkingDropdown";
+import { ConnectionBadge } from "../input/connection-selector";
+import { AttachmentDisplay } from "../ui/AttachmentDisplay";
+import { CopyButton } from "../ui/CopyButton";
+import { TruncatedText } from "../ui/TruncatedText";
+import { PerformanceMetrics } from "../performance/PerformanceMetrics";
+import { ChainPerformanceSummary } from "../performance/ChainPerformanceSummary";
+import { ThinkingDropdown } from "../ui/ThinkingDropdown";
 import { useUser } from "@clerk/nextjs";
 import { usePerformance } from "@/lib/performance-context";
 

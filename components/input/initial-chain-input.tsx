@@ -7,7 +7,7 @@ import { AgentInput, type Agent } from "./agent-input";
 import { v4 as uuidv4 } from "uuid";
 import { DEFAULT_AGENT_CONFIG, CONDITION_PRESETS } from "@/lib/constants";
 import { useSidebar } from "@/lib/sidebar-context";
-import { NodePill } from "./ui/NodePill";
+import { NodePill } from "../ui/NodePill";
 import {
   Plus,
   ArrowRight,
