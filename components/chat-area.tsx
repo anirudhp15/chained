@@ -491,7 +491,7 @@ export function ChatArea({
                     size={14}
                     className="group-hover:scale-110 group-hover:-rotate-12 transition-transform"
                   />
-                  <span className="text-xs group-hover:block hidden transition-all duration-200">
+                  <span className="text-xs group-hover:text-lavender-400 transition-all duration-200">
                     Chain
                   </span>
                 </button>
@@ -776,7 +776,7 @@ export function ChatArea({
                           size={10}
                           className="text-gray-400 hover:text-lavender-400 group-hover:scale-110 transition-all"
                         />
-                        <span className="text-xs text-gray-400 group-hover:text-lavender-400 transition-all duration-200 hidden group-hover:block">
+                        <span className="text-xs text-gray-400 group-hover:text-lavender-400 transition-all duration-200 ">
                           Focus
                         </span>
                       </button>

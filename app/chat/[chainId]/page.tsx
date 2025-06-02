@@ -22,10 +22,10 @@ import {
 import { SupervisorConversation } from "../../../components/supervisor-conversation";
 import type { Agent } from "../../../components/agent-input";
 import { evaluateCondition } from "../../../lib/condition-evaluator";
-import { SupervisorModal } from "@/components/supervisor-modal";
 import { PerformanceProvider } from "../../../lib/performance-context";
 import Link from "next/link";
 import { ArrowLeft, Bot, MessageSquare } from "lucide-react";
+import { SupervisorInterface } from "../../../components/supervisor-interface";
 
 function ChatPageContent() {
   const params = useParams();
@@ -720,9 +720,13 @@ function ChatPageContent() {
           onFocusAgent={handleFocusAgent}
           onLoadPreset={handleLoadPreset}
         />
-        {inputMode === "supervisor" && (
-          <SupervisorModal
+        {inputMode === "supervisor" ? (
+          <SupervisorInterface
             sessionId={chainId as Id<"chatSessions">}
+            agentSteps={agentSteps || []}
+            onSupervisorSend={handleSupervisorSend}
+            onSupervisorTyping={handleSupervisorTyping}
+            isLoading={isLoading}
             isOpen={supervisorModalOpen}
             onToggle={() => setSupervisorModalOpen(!supervisorModalOpen)}
             isFullscreen={supervisorModalFullscreen}
@@ -733,52 +737,53 @@ function ChatPageContent() {
             supervisorStatus={supervisorStatus}
             supervisorStreamContent={supervisorStreamContent}
           />
+        ) : (
+          <InputAreaContainer
+            mode={inputMode}
+            sessionId={chainId as Id<"chatSessions">}
+            onSendChain={handleSendChain}
+            onSendFocusedAgent={handleSendFocusedAgent}
+            focusedAgentIndex={focusedAgentIndex}
+            focusedAgent={
+              focusedAgentIndex !== null && agentSteps
+                ? {
+                    id: agentSteps[focusedAgentIndex]._id,
+                    model: agentSteps[focusedAgentIndex].model,
+                    prompt: "", // Start with empty prompt for new input
+                    name: agentSteps[focusedAgentIndex].name,
+                    connection: {
+                      type:
+                        agentSteps[focusedAgentIndex].connectionType ===
+                          "supervisor" ||
+                        agentSteps[focusedAgentIndex].connectionType ===
+                          "collaborative"
+                          ? "direct"
+                          : ((agentSteps[focusedAgentIndex].connectionType ||
+                              "direct") as
+                              | "direct"
+                              | "conditional"
+                              | "parallel"
+                              | "collaborative"),
+                      condition:
+                        agentSteps[focusedAgentIndex].connectionCondition,
+                      sourceAgentId:
+                        agentSteps[
+                          focusedAgentIndex
+                        ].sourceAgentIndex?.toString(),
+                    },
+                  }
+                : null
+            }
+            presetAgents={presetAgents}
+            onClearPresetAgents={handleClearPresetAgents}
+            onSupervisorSend={handleSupervisorSend}
+            onSupervisorTyping={handleSupervisorTyping}
+            agentSteps={agentSteps || []}
+            isLoading={isLoading}
+            isStreaming={isStreaming}
+            queuedAgents={queuedAgents}
+          />
         )}
-        <InputAreaContainer
-          mode={inputMode}
-          sessionId={chainId as Id<"chatSessions">}
-          onSendChain={handleSendChain}
-          onSendFocusedAgent={handleSendFocusedAgent}
-          focusedAgentIndex={focusedAgentIndex}
-          focusedAgent={
-            focusedAgentIndex !== null && agentSteps
-              ? {
-                  id: agentSteps[focusedAgentIndex]._id,
-                  model: agentSteps[focusedAgentIndex].model,
-                  prompt: "", // Start with empty prompt for new input
-                  name: agentSteps[focusedAgentIndex].name,
-                  connection: {
-                    type:
-                      agentSteps[focusedAgentIndex].connectionType ===
-                        "supervisor" ||
-                      agentSteps[focusedAgentIndex].connectionType ===
-                        "collaborative"
-                        ? "direct"
-                        : ((agentSteps[focusedAgentIndex].connectionType ||
-                            "direct") as
-                            | "direct"
-                            | "conditional"
-                            | "parallel"
-                            | "collaborative"),
-                    condition:
-                      agentSteps[focusedAgentIndex].connectionCondition,
-                    sourceAgentId:
-                      agentSteps[
-                        focusedAgentIndex
-                      ].sourceAgentIndex?.toString(),
-                  },
-                }
-              : null
-          }
-          presetAgents={presetAgents}
-          onClearPresetAgents={handleClearPresetAgents}
-          onSupervisorSend={handleSupervisorSend}
-          onSupervisorTyping={handleSupervisorTyping}
-          agentSteps={agentSteps || []}
-          isLoading={isLoading}
-          isStreaming={isStreaming}
-          queuedAgents={queuedAgents}
-        />
       </div>
     </div>
   );

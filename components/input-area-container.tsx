@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { InitialChainInput } from "./initial-chain-input";
 import { FocusedAgentInput } from "./focused-agent-input";
-import { SupervisorChatInput } from "./supervisor-chat-input";
 import type { Agent } from "./agent-input";
 import type { Id } from "../convex/_generated/dataModel";
 
@@ -23,10 +22,10 @@ interface InputAreaContainerProps {
   focusedAgent?: Agent | null;
   onSendFocusedAgent?: (agent: Agent) => void;
 
-  // Supervisor mode props
+  // Supervisor mode props (kept for backward compatibility but not used)
   onSupervisorSend?: (message: string) => void;
   onSupervisorTyping?: (isTyping: boolean) => void;
-  agentSteps?: any[]; // For supervisor mode
+  agentSteps?: any[];
 
   // Common props
   isLoading?: boolean;
@@ -83,18 +82,9 @@ export function InputAreaContainer({
       );
 
     case "supervisor":
-      if (!sessionId || !onSupervisorSend) {
-        return null;
-      }
-      return (
-        <SupervisorChatInput
-          sessionId={sessionId}
-          agentSteps={agentSteps}
-          onSupervisorSend={onSupervisorSend}
-          onSupervisorTyping={onSupervisorTyping}
-          isLoading={isLoading}
-        />
-      );
+      // Supervisor mode is now handled by SupervisorInterface component
+      // This case is kept for backward compatibility but returns null
+      return null;
 
     default:
       return null;
