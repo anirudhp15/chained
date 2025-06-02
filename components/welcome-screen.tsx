@@ -397,10 +397,10 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
     : null;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-min flex flex-col">
       {/* Main content area */}
-      <div className="flex-1 flex items-start justify-center px-4 md:px-6 pt-16 md:pt-20">
-        <div className="w-full max-w-7xl mx-auto text-center space-y-4 md:space-y-8 welcome-screen-container md:!w-auto md:!margin-0 md:!padding-0">
+      <div className="flex-1 flex items-start justify-center p-4 lg:p-8 ">
+        <div className="w-full max-w-7xl mx-auto text-center space-y-4 md:space-y-8 welcome-screen-container md:w-auto md:margin-0 md:padding-0">
           {/* Welcome Message */}
           <div className="space-y-2 md:space-y-4">
             <div
