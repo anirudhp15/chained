@@ -163,7 +163,9 @@ export function ConnectionBadge({
             {sourceAgentName}
           </span>
           <span className="font-semibold md:hidden text-xs">
-            {sourceAgentName.split(" ")[0]}
+            {sourceAgentName.split(" ")[0]}{" "}
+            {sourceAgentName.split(" ").length > 1 &&
+              sourceAgentName.split(" ")[1]}
           </span>
         </div>
 

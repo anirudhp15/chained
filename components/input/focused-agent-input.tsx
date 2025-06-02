@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { type Agent } from "./agent-input";
 import { ModalityIcons } from "../modality/ModalityIcons";
 import { useSidebar } from "@/lib/sidebar-context";
+import { Pencil } from "lucide-react";
 
 interface FocusedAgentInputProps {
   focusedAgentIndex: number;
@@ -23,6 +24,8 @@ export function FocusedAgentInput({
   const [focusedAgentState, setFocusedAgentState] = useState<Agent | null>(
     null
   );
+  const [isNameEditing, setIsNameEditing] = useState(false);
+  const [tempName, setTempName] = useState("");
 
   // Get sidebar state for positioning
   const { sidebarWidth } = useSidebar();
@@ -44,14 +47,28 @@ export function FocusedAgentInput({
   // Initialize focused agent state when focus mode is activated
   useEffect(() => {
     if (focusedAgent) {
-      setFocusedAgentState({
+      const newState = {
         ...focusedAgent,
         prompt: "", // Start with empty prompt for new input
-      });
+      };
+      setFocusedAgentState(newState);
+      setTempName(newState.name || `Node ${focusedAgentIndex + 1}`);
     } else {
       setFocusedAgentState(null);
     }
-  }, [focusedAgent]);
+  }, [focusedAgent, focusedAgentIndex]);
+
+  const nodeName = focusedAgentState?.name || `Node ${focusedAgentIndex + 1}`;
+
+  const handleNameSave = () => {
+    setIsNameEditing(false);
+    if (tempName.trim() && focusedAgentState) {
+      const updatedAgent = { ...focusedAgentState, name: tempName.trim() };
+      setFocusedAgentState(updatedAgent);
+    } else {
+      setTempName(nodeName);
+    }
+  };
 
   const handleSendFocusedAgent = () => {
     if (
@@ -106,6 +123,49 @@ export function FocusedAgentInput({
             {/* Bottom controls */}
             <div className="absolute bottom-3 md:bottom-4 left-3 md:left-4 right-3 md:right-4 flex items-center justify-between">
               <div className="flex items-center gap-2 md:gap-3">
+                {/* Agent Name Editor */}
+                <div className="flex items-center gap-1.5">
+                  {isNameEditing ? (
+                    <input
+                      type="text"
+                      value={tempName}
+                      onChange={(e) => setTempName(e.target.value)}
+                      onBlur={handleNameSave}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleNameSave();
+                        if (e.key === "Escape") {
+                          setIsNameEditing(false);
+                          setTempName(nodeName);
+                        }
+                      }}
+                      className="bg-gray-700/50 border border-gray-500/50 rounded px-2 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-lavender-400/50 min-w-16 max-w-24"
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ fontSize: "16px" }}
+                    />
+                  ) : (
+                    <>
+                      <div className="w-2 h-2 bg-lavender-400/70 rounded-full flex-shrink-0"></div>
+                      <span className="text-xs text-lavender-400/90 font-medium max-w-20 truncate">
+                        {nodeName}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsNameEditing(true);
+                        }}
+                        className="opacity-60 hover:opacity-100 transition-opacity p-0.5 hover:bg-gray-700/50 rounded"
+                        title="Edit name"
+                      >
+                        <Pencil
+                          size={10}
+                          className="text-gray-400 hover:text-lavender-400"
+                        />
+                      </button>
+                    </>
+                  )}
+                </div>
+
                 {/* Model Display */}
                 <div className="px-2 md:px-3 py-1 md:py-1.5 bg-gray-900/90 border border-gray-600/50 rounded-lg text-gray-300 text-xs backdrop-blur-sm">
                   <span className="font-medium">{focusedAgentState.model}</span>

@@ -9,6 +9,7 @@ import {
   useMutation,
 } from "convex/react";
 import { SignInButton } from "@clerk/nextjs";
+import { motion } from "framer-motion";
 import { api } from "../../convex/_generated/api";
 import { Sidebar } from "../../components/chat/sidebar";
 import { MobileSidebarToggle } from "../../components/MobileSidebarToggle";
@@ -16,6 +17,31 @@ import { WelcomeScreen } from "../../components/chat/welcome-screen";
 import { InputAreaContainer } from "@/components/input/input-area-container";
 import { PerformanceProvider } from "../../lib/performance-context";
 import type { Agent } from "../../components/input/agent-input";
+
+// Subtle Grid Animation Component
+const SubtleGridBackground = () => {
+  return (
+    <motion.div
+      className="absolute inset-0 opacity-[0.25] pointer-events-none"
+      style={{
+        backgroundImage: `
+          linear-gradient(rgba(147,112,219,0.4) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(147,112,219,0.4) 1px, transparent 1px)
+        `,
+        backgroundSize: "60px 60px",
+        filter: "blur(0.5px)",
+      }}
+      animate={{
+        backgroundPosition: ["0px 0px", "60px 60px", "0px 0px"],
+      }}
+      transition={{
+        duration: 20,
+        repeat: Infinity,
+        ease: "linear",
+      }}
+    />
+  );
+};
 
 function ChatLandingContent() {
   const router = useRouter();
@@ -74,7 +100,10 @@ function ChatLandingContent() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-950">
+    <div className="flex h-screen bg-gray-950 relative overflow-hidden">
+      {/* Subtle Grid Background */}
+      <SubtleGridBackground />
+
       {/* Only render sidebar if there are chats */}
       {shouldShowSidebar && (
         <Sidebar

@@ -408,8 +408,8 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                 className="flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700 ease-out"
                 style={{ animationDelay: "0.1s", animationFillMode: "both" }}
               >
-                <h1 className="text-3xl sm:text-4xl md:text-4xl lg:text-5xl font-semibold text-white tracking-wide leading-tight whitespace-nowrap welcome-screen-title">
-                  What do you want to chain?
+                <h1 className="text-3xl sm:text-4xl md:text-4xl lg:text-5xl font-semibold text-white leading-tight whitespace-nowrap welcome-screen-title">
+                  What would you like to chain?
                 </h1>
               </div>
 

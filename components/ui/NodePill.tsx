@@ -11,7 +11,7 @@ import {
   X,
   Sparkles,
 } from "lucide-react";
-import { Agent } from "../agent-input";
+import { Agent } from "../input/agent-input";
 
 interface NodePillProps {
   agent: Agent;
@@ -305,7 +305,7 @@ export function NodePill({
       >
         {/* Base Pill */}
         <div
-          className={`bg-gray-900/75 backdrop-blur-sm mx-auto border border-gray-600/50 rounded-xl px-4 py-2 transition-all duration-200 hover:bg-gray-800/90 hover:border-lavender-400/20 w-full max-w-xl hover:max-w-4xl group shadow-lg shadow-gray-950/50 animate-in fade-in slide-in-from-bottom-4 lg:slide-in-from-bottom-8 ease-out ${isExpanded ? "bg-gray-800/90 border-lavender-400/30" : ""} ${
+          className={`bg-gray-900/75 backdrop-blur-sm mx-auto border border-gray-600/50 rounded-xl px-4 py-2 transition-all duration-200 hover:bg-gray-800/90 hover:border-lavender-400/20 w-full max-w-4xl group shadow-lg shadow-gray-950/50 animate-in fade-in slide-in-from-bottom-4 lg:slide-in-from-bottom-8 ease-out ${isExpanded ? "bg-gray-800/90 border-lavender-400/30" : ""} ${
             // Add visual indication for non-collapsible (last) agents on mobile
             isMobile && !isCollapsible
               ? "border-green-400/20 bg-green-900/10"
@@ -330,22 +330,25 @@ export function NodePill({
             {/* Left: Node Name */}
             <div className="flex items-center gap-3">
               {isEditing ? (
-                <input
-                  type="text"
-                  value={tempName}
-                  onChange={(e) => setTempName(e.target.value)}
-                  onBlur={handleNameSave}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleNameSave();
-                    if (e.key === "Escape") {
-                      setIsEditing(false);
-                      setTempName(nodeName);
-                    }
-                  }}
-                  className="bg-gray-700/50 whitespace-nowrap border border-gray-500/50 rounded px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-lavender-400/50"
-                  autoFocus
-                  onClick={(e) => e.stopPropagation()}
-                />
+                <>
+                  <div className="w-2 h-2 bg-lavender-400/50 rounded-full"></div>
+                  <input
+                    type="text"
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    onBlur={handleNameSave}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleNameSave();
+                      if (e.key === "Escape") {
+                        setIsEditing(false);
+                        setTempName(nodeName);
+                      }
+                    }}
+                    className="bg-gray-700/50 whitespace-nowrap border border-gray-500/50 rounded px-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-lavender-400/50"
+                    autoFocus
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </>
               ) : (
                 <>
                   <div className="w-2 h-2 bg-lavender-400 rounded-full"></div>
@@ -423,8 +426,8 @@ export function NodePill({
               </div>
 
               {/* Desktop: Original Status */}
-              <span className="text-xs text-gray-400 whitespace-nowrap hidden lg:block">
-                Ready for task
+              <span className="text-xs text-gray-500 group-hover:text-lavender-400 whitespace-nowrap hidden lg:block">
+                Ready
               </span>
 
               {/* Close Agent Button - only show if canRemove */}
@@ -437,7 +440,7 @@ export function NodePill({
                   className="flex items-center gap-1 px-2 py-1 bg-gray-700/50 hover:bg-red-600/80 text-gray-400 hover:text-white rounded-xl text-xs font-medium transition-colors"
                 >
                   <Trash2 size={12} />
-                  <span className="hidden sm:inline">Close</span>
+                  <span className="hidden sm:inline">Remove</span>
                 </button>
               )}
 

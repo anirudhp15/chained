@@ -7,7 +7,7 @@ import { ModalityIcons } from "../modality/ModalityIcons";
 import { CONNECTION_TYPES, DEFAULT_AGENT_CONFIG } from "@/lib/constants";
 import { useSidebar } from "@/lib/sidebar-context";
 import { usePerformance } from "@/lib/performance-context";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Pencil } from "lucide-react";
 
 // Simple connection icon component
 const ConnectionIcon = ({ connectionType }: { connectionType?: string }) => {
@@ -71,6 +71,10 @@ export function InputArea({
 
   // Get performance state
   const { showDetailedPerformance, togglePerformance } = usePerformance();
+
+  // Focused agent name editing state
+  const [isNameEditing, setIsNameEditing] = useState(false);
+  const [tempName, setTempName] = useState("");
 
   // Calculate margin for desktop centering
   const getContainerStyle = () => {

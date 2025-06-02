@@ -71,7 +71,7 @@ export function SupervisorModal({
       case "orchestrating":
         return "Orchestrating agents...";
       case "ready":
-        return "Ready for actions";
+        return "Ready";
       default:
         return "Supervisor available";
     }
@@ -284,7 +284,7 @@ export function SupervisorModal({
               }}
               whileTap={{ scale: 0.98 }}
               onClick={onToggle}
-              className="flex justify-between shadow-lg shadow-gray-950/50 items-center gap-3 px-4 py-2 bg-gray-900/85 backdrop-blur-sm border max-w-md hover:max-w-4xl w-full border-gray-600/50 rounded-xl text-sm transition-all duration-300 hover:bg-gray-800/90 hover:border-emerald-400/30 group"
+              className="flex justify-between shadow-lg shadow-gray-950/50 items-center gap-3 px-4 py-2 bg-gray-900/85 backdrop-blur-sm border max-w-4xl w-full border-gray-600/50 rounded-xl text-sm transition-all duration-300 hover:bg-gray-800/90 hover:border-emerald-400/30 group"
             >
               <div className="flex items-center gap-3">
                 <motion.div

@@ -416,6 +416,8 @@ export function AgentInput({
   isMobileCollapsed,
 }: AgentInputProps) {
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [isNameEditing, setIsNameEditing] = useState(false);
+  const [tempName, setTempName] = useState(agent.name || `Node ${index + 1}`);
   const [buttonPositions, setButtonPositions] = useState<{
     model?: DOMRect | null;
     condition?: DOMRect | null;
@@ -423,6 +425,22 @@ export function AgentInput({
   const [showConditionInput, setShowConditionInput] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Update tempName when agent name or index changes
+  useEffect(() => {
+    setTempName(agent.name || `Node ${index + 1}`);
+  }, [agent.name, index]);
+
+  const nodeName = agent.name || `Node ${index + 1}`;
+
+  const handleNameSave = () => {
+    setIsNameEditing(false);
+    if (tempName.trim()) {
+      onUpdate({ ...agent, name: tempName.trim() });
+    } else {
+      setTempName(nodeName);
+    }
+  };
 
   const getProviderKey = (modelValue: string): keyof ModelProviders => {
     if (
@@ -444,14 +462,36 @@ export function AgentInput({
 
   const currentProvider = (() => {
     const providerKey = getProviderKey(agent.model);
-    return MODEL_PROVIDERS[providerKey];
+    const provider = MODEL_PROVIDERS[providerKey];
+
+    // If no provider found and agent.model is empty, default to OpenAI for gpt-4o
+    if (!provider && (!agent.model || agent.model.trim() === "")) {
+      return MODEL_PROVIDERS.openai;
+    }
+
+    return provider;
   })();
 
   const selectedModel = (() => {
     const providerKey = getProviderKey(agent.model);
-    return MODEL_PROVIDERS[providerKey]?.models.find(
+    const foundModel = MODEL_PROVIDERS[providerKey]?.models.find(
       (m) => m.value === agent.model
     );
+
+    // If no model is found and agent.model is empty, default to gpt-4o
+    if (!foundModel && (!agent.model || agent.model.trim() === "")) {
+      return MODEL_PROVIDERS.openai.models.find((m) => m.value === "gpt-4o");
+    }
+
+    return foundModel;
+  })();
+
+  // Get the effective model value for components that need a model value
+  const effectiveModelValue = (() => {
+    if (!agent.model || agent.model.trim() === "") {
+      return "gpt-4o";
+    }
+    return agent.model;
   })();
 
   // Auto-resize textarea
@@ -617,7 +657,13 @@ export function AgentInput({
                     {/* Models List */}
                     <div className="py-1">
                       {provider.models.map((model) => {
-                        const isSelected = agent.model === model.value;
+                        // Handle selection state properly - if agent.model is empty and this is gpt-4o, show as fallback
+                        const isActuallySelected = agent.model === model.value;
+                        const isFallbackShown =
+                          (!agent.model || agent.model.trim() === "") &&
+                          model.value === "gpt-4o";
+                        const isSelected = isActuallySelected;
+
                         return (
                           <button
                             key={model.value}
@@ -628,7 +674,9 @@ export function AgentInput({
                             className={`w-full px-3 py-2 text-left ${STYLES.textResponsive} transition-colors hover:bg-gray-700/50 ${
                               isSelected
                                 ? "bg-lavender-500/10 text-lavender-400"
-                                : "text-white"
+                                : isFallbackShown
+                                  ? "bg-blue-500/10 text-blue-400"
+                                  : "text-white"
                             }`}
                           >
                             <div className="flex items-center justify-between">
@@ -642,6 +690,11 @@ export function AgentInput({
                                   {isSelected && (
                                     <span className="text-lavender-400 text-xs">
                                       Selected
+                                    </span>
+                                  )}
+                                  {isFallbackShown && !isSelected && (
+                                    <span className="text-blue-400 text-xs">
+                                      Default
                                     </span>
                                   )}
                                 </div>
@@ -757,9 +810,8 @@ export function AgentInput({
           setTimeout(adjustTextareaHeight, 0);
         }}
         placeholder="Ask anything"
-        className="w-full p-4 h-auto rounded-t-xl min-h-12 lg:min-h-16 max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-base lg:text-sm overflow-y-auto"
+        className="w-full p-4 h-auto rounded-t-xl min-h-12 lg:min-h-[7.5rem] max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-base lg:text-sm overflow-y-auto"
         ref={textareaRef}
-        style={{ fontSize: "16px" }}
       />
 
       {/* Bottom controls container */}
@@ -770,7 +822,7 @@ export function AgentInput({
             {/* Modality Icons */}
             <div className="flex items-center gap-1.5">
               <ModalityIcons
-                selectedModel={agent.model}
+                selectedModel={effectiveModelValue}
                 onImagesChange={(images) => onUpdate({ ...agent, images })}
                 onWebSearchToggle={(enabled) =>
                   onUpdate({ ...agent, webSearchEnabled: enabled })
@@ -790,7 +842,7 @@ export function AgentInput({
             {renderEnhancedOptions()}
             {/* Modality Icons */}
             <ModalityIcons
-              selectedModel={agent.model}
+              selectedModel={effectiveModelValue}
               onImagesChange={(images) => onUpdate({ ...agent, images })}
               onWebSearchToggle={(enabled) =>
                 onUpdate({ ...agent, webSearchEnabled: enabled })

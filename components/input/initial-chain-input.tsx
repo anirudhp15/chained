@@ -516,7 +516,7 @@ const DesktopConnectionSelector = ({
   };
 
   return (
-    <div className="hidden md:flex items-center justify-center relative mb-24">
+    <div className="hidden md:flex items-center justify-center relative mb-36">
       {/* Connection Line/Background */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-12 h-0.5 bg-gray-600/30"></div>

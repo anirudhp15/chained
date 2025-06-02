@@ -21,9 +21,13 @@ import {
   Clock,
   Send,
   Sparkles,
+  BarChart3,
+  Paperclip,
 } from "lucide-react";
 import { useSidebar } from "@/lib/sidebar-context";
 import { usePerformance } from "@/lib/performance-context";
+import { UploadedImage } from "../modality/ImageUpload";
+import { ModalityIcons } from "../modality/ModalityIcons";
 
 interface SupervisorInterfaceProps {
   sessionId: Id<"chatSessions">;
@@ -65,6 +69,7 @@ export function SupervisorInterface({
   const [showAgentDropdown, setShowAgentDropdown] = useState(false);
   const [lastAtPosition, setLastAtPosition] = useState(-1);
   const [filteredAgents, setFilteredAgents] = useState<AgentOption[]>([]);
+  const [images, setImages] = useState<UploadedImage[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -222,7 +227,7 @@ export function SupervisorInterface({
       case "orchestrating":
         return "Orchestrating agents...";
       case "ready":
-        return "Ready for actions";
+        return "Ready";
       default:
         return "Supervisor available";
     }
@@ -352,7 +357,7 @@ export function SupervisorInterface({
               <div className="flex justify-center">
                 <button
                   onClick={onToggle}
-                  className="flex justify-between shadow-lg shadow-gray-950/50 animate-in fade-in slide-in-from-top-4 lg:slide-in-from-top-8 ease-out items-center gap-3 px-4 py-3 bg-gray-900/85 backdrop-blur-sm border max-w-md hover:max-w-4xl w-full border-gray-600/50 rounded-xl text-sm transition-all duration-300 hover:bg-gray-800/90 hover:border-emerald-400/30 group"
+                  className="flex justify-between shadow-lg shadow-gray-950/50 items-center gap-3 px-4 py-3 bg-gray-900/85 backdrop-blur-sm border max-w-4xl w-full border-gray-600/50 rounded-xl text-sm transition-all duration-300 hover:bg-gray-800/90 hover:border-emerald-400/30 group"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
@@ -379,7 +384,7 @@ export function SupervisorInterface({
                 onKeyDown={handleKeyDown}
                 onKeyPress={handleKeyPress}
                 placeholder="What do you want to do next?"
-                className="w-full h-24 md:h-32 px-3 md:px-4 py-3 md:py-4 pb-12 md:pb-16 border-none outline-none ring-0 text-base md:text-sm bg-transparent text-white placeholder-gray-400 focus:outline-none resize-none transition-all"
+                className="w-full h-24 md:h-32 lg:h-44 px-3 md:px-4 py-3 md:py-4 pb-12 md:pb-16 border-none outline-none ring-0 text-base md:text-sm bg-transparent text-white placeholder-gray-400 focus:outline-none resize-none transition-all"
                 style={{ fontSize: "16px" }}
               />
 
@@ -411,44 +416,57 @@ export function SupervisorInterface({
               {/* Bottom controls */}
               <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between p-3 md:p-4">
                 <div className="flex items-center gap-2">
+                  {/* Image attachment and modality icons */}
+                  <ModalityIcons
+                    selectedModel="gpt-4o" // Default to a model that supports images
+                    onImagesChange={setImages}
+                    onWebSearchToggle={() => {}} // Supervisor doesn't need web search toggle
+                    isWebSearchEnabled={false}
+                    images={images}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
                   {/* Performance toggle button */}
                   <button
                     onClick={togglePerformance}
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-all ${
+                    className={`flex items-center justify-center p-2 rounded-md transition-all ${
                       showDetailedPerformance
-                        ? "bg-lavender-500/20 text-lavender-400 border border-lavender-500/30"
-                        : "bg-gray-700/50 text-gray-400 border border-gray-600/30 hover:bg-gray-700 hover:text-gray-300"
+                        ? "text-lavender-400 bg-lavender-500/20 hover:bg-lavender-500/30"
+                        : "text-gray-400 hover:text-lavender-400 hover:bg-gray-700/50"
+                    }`}
+                    title={
+                      showDetailedPerformance
+                        ? "Hide detailed performance"
+                        : "Show detailed performance"
+                    }
+                  >
+                    <BarChart3 size={18} />
+                  </button>
+
+                  {/* Send button */}
+                  <button
+                    onClick={handleSend}
+                    disabled={!prompt.trim() || isLoading}
+                    className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
+                      prompt.trim() && !isLoading
+                        ? "bg-lavender-500 hover:bg-lavender-600 text-white shadow-lg hover:shadow-lavender-500/25 hover:scale-105"
+                        : "bg-gray-700/50 text-gray-500 cursor-not-allowed"
                     }`}
                   >
-                    <Sparkles size={12} />
-                    <span className="hidden sm:inline">
-                      {showDetailedPerformance ? "Hide Stats" : "Show Stats"}
-                    </span>
+                    {isLoading ? (
+                      <>
+                        <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="hidden md:inline">Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send size={14} />
+                        <span className="hidden md:inline">Send</span>
+                      </>
+                    )}
                   </button>
                 </div>
-
-                {/* Send button */}
-                <button
-                  onClick={handleSend}
-                  disabled={!prompt.trim() || isLoading}
-                  className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
-                    prompt.trim() && !isLoading
-                      ? "bg-lavender-500 hover:bg-lavender-600 text-white shadow-lg hover:shadow-lavender-500/25 hover:scale-105"
-                      : "bg-gray-700/50 text-gray-500 cursor-not-allowed"
-                  }`}
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="hidden md:inline">Sending...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send size={14} />
-                      <span className="hidden md:inline">Send</span>
-                    </>
-                  )}
-                </button>
               </div>
             </div>
           </div>

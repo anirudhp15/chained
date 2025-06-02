@@ -104,13 +104,14 @@ function MobileAgentCard({
               e.stopPropagation();
               onFocusToggle(agent.index);
             }}
-            className="p-1 hover:bg-gray-700/50 rounded transition-colors cursor-pointer"
+            className="p-1 hover:bg-gray-700/50 rounded flex items-center gap-1 text-xs text-gray-400 transition-colors cursor-pointer"
             title="Focus on this agent"
           >
             <Focus
               size={14}
               className="text-gray-400 hover:text-lavender-400"
             />
+            Focus
           </div>
           <ChevronDown
             size={16}
@@ -126,17 +127,19 @@ function MobileAgentCard({
         <div className="border-t border-gray-700/50 p-3 space-y-3 animate-in slide-in-from-top-2 duration-200">
           {/* User Prompt */}
           <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <UserDisplay />
-              {agent.connectionType && agent.index > 0 && (
-                <ConnectionBadge
-                  type={agent.connectionType}
-                  sourceAgentIndex={agent.index - 1}
-                  condition={agent.connectionCondition}
-                  size="sm"
-                  agents={agentGroups}
-                />
-              )}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserDisplay />
+                {agent.connectionType && agent.index > 0 && (
+                  <ConnectionBadge
+                    type={agent.connectionType}
+                    sourceAgentIndex={agent.index - 1}
+                    condition={agent.connectionCondition}
+                    agents={agentGroups}
+                  />
+                )}
+              </div>
+              <CopyButton text={agent.prompt} size="sm" />
             </div>
             <TruncatedText
               text={agent.prompt}
@@ -147,9 +150,6 @@ function MobileAgentCard({
               buttonClassName="text-xs"
               gradientFrom="from-gray-800/50"
             />
-            <div className="mt-2 flex justify-end">
-              <CopyButton text={agent.prompt} size="sm" />
-            </div>
           </div>
 
           {/* Multimodal Attachments */}
@@ -184,7 +184,7 @@ function MobileAgentCard({
           {/* Agent Response */}
           {!agent.wasSkipped &&
             (agent.response || agent.streamedContent || agent.isStreaming) && (
-              <div className="p-2">
+              <div className="px-1">
                 <div className="text-xs text-lavender-400/80 mb-2 flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <ModelAvatar model={agent.model} size="sm" />
@@ -476,48 +476,53 @@ export function ChatArea({
         />
       </div>
       {/* Focus Mode Header */}
-      <div className="flex-shrink-0 px-3 py-3 bg-gray-950/95 backdrop-blur-sm border-b border-gray-700/30">
+      <div className="flex-shrink-0 px-4 py-3 bg-gray-950/95 backdrop-blur-sm border-b border-gray-700/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ModelAvatar model={agent.model} size="xs" />
             <div className="flex flex-col">
               <span className="flex flex-row gap-2 px-2 py-1 group transition-all duration-200 hover:bg-gray-700/50 rounded-lg text-white font-medium text-xs">
                 {agent.name || `Node ${agent.index + 1}`}
-                <button
-                  onClick={() => handleFocusToggle(agent.index)}
-                  className="flex items-center gap-2 text-gray-300 hover:text-white transition-all group"
-                >
-                  <Link2
-                    size={14}
-                    className="group-hover:scale-110 group-hover:-rotate-12 transition-transform"
-                  />
-                  <span className="text-xs group-hover:text-lavender-400 transition-all duration-200">
-                    Chain
-                  </span>
-                </button>
               </span>
               <span className="text-gray-400 text-xs ml-2">{agent.model}</span>
             </div>
           </div>
+          <button
+            onClick={() => handleFocusToggle(agent.index)}
+            className="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-800/30 rounded-lg px-2 py-1 transition-all group"
+          >
+            <span className="text-xs group-hover:text-lavender-400 transition-all duration-200">
+              Chain
+            </span>
+            <Link2
+              size={14}
+              className="group-hover:scale-110 group-hover:-rotate-45 transition-transform"
+            />
+          </button>
         </div>
       </div>
 
       {/* Focused Agent Content */}
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-dark">
-        <div className="max-w-4xl mx-auto px-6 py-6 pb-64 space-y-6">
+        <div className="max-w-4xl mx-auto p-4 pb-64 space-y-6">
           {/* User Prompt */}
           <div className="w-full">
-            <div className="bg-gray-800/90 border border-gray-700/50 rounded-xl px-6 py-4">
-              <div className="flex flex-row gap-3">
-                <UserDisplay />
-                {agent.connectionType && agent.index > 0 && (
-                  <ConnectionBadge
-                    type={agent.connectionType}
-                    sourceAgentIndex={agent.index - 1}
-                    condition={agent.connectionCondition}
-                    agents={agentGroups}
-                  />
-                )}
+            <div className="bg-gray-800/90 border border-gray-700/50 rounded-xl p-4">
+              <div className="flex flex-row items-center justify-between">
+                <div className="flex flex-row items-center gap-3">
+                  <UserDisplay />
+                  {agent.connectionType && agent.index > 0 && (
+                    <ConnectionBadge
+                      type={agent.connectionType}
+                      sourceAgentIndex={agent.index - 1}
+                      condition={agent.connectionCondition}
+                      agents={agentGroups}
+                    />
+                  )}
+                </div>
+                <div className="flex justify-end">
+                  <CopyButton text={agent.prompt} size="sm" />
+                </div>
               </div>
               <TruncatedText
                 text={agent.prompt}
@@ -761,31 +766,31 @@ export function ChatArea({
             {/* Agent Column */}
             <div className="h-full flex flex-col">
               {/* Agent Header */}
-              <div className="agent-header flex-shrink-0 px-3 py-3 bg-gray-950/95 backdrop-blur-sm border-b border-gray-700/30">
+              <div className="agent-header flex flex-row justify-between flex-shrink-0 px-3 py-3 bg-gray-950/95 backdrop-blur-sm border-b border-gray-700/30">
                 <div className="flex items-center gap-2">
                   <ModelAvatar model={agent.model} size="xs" />
                   <div className="flex flex-col">
                     <span className="text-white flex flex-row group gap-2 font-medium text-xs px-2 py-1 hover:bg-gray-800/50 rounded transition-colors group">
                       {agent.name || `Node ${agent.index + 1}`}
-                      <button
-                        onClick={() => handleFocusToggle(agent.index)}
-                        className="flex items-center gap-2"
-                        title="Focus on this agent"
-                      >
-                        <Focus
-                          size={10}
-                          className="text-gray-400 hover:text-lavender-400 group-hover:scale-110 transition-all"
-                        />
-                        <span className="text-xs text-gray-400 group-hover:text-lavender-400 transition-all duration-200 ">
-                          Focus
-                        </span>
-                      </button>
                     </span>
                     <span className="text-gray-400 text-xs ml-2">
                       {agent.model}
                     </span>
                   </div>
                 </div>
+                <button
+                  onClick={() => handleFocusToggle(agent.index)}
+                  className="flex items-center gap-2"
+                  title="Focus on this agent"
+                >
+                  <span className="text-xs text-gray-400  group-hover:text-lavender-400 transition-all duration-200 ">
+                    Focus
+                  </span>
+                  <Focus
+                    size={10}
+                    className="text-gray-400 hover:text-lavender-400 group-hover:scale-110 transition-all"
+                  />
+                </button>
               </div>
 
               {/* Agent Content - Individually Scrollable */}
@@ -800,7 +805,6 @@ export function ChatArea({
                           type={agent.connectionType}
                           sourceAgentIndex={agent.index - 1}
                           condition={agent.connectionCondition}
-                          size="sm"
                           agents={agentGroups}
                         />
                       )}

@@ -6,6 +6,7 @@ import {
   Plus,
   MessageSquare,
   Link2,
+  Link as LinkIcon,
   Link2Off,
   ChevronLeft,
   MoreVertical,
@@ -21,8 +22,8 @@ import {
   Command,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
-import type { Id } from "../../convex/_generated/dataModel";
 import Link from "next/link";
+import type { Id } from "../../convex/_generated/dataModel";
 import { useUser, UserButton, SignOutButton, UserProfile } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useSidebar } from "@/lib/sidebar-context";
@@ -350,14 +351,17 @@ export function Sidebar({
         <div className="p-4 flex justify-center">
           <button
             onClick={() => router.push("/chat")}
-            className={`flex items-center text-sm justify-center font-bold gap-2 px-3 py-2 bg-lavender-500 hover:bg-lavender-600 text-white rounded-lg transition-all duration-200 lavender-glow hover:scale-105 hover:shadow-lavender-500/25 ${
+            className={`flex items-center text-sm justify-between font-semibold gap-2 p-2.5 bg-lavender-500 hover:bg-lavender-600 text-gray-200 rounded-lg transition-all duration-200 lavender-glow hover:shadow-lavender-500/25 ${
               isCollapsed ? "w-8 h-8 justify-center" : "w-full"
             }`}
           >
-            <Plus
-              className={`${isCollapsed ? "text-white block text-4xl" : "hidden"} transition-transform duration-200 hover:rotate-90`}
-            />
-            {!isCollapsed && <span>New Chain</span>}
+            <div className="flex items-center gap-4">
+              <LinkIcon
+                size={16}
+                className={`${isCollapsed ? "text-white block " : "text-gray-200"} transition-transform duration-200 hover:rotate-90`}
+              />
+              {!isCollapsed && <span>New Chain</span>}
+            </div>
           </button>
         </div>
 
@@ -495,6 +499,10 @@ export function Sidebar({
                             : "w-full px-3 py-2 pr-8"
                         }`}
                       >
+                        <LinkIcon
+                          size={16}
+                          className={`${isCollapsed ? "text-lavender-400/50 block " : "text-gray-400"} transition-transform duration-200 hover:rotate-90`}
+                        />
                         {!isCollapsed && (
                           <>
                             {editingChatId === chat._id ? (
@@ -728,7 +736,7 @@ export function Sidebar({
             onClick={handleMobileNewChat}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-lavender-500 hover:bg-lavender-600 text-white rounded-lg transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-lavender-500/25"
           >
-            <Plus size={16} />
+            <LinkIcon size={16} />
             <span>New Chain</span>
           </button>
         </div>
