@@ -17,8 +17,10 @@ import {
   LogOut,
   ChevronUp,
   X,
+  Search,
+  Command,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { Id } from "../convex/_generated/dataModel";
 import Link from "next/link";
 import { useUser, UserButton, SignOutButton, UserProfile } from "@clerk/nextjs";
@@ -37,6 +39,72 @@ interface ChatGroup {
   title: string;
   chats: any[];
 }
+
+// Enhanced search functionality with fuzzy matching
+const useSearchFilter = (chats: any[], searchQuery: string) => {
+  return useMemo(() => {
+    if (!searchQuery.trim()) return chats;
+
+    const query = searchQuery.toLowerCase();
+    return chats
+      .filter((chat) => {
+        const title = chat.title.toLowerCase();
+
+        // Exact match gets highest priority
+        if (title.includes(query)) return true;
+
+        // Fuzzy matching - check if all characters in query exist in title in order
+        let queryIndex = 0;
+        for (let i = 0; i < title.length && queryIndex < query.length; i++) {
+          if (title[i] === query[queryIndex]) {
+            queryIndex++;
+          }
+        }
+        return queryIndex === query.length;
+      })
+      .sort((a, b) => {
+        const aTitle = a.title.toLowerCase();
+        const bTitle = b.title.toLowerCase();
+
+        // Prioritize exact matches
+        const aExact = aTitle.includes(query);
+        const bExact = bTitle.includes(query);
+
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+
+        // Then by title length (shorter = more relevant)
+        return aTitle.length - bTitle.length;
+      });
+  }, [chats, searchQuery]);
+};
+
+// Highlight search terms in text
+const HighlightedText = ({
+  text,
+  searchQuery,
+}: {
+  text: string;
+  searchQuery: string;
+}) => {
+  if (!searchQuery.trim()) return <span>{text}</span>;
+
+  const query = searchQuery.toLowerCase();
+  const lowerText = text.toLowerCase();
+  const index = lowerText.indexOf(query);
+
+  if (index === -1) return <span>{text}</span>;
+
+  return (
+    <span>
+      {text.substring(0, index)}
+      <span className="bg-lavender-500/30 text-lavender-200 font-medium">
+        {text.substring(index, index + query.length)}
+      </span>
+      {text.substring(index + query.length)}
+    </span>
+  );
+};
 
 // Loading animation component
 const LoadingAnimation = () => (
@@ -107,6 +175,38 @@ export function Sidebar({
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
 
+  // Enhanced search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Apply search filter
+  const filteredChats = useSearchFilter(recentChats || [], searchQuery);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeydown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + K to focus search
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+
+      // Escape to clear search or close mobile sidebar
+      if (e.key === "Escape") {
+        if (searchQuery) {
+          setSearchQuery("");
+          searchInputRef.current?.blur();
+        } else if (isMobileOpen && onMobileToggle) {
+          onMobileToggle();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeydown);
+    return () => document.removeEventListener("keydown", handleKeydown);
+  }, [searchQuery, isMobileOpen, onMobileToggle]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = () => {
@@ -121,19 +221,7 @@ export function Sidebar({
     }
   }, [openMenuId, showAccountMenu, showUserProfile]);
 
-  // Close mobile sidebar on escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isMobileOpen && onMobileToggle) {
-        onMobileToggle();
-      }
-    };
-
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [isMobileOpen, onMobileToggle]);
-
-  const handleEditChat = (chatId: string, currentTitle: string) => {
+  const handleEditChat = async (chatId: string, currentTitle: string) => {
     setEditingChatId(chatId);
     setEditingTitle(currentTitle);
     setOpenMenuId(null);
@@ -141,22 +229,30 @@ export function Sidebar({
 
   const handleSaveEdit = async () => {
     if (editingChatId && editingTitle.trim()) {
-      await updateChatTitle({
-        sessionId: editingChatId as Id<"chatSessions">,
-        title: editingTitle.trim(),
-      });
+      try {
+        await updateChatTitle({
+          sessionId: editingChatId as Id<"chatSessions">,
+          title: editingTitle.trim(),
+        });
+      } catch (error) {
+        console.error("Failed to update chat title:", error);
+      }
     }
     setEditingChatId(null);
     setEditingTitle("");
   };
 
   const handleDeleteChat = async (chatId: string) => {
-    // If deleting the currently active chat, clear the selection
-    if (currentSessionId === chatId) {
-      router.push("/chat");
+    try {
+      // If deleting the currently active chat, clear the selection
+      if (currentSessionId === chatId) {
+        router.push("/chat");
+      }
+      await deleteChat({ sessionId: chatId as Id<"chatSessions"> });
+      setOpenMenuId(null);
+    } catch (error) {
+      console.error("Failed to delete chat:", error);
     }
-    await deleteChat({ sessionId: chatId as Id<"chatSessions"> });
-    setOpenMenuId(null);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -184,6 +280,11 @@ export function Sidebar({
     }
   };
 
+  const clearSearch = () => {
+    setSearchQuery("");
+    searchInputRef.current?.focus();
+  };
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -196,7 +297,7 @@ export function Sidebar({
 
       {/* Desktop Sidebar */}
       <div
-        className={`hidden lg:flex bg-gray-900/90 border-r border-gray-700 flex-col h-full transition-all duration-300 ease-out ${
+        className={`hidden z-50 lg:flex bg-gray-900/90 border-r border-gray-700 flex-col h-full transition-all duration-300 ease-out ${
           isCollapsed ? "w-16" : "w-64"
         }`}
       >
@@ -249,7 +350,7 @@ export function Sidebar({
         <div className="p-4 flex justify-center">
           <button
             onClick={() => router.push("/chat")}
-            className={`flex items-center justify-center font-bold gap-2 px-3 py-2 bg-lavender-500 hover:bg-lavender-600 text-white rounded-lg transition-all duration-200 lavender-glow hover:scale-105 hover:shadow-lavender-500/25 ${
+            className={`flex items-center text-sm justify-center font-bold gap-2 px-3 py-2 bg-lavender-500 hover:bg-lavender-600 text-white rounded-lg transition-all duration-200 lavender-glow hover:scale-105 hover:shadow-lavender-500/25 ${
               isCollapsed ? "w-8 h-8 justify-center" : "w-full"
             }`}
           >
@@ -260,14 +361,60 @@ export function Sidebar({
           </button>
         </div>
 
-        {/* Desktop Search - Only show when expanded */}
+        {/* Desktop Search - Enhanced version */}
         {!isCollapsed && (
           <div className="px-4 pb-4">
-            <input
-              type="text"
-              placeholder="Search your chains..."
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-lavender-400 transition-all duration-200 focus:scale-[1.02] focus:shadow-md focus:shadow-lavender-500/10"
-            />
+            <div className="relative flex focus:outline-none rounded-lg items-center flex-row text-sm group">
+              <div className="p-2.5 rounded-l-lg bg-gray-800 flex items-center pointer-events-none">
+                <Search
+                  size={16}
+                  className={`transition-colors duration-200 ${
+                    isSearchFocused ? "text-lavender-400" : "text-gray-300"
+                  }`}
+                />
+              </div>
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                placeholder="Search chains..."
+                className="w-full p-2 bg-gray-800 rounded-r-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-200 focus:shadow-md outline-none border-r-0"
+              />
+
+              {/* Keyboard shortcut hint */}
+              {!isSearchFocused && !searchQuery && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                    <Command size={12} />
+                    <span>K</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Clear button */}
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300 transition-colors duration-200"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Search results counter */}
+            {searchQuery && (
+              <div className="p-2 pb-3 mt-4 border-b border-gray-800/50 text-xs font-semibold hover:text-lavender-400 text-lavender-500 uppercase tracking-wide px-0">
+                {filteredChats.length} result
+                {filteredChats.length !== 1 ? "s" : ""}
+                {filteredChats.length !== (recentChats?.length || 0) && (
+                  <span> of {recentChats?.length || 0}</span>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -277,28 +424,54 @@ export function Sidebar({
             {recentChats === undefined ? (
               // Loading state
               <LoadingAnimation />
-            ) : recentChats.length === 0 ? (
+            ) : filteredChats.length === 0 ? (
               // Empty state
               !isCollapsed && (
                 <div className="px-2 py-8 text-center">
-                  <MessageSquare
-                    size={32}
-                    className="mx-auto text-gray-600 mb-2 animate-pulse"
-                  />
-                  <p className="text-sm text-gray-500">No chains yet</p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Create your first chain to get started
-                  </p>
+                  {searchQuery ? (
+                    <>
+                      <Search
+                        size={32}
+                        className="mx-auto text-gray-600 mb-2"
+                      />
+                      <p className="text-sm text-gray-500">No chains found</p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Try a different search term
+                      </p>
+                      <button
+                        onClick={clearSearch}
+                        className="mt-3 text-xs text-lavender-400 hover:text-lavender-300 transition-colors duration-200"
+                      >
+                        Clear search
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquare
+                        size={32}
+                        className="mx-auto text-gray-600 mb-2 animate-pulse"
+                      />
+                      <p className="text-sm text-gray-500">No chains yet</p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Create your first chain to get started
+                      </p>
+                    </>
+                  )}
                 </div>
               )
             ) : (
-              // Grouped chats
-              groupChatsByTime(recentChats).map((group, groupIndex) => (
+              // Grouped chats - use filtered results
+              (searchQuery
+                ? // Show flat list when searching
+                  [{ title: "Search Results", chats: filteredChats }]
+                : // Show grouped list when not searching
+                  groupChatsByTime(filteredChats)
+              ).map((group, groupIndex) => (
                 <div
                   key={group.title}
                   className={`${groupIndex > 0 ? "mt-6" : ""}`}
                 >
-                  {!isCollapsed && (
+                  {!isCollapsed && !searchQuery && (
                     <h3 className="px-2 py-2 text-xs font-semibold text-lavender-500 uppercase tracking-wide border-b border-gray-800/50 mb-2 transition-colors duration-200 hover:text-lavender-400">
                       {group.title}
                     </h3>
@@ -338,7 +511,10 @@ export function Sidebar({
                               />
                             ) : (
                               <span className="truncate flex-1 transition-colors duration-200">
-                                {chat.title}
+                                <HighlightedText
+                                  text={chat.title}
+                                  searchQuery={searchQuery}
+                                />
                               </span>
                             )}
                           </>
@@ -557,27 +733,99 @@ export function Sidebar({
           </button>
         </div>
 
+        {/* Mobile Search */}
+        <div className="px-3 pb-3">
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search
+                size={16}
+                className={`transition-colors duration-200 ${
+                  isSearchFocused ? "text-lavender-400" : "text-gray-400"
+                }`}
+              />
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+              placeholder="Search chains..."
+              className="w-full pl-10 pr-8 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-lavender-400 focus:ring-1 focus:ring-lavender-400/30 transition-all duration-200 text-sm"
+            />
+
+            {/* Clear button */}
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300 transition-colors duration-200"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Search results counter */}
+          {searchQuery && (
+            <div className="mt-2 text-xs text-gray-500 px-1">
+              {filteredChats.length} result
+              {filteredChats.length !== 1 ? "s" : ""}
+              {filteredChats.length !== (recentChats?.length || 0) && (
+                <span> of {recentChats?.length || 0}</span>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Mobile Chat List */}
         <div className="flex-1 overflow-y-auto px-3">
           {recentChats === undefined ? (
             <LoadingAnimation />
-          ) : recentChats.length === 0 ? (
+          ) : filteredChats.length === 0 ? (
             <div className="py-8 text-center">
-              <MessageSquare size={24} className="mx-auto text-gray-600 mb-2" />
-              <p className="text-xs text-gray-500">No chains yet</p>
-              <p className="text-xs text-gray-600 mt-1">
-                Create your first chain to get started
-              </p>
+              {searchQuery ? (
+                <>
+                  <Search size={24} className="mx-auto text-gray-600 mb-2" />
+                  <p className="text-xs text-gray-500">No chains found</p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Try a different search term
+                  </p>
+                  <button
+                    onClick={clearSearch}
+                    className="mt-3 text-xs text-lavender-400 hover:text-lavender-300 transition-colors duration-200"
+                  >
+                    Clear search
+                  </button>
+                </>
+              ) : (
+                <>
+                  <MessageSquare
+                    size={24}
+                    className="mx-auto text-gray-600 mb-2"
+                  />
+                  <p className="text-xs text-gray-500">No chains yet</p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Create your first chain to get started
+                  </p>
+                </>
+              )}
             </div>
           ) : (
-            groupChatsByTime(recentChats).map((group, groupIndex) => (
+            (searchQuery
+              ? // Show flat list when searching
+                [{ title: "Search Results", chats: filteredChats }]
+              : // Show grouped list when not searching
+                groupChatsByTime(filteredChats)
+            ).map((group, groupIndex) => (
               <div
                 key={group.title}
                 className={`${groupIndex > 0 ? "mt-4" : ""}`}
               >
-                <h3 className="px-2 py-1 text-xs font-semibold text-lavender-500 uppercase tracking-wide border-b border-gray-800/50 mb-2">
-                  {group.title}
-                </h3>
+                {!searchQuery && (
+                  <h3 className="px-2 py-1 text-xs font-semibold text-lavender-500 uppercase tracking-wide border-b border-gray-800/50 mb-2">
+                    {group.title}
+                  </h3>
+                )}
                 {group.chats.map((chat) => (
                   <div key={chat._id} className="mb-1">
                     <button
@@ -588,7 +836,12 @@ export function Sidebar({
                           : "text-gray-300 hover:bg-gray-800 hover:text-white"
                       }`}
                     >
-                      <span className="truncate flex-1">{chat.title}</span>
+                      <span className="truncate flex-1">
+                        <HighlightedText
+                          text={chat.title}
+                          searchQuery={searchQuery}
+                        />
+                      </span>
                     </button>
                   </div>
                 ))}

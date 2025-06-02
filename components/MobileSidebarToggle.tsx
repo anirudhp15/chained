@@ -14,7 +14,7 @@ export function MobileSidebarToggle({
   return (
     <button
       onClick={onToggle}
-      className="lg:hidden fixed top-4 left-4 z-30 p-2 bg-gray-900/90 backdrop-blur-sm border border-gray-700 rounded-lg text-lavender-400 hover:text-lavender-300 transition-all duration-200 hover:scale-110 shadow-lg"
+      className="lg:hidden fixed top-4 left-4 z-30 p-2  text-lavender-400/75 hover:text-lavender-400 transition-all duration-200 hover:scale-110 shadow-lg"
     >
       {isOpen ? (
         <Link2Off
