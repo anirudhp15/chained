@@ -39,6 +39,28 @@ async function getOrCreateUser(ctx: MutationCtx) {
   return user;
 }
 
+// Helper function to get user without updating lastSeen (for high-frequency operations)
+async function getUserForStreaming(ctx: MutationCtx) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("Not authenticated");
+  }
+
+  // Just get the user without updating lastSeen to avoid concurrency issues
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_token", (q) =>
+      q.eq("tokenIdentifier", identity.tokenIdentifier)
+    )
+    .first();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user;
+}
+
 // Create a new chat session
 export const createSession = mutation({
   args: {
@@ -117,7 +139,7 @@ export const addAgentStep = mutation({
   },
 });
 
-// Update agent step with response
+// Update agent step with response (optimized for streaming)
 export const updateAgentStep = mutation({
   args: {
     stepId: v.id("agentSteps"),
@@ -140,8 +162,8 @@ export const updateAgentStep = mutation({
     tokensPerSecond: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const user = await getOrCreateUser(ctx);
-    if (!user) throw new Error("Failed to get user");
+    // Use optimized user lookup for streaming operations
+    const user = await getUserForStreaming(ctx);
 
     // Verify user owns the agent step
     const step = await ctx.db.get(args.stepId);
@@ -177,15 +199,14 @@ export const updateAgentStep = mutation({
   },
 });
 
-// Update streamed content for an agent step
+// Update streamed content for an agent step (optimized for high frequency)
 export const updateStreamedContent = mutation({
   args: {
     stepId: v.id("agentSteps"),
     content: v.string(),
   },
   handler: async (ctx, args) => {
-    const user = await getOrCreateUser(ctx);
-    if (!user) throw new Error("Failed to get user");
+    const user = await getUserForStreaming(ctx);
 
     // Verify user owns the agent step
     const step = await ctx.db.get(args.stepId);
@@ -519,7 +540,7 @@ export const updateSessionTitle = mutation({
   },
 });
 
-// Complete agent execution with performance metrics
+// Complete agent execution with performance metrics (optimized)
 export const completeAgentExecution = mutation({
   args: {
     stepId: v.id("agentSteps"),
@@ -535,8 +556,7 @@ export const completeAgentExecution = mutation({
     estimatedCost: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const user = await getOrCreateUser(ctx);
-    if (!user) throw new Error("Failed to get user");
+    const user = await getUserForStreaming(ctx);
 
     // Verify user owns the agent step
     const step = await ctx.db.get(args.stepId);

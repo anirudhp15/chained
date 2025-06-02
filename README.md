@@ -320,3 +320,124 @@ npx convex dev
 ---
 
 Built with ❤️ using Next.js, Convex, and modern AI APIs.
+
+## Video Implementation
+
+This project uses **HTML5 video elements** for optimal performance and reliability:
+
+- ✅ **Simple & Fast**: No complex video processing or API routes
+- ✅ **Vercel Ready**: Videos deploy automatically with your app
+- ✅ **CDN Optimized**: Served through Vercel's global CDN
+- ✅ **Git Friendly**: Demo video included, large videos excluded
+- ✅ **Performance**: Optimized bundle size (12.6 kB landing page)
+
+### Video Files
+
+- **Demo Video**: `public/videos/chained_demo.mp4` (included in Git)
+- **Future Videos**: Add to `.gitignore` to exclude large files from Git
+
+## Quick Start
+
+1. **Clone the repository**
+
+   ```bash
+   git clone <your-repo-url>
+   cd chain-chat
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+
+   ```bash
+   cp .env.example .env.local
+   # Add your API keys and configuration
+   ```
+
+4. **Run development server**
+
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production**
+   ```bash
+   npm run build
+   ```
+
+## Deployment
+
+### Vercel Deployment (Recommended)
+
+1. **Connect to Vercel**
+
+   - Push code to GitHub/GitLab/Bitbucket
+   - Connect repository to Vercel dashboard
+   - Set environment variables in Vercel dashboard
+
+2. **Automatic Deployment**
+   - Videos are automatically deployed with your app
+   - Served through Vercel's global CDN
+   - No additional configuration needed
+
+See `VERCEL_DEPLOYMENT.md` for detailed deployment instructions.
+
+## Environment Variables
+
+```env
+NEXT_PUBLIC_CONVEX_URL=your_convex_url
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_key
+CLERK_SECRET_KEY=your_clerk_secret
+# ... other environment variables
+```
+
+## Tech Stack
+
+- **Framework**: Next.js 15.3.3
+- **Database**: Convex
+- **Authentication**: Clerk
+- **Styling**: Tailwind CSS
+- **Video**: HTML5 video elements
+- **Deployment**: Vercel
+
+## Project Structure
+
+```
+├── app/                    # Next.js app directory
+├── components/            # React components
+├── convex/               # Convex database functions
+├── lib/                  # Utility functions
+├── public/               # Static assets
+│   └── videos/          # Video files
+├── VERCEL_DEPLOYMENT.md  # Deployment guide
+└── VIDEO_MANAGEMENT.md   # Video management guide
+```
+
+## Performance
+
+- **Landing Page**: 12.6 kB (optimized)
+- **Video Loading**: CDN-optimized with caching
+- **Build Time**: ~12 seconds
+- **Bundle Size**: Optimized for production
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## Support
+
+- Check `VERCEL_DEPLOYMENT.md` for deployment issues
+- Check `VIDEO_MANAGEMENT.md` for video-related questions
+- Open an issue for bugs or feature requests
+
+## License
+
+[Your License Here]

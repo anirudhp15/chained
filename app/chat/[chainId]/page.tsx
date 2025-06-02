@@ -595,8 +595,16 @@ function ChatPageContent() {
     });
 
     if (!response.ok) {
-      console.error(`Failed to start streaming: ${response.statusText}`);
-      return;
+      let errorMessage = `Failed to start streaming: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+        console.error("API Error Details:", errorData);
+      } catch (e) {
+        console.error("Could not parse error response");
+      }
+      console.error(errorMessage);
+      throw new Error(errorMessage);
     }
 
     const reader = response.body?.getReader();

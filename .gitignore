@@ -35,10 +35,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Large video files (exclude future large videos to save Git storage)
-# Keep existing demo video but prevent new large videos
-public/videos/*.mp4
-!public/videos/chained_demo.mp4
-public/videos/chained_demo.mp4
+# Video files - Keep demo video for deployment, exclude others
+# The demo video will be included in Git for Vercel deployment
+# Add new large videos to this list to exclude them
+# public/videos/*.mp4
+# public/videos/*.webm
+# public/videos/*.mov
+# public/videos/*.avi
+# !public/videos/chained_demo.mp4
 
 .env.local

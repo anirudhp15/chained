@@ -68,6 +68,8 @@ interface AgentInputProps {
   onSendChain?: () => void;
   canSend?: boolean;
   isLoading?: boolean;
+  // Mobile-specific prop
+  isMobileCollapsed?: boolean;
 }
 
 // Grok Icon Component
@@ -411,6 +413,7 @@ export function AgentInput({
   onSendChain,
   canSend,
   isLoading,
+  isMobileCollapsed,
 }: AgentInputProps) {
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [buttonPositions, setButtonPositions] = useState<{
@@ -736,8 +739,16 @@ export function AgentInput({
 
   const { showDetailedPerformance, togglePerformance } = usePerformance();
 
+  // Handle mobile collapse - use screen width to determine if it should be collapsed
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 1024; // lg breakpoint
+  if (isMobileCollapsed && isMobile) {
+    return null; // Don't render anything when collapsed on mobile
+  }
+
   return (
-    <div className="relative flex flex-col mx-2 md:mx-0 rounded-xl border border-gray-600/50 bg-gray-800/70 backdrop-blur-sm hover:bg-gray-800/90 hover:border-lavender-400/20 transition-all duration-200">
+    <div
+      className={`relative flex flex-col mx-2 lg:mx-0 rounded-xl border border-gray-600/50 bg-gray-800/70 backdrop-blur-sm hover:bg-gray-800/90 hover:border-lavender-400/20 transition-all duration-200 animate-in slide-in-from-top-4 fade-in ${!isLastAgent ? "mb-2 lg:mb-0" : "pm-0"} ease-out lg:animate-none`}
+    >
       <textarea
         value={agent.prompt}
         onChange={(e) => {
@@ -746,16 +757,16 @@ export function AgentInput({
           setTimeout(adjustTextareaHeight, 0);
         }}
         placeholder="Ask anything"
-        className="w-full p-4 h-auto rounded-t-xl min-h-12 md:min-h-16 max-h-32 md:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-base md:text-sm overflow-y-auto"
+        className="w-full p-4 h-auto rounded-t-xl min-h-12 lg:min-h-16 max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-base lg:text-sm overflow-y-auto"
         ref={textareaRef}
         style={{ fontSize: "16px" }}
       />
 
       {/* Bottom controls container */}
-      <div className="relative h-full min-h-10 md:min-h-16">
+      <div className="relative h-full min-h-10 lg:min-h-16">
         {/* Bottom controls - absolutely positioned */}
-        <div className="absolute bottom-0 left-0 right-0 flex flex-row md:items-center justify-between px-2 md:px-4 py-1.5 md:py-3 overflow-hidden gap-1.5 md:gap-2">
-          <div className="block md:hidden">
+        <div className="absolute bottom-0 left-0 right-0 flex flex-row lg:items-center justify-between px-2 lg:px-4 py-1.5 lg:py-3 overflow-hidden gap-1.5 lg:gap-2">
+          <div className="block lg:hidden">
             {/* Modality Icons */}
             <div className="flex items-center gap-1.5">
               <ModalityIcons
@@ -773,7 +784,7 @@ export function AgentInput({
             </div>
           </div>
           {/* Left side controls */}
-          <div className="hidden md:flex items-center gap-1.5 md:gap-2 flex-wrap">
+          <div className="hidden lg:flex items-center gap-1.5 lg:gap-2 flex-wrap">
             {renderModelSelector()}
             {/* Tool Button */}
             {renderEnhancedOptions()}
@@ -794,7 +805,7 @@ export function AgentInput({
             {/* Performance Toggle */}
             <button
               onClick={togglePerformance}
-              className={`flex items-center justify-center p-1.5 md:p-2 rounded-md transition-all ${
+              className={`flex items-center justify-center p-1.5 lg:p-2 rounded-md transition-all ${
                 showDetailedPerformance
                   ? "text-lavender-400 bg-lavender-500/20 hover:bg-lavender-500/30"
                   : "text-gray-400 hover:text-lavender-400 hover:bg-gray-700/50"
@@ -805,14 +816,14 @@ export function AgentInput({
                   : "Show detailed performance"
               }
             >
-              <BarChart3 size={16} className="md:w-4 md:h-4" />
+              <BarChart3 size={16} className="lg:w-4 lg:h-4" />
             </button>
 
             {isLastAgent && onSendChain && (
               <button
                 onClick={onSendChain}
                 disabled={!canSend}
-                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 whitespace-nowrap rounded-lg font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm w-min justify-center"
+                className="flex items-center gap-1.5 lg:gap-2 px-3 lg:px-4 py-1.5 lg:py-2 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 whitespace-nowrap rounded-lg font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm w-min justify-center"
               >
                 <span className="truncate">
                   {isLoading ? "Running..." : "Chain"}
@@ -827,7 +838,7 @@ export function AgentInput({
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="md:w-3.5 md:h-3.5 flex-shrink-0"
+                  className="lg:w-3.5 lg:h-3.5 flex-shrink-0"
                 >
                   <path d="m22 2-7 20-4-9-9-4Z" />
                   <path d="M22 2 11 13" />

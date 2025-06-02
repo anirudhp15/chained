@@ -99,19 +99,19 @@ function MobileAgentCard({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <div
             onClick={(e) => {
               e.stopPropagation();
               onFocusToggle(agent.index);
             }}
-            className="p-1 hover:bg-gray-700/50 rounded transition-colors"
+            className="p-1 hover:bg-gray-700/50 rounded transition-colors cursor-pointer"
             title="Focus on this agent"
           >
             <Focus
               size={14}
               className="text-gray-400 hover:text-lavender-400"
             />
-          </button>
+          </div>
           <ChevronDown
             size={16}
             className={`text-gray-400 transition-transform duration-200 ${

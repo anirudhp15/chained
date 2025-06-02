@@ -1,30 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ConvexProvider } from "./convex-provider";
-import { MathJaxContext } from "better-react-mathjax";
 import { SidebarProvider } from "@/lib/sidebar-context";
 import { PostHogProvider } from "./posthog-provider";
+import { MathProvider } from "@/components/math-provider";
 
-// MathJax configuration for the entire app
-const mathJaxConfig = {
-  loader: { load: ["[tex]/html"] },
-  tex: {
-    packages: { "[+]": ["html"] },
-    inlineMath: [
-      ["$", "$"],
-      ["\\(", "\\)"],
-    ],
-    displayMath: [
-      ["$$", "$$"],
-      ["\\[", "\\]"],
-    ],
-    processEscapes: true,
-    processEnvironments: true,
-  },
-  options: {
-    ignoreHtmlClass: "tex2jax_ignore",
-    processHtmlClass: "tex2jax_process",
-  },
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -52,13 +38,6 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://chained.app"), // Replace with your actual domain
   alternates: {
     canonical: "/",
-  },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: "cover",
   },
   openGraph: {
     title: "Chained - Build Powerful AI Workflows",
@@ -104,13 +83,13 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.svg", sizes: "16x16", type: "image/svg+xml" },
+      { url: "/favicon-32x32.svg", sizes: "32x32", type: "image/svg+xml" },
       { url: "/favicon.ico", sizes: "any" },
     ],
     shortcut: "/favicon.ico",
     apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/apple-touch-icon.svg", sizes: "180x180", type: "image/svg+xml" },
     ],
     other: [
       {
@@ -136,21 +115,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-gray-950">
-      <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-        />
-      </head>
       <body className="antialiased bg-gray-950 min-h-screen overflow-x-hidden font-sans">
         <PostHogProvider>
-          <MathJaxContext config={mathJaxConfig}>
+          <MathProvider>
             <ConvexProvider>
               <SidebarProvider>
                 <div className="min-h-screen bg-gray-950">{children}</div>
               </SidebarProvider>
             </ConvexProvider>
-          </MathJaxContext>
+          </MathProvider>
         </PostHogProvider>
       </body>
     </html>

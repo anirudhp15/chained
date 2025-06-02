@@ -20,67 +20,146 @@ import { rateLimiters, checkUserTierLimits } from "../../../lib/rate-limiter";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-// STREAM-FIRST ARCHITECTURE: Non-blocking database queue
-const databaseQueue: Array<{
-  type: string;
-  data: any;
-  timestamp: number;
-  stepId: string;
-}> = [];
+// Improved database queue with better batching
+const databaseQueue = new Map<
+  string,
+  {
+    type: string;
+    data: any;
+    stepId: string;
+    retryCount: number;
+    timestamp: number;
+  }
+>();
+
+let isProcessingQueue = false;
 
 function queueDatabaseWrite(type: string, data: any, stepId: string) {
-  databaseQueue.push({
+  const key = `${stepId}-${type}`;
+  databaseQueue.set(key, {
     type,
     data,
-    timestamp: Date.now(),
     stepId,
+    retryCount: 0,
+    timestamp: Date.now(),
   });
 
-  // Process queue async without blocking stream
-  setImmediate(() => processDatabaseQueue());
+  // Debounce queue processing
+  if (!isProcessingQueue) {
+    setTimeout(() => processDatabaseQueue(), 50); // Reduced delay for better responsiveness
+  }
+}
+
+// Retry function with exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 100
+): Promise<T> {
+  let lastError: Error = new Error("Unknown error");
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+
+      // Check if it's a concurrency error
+      if (error.message?.includes("OptimisticConcurrencyControlFailure")) {
+        if (attempt < maxRetries) {
+          // Exponential backoff with jitter
+          const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 100;
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+      } else {
+        // For non-concurrency errors, don't retry
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 async function processDatabaseQueue() {
-  if (databaseQueue.length === 0) return;
+  if (isProcessingQueue || databaseQueue.size === 0) return;
 
-  const batch = databaseQueue.splice(0, 10); // Process in batches
+  isProcessingQueue = true;
+
   try {
-    // Batch write to database
-    await Promise.all(
-      batch.map(async (item) => {
+    // Process items in batches by stepId to reduce conflicts
+    const stepGroups = new Map<string, Array<{ key: string; item: any }>>();
+
+    for (const [key, item] of databaseQueue.entries()) {
+      if (!stepGroups.has(item.stepId)) {
+        stepGroups.set(item.stepId, []);
+      }
+      stepGroups.get(item.stepId)!.push({ key, item });
+    }
+
+    // Process each step's updates sequentially
+    for (const [stepId, items] of stepGroups.entries()) {
+      // Sort by timestamp to process in order
+      items.sort((a, b) => a.item.timestamp - b.item.timestamp);
+
+      for (const { key, item } of items) {
         try {
-          switch (item.type) {
-            case "thinking":
-              await convex.mutation(api.mutations.updateAgentStep, {
-                stepId: item.stepId as Id<"agentSteps">,
-                thinking: item.data.thinking,
-                isThinking: item.data.isThinking,
-                isComplete: false,
-              });
-              break;
-            case "content":
-              await convex.mutation(api.mutations.updateStreamedContent, {
-                stepId: item.stepId as Id<"agentSteps">,
-                content: item.data.content,
-              });
-              break;
-            case "complete":
-              await convex.mutation(api.mutations.completeAgentExecution, {
-                stepId: item.stepId as Id<"agentSteps">,
-                response: item.data.response,
-                thinking: item.data.thinking,
-                tokenUsage: item.data.tokenUsage,
-                estimatedCost: item.data.estimatedCost,
-              });
-              break;
-          }
+          await retryWithBackoff(async () => {
+            switch (item.type) {
+              case "thinking":
+                await convex.mutation(api.mutations.updateAgentStep, {
+                  stepId: item.stepId as Id<"agentSteps">,
+                  thinking: item.data.thinking,
+                  isThinking: item.data.isThinking,
+                  isComplete: false,
+                  isStreaming: true,
+                });
+                break;
+              case "content":
+                await convex.mutation(api.mutations.updateStreamedContent, {
+                  stepId: item.stepId as Id<"agentSteps">,
+                  content: item.data.content,
+                });
+                break;
+              case "complete":
+                await convex.mutation(api.mutations.completeAgentExecution, {
+                  stepId: item.stepId as Id<"agentSteps">,
+                  response: item.data.response,
+                  thinking: item.data.thinking,
+                  tokenUsage: item.data.tokenUsage,
+                  estimatedCost: item.data.estimatedCost,
+                });
+                break;
+            }
+          });
+
+          // Remove successfully processed item
+          databaseQueue.delete(key);
         } catch (error) {
-          console.error(`Database write failed for ${item.type}:`, error);
+          console.error(
+            `Database write failed for ${item.type} after retries:`,
+            error
+          );
+
+          // For critical operations like completion, try to queue again with limited retries
+          if (item.type === "complete" && item.retryCount < 2) {
+            item.retryCount++;
+            // Keep in queue for retry
+          } else {
+            // Remove failed item after max retries
+            databaseQueue.delete(key);
+          }
         }
-      })
-    );
-  } catch (error) {
-    console.error("Database queue processing error:", error);
+      }
+    }
+  } finally {
+    isProcessingQueue = false;
+
+    // Continue processing if there are still items
+    if (databaseQueue.size > 0) {
+      setTimeout(() => processDatabaseQueue(), 100);
+    }
   }
 }
 
@@ -88,37 +167,48 @@ export async function POST(request: NextRequest) {
   const startTime = performance.now();
 
   try {
+    console.log("🔍 API Request received");
+
     // 1. Validate request size
     const sizeValidation = ApiValidator.validateRequestSize(
       request,
       10 * 1024 * 1024
     ); // 10MB limit
     if (!sizeValidation.success) {
+      console.error("❌ Size validation failed:", sizeValidation.error);
       return NextResponse.json(
         { error: sizeValidation.error },
         { status: 413 }
       );
     }
+    console.log("✅ Size validation passed");
 
     // 2. Validate content type
     const contentTypeValidation = validateContentType(request, [
       "application/json",
     ]);
     if (!contentTypeValidation.success) {
+      console.error(
+        "❌ Content type validation failed:",
+        contentTypeValidation.error
+      );
       return NextResponse.json(
         { error: contentTypeValidation.error },
         { status: 400 }
       );
     }
+    console.log("✅ Content type validation passed");
 
     // 3. Validate authentication
     const authValidation = await ApiValidator.validateAuth();
     if (!authValidation.success) {
+      console.error("❌ Auth validation failed:", authValidation.error);
       return NextResponse.json(
         { error: authValidation.error },
         { status: 401 }
       );
     }
+    console.log("✅ Auth validation passed");
 
     const { userId } = authValidation;
 
@@ -126,7 +216,10 @@ export async function POST(request: NextRequest) {
     let body;
     try {
       body = await request.json();
+      console.log("✅ JSON parsing successful");
+      console.log("📋 Request body keys:", Object.keys(body));
     } catch (error) {
+      console.error("❌ JSON parsing failed:", error);
       return NextResponse.json(
         { error: "Invalid JSON in request body" },
         { status: 400 }
@@ -140,11 +233,20 @@ export async function POST(request: NextRequest) {
       "prompt",
     ]);
     if (!fieldValidation.success) {
+      console.error(
+        "❌ Required fields validation failed:",
+        fieldValidation.error
+      );
+      console.log("📋 Available fields:", Object.keys(body));
+      console.log("📋 stepId:", body.stepId);
+      console.log("📋 model:", body.model);
+      console.log("📋 prompt:", body.prompt ? "present" : "missing");
       return NextResponse.json(
         { error: fieldValidation.error },
         { status: 400 }
       );
     }
+    console.log("✅ Required fields validation passed");
 
     const {
       stepId,
@@ -160,27 +262,39 @@ export async function POST(request: NextRequest) {
     // 6. Validate individual fields
     const modelValidation = ApiValidator.validateModel(model);
     if (!modelValidation.success) {
+      console.error("❌ Model validation failed:", modelValidation.error);
+      console.log("📋 Provided model:", model);
       return NextResponse.json(
         { error: modelValidation.error },
         { status: 400 }
       );
     }
+    console.log("✅ Model validation passed:", model);
 
     const promptValidation = ApiValidator.validatePrompt(prompt);
     if (!promptValidation.success) {
+      console.error("❌ Prompt validation failed:", promptValidation.error);
+      console.log("📋 Prompt length:", prompt?.length || 0);
       return NextResponse.json(
         { error: promptValidation.error },
         { status: 400 }
       );
     }
+    console.log("✅ Prompt validation passed");
 
     const sessionValidation = ApiValidator.validateSessionId(stepId);
     if (!sessionValidation.success) {
+      console.error(
+        "❌ Session ID validation failed:",
+        sessionValidation.error
+      );
+      console.log("📋 Provided stepId:", stepId);
       return NextResponse.json(
         { error: sessionValidation.error },
         { status: 400 }
       );
     }
+    console.log("✅ Session ID validation passed");
 
     // 7. Check user tier limits (get user tier from database)
     // Note: You'll need to implement getUserTier function to get user's subscription tier
@@ -188,6 +302,7 @@ export async function POST(request: NextRequest) {
     const tierLimit = await checkUserTierLimits(userId!, userTier);
 
     if (!tierLimit.success) {
+      console.error("❌ Tier limit exceeded");
       return NextResponse.json(
         {
           error: "Daily limit exceeded",
@@ -198,12 +313,14 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
+    console.log("✅ Tier limits passed");
 
     // 8. Apply additional rate limiting for LLM calls
     const llmRateLimit = await rateLimiters.llm.checkRateLimit(
       `user:${userId}`
     );
     if (!llmRateLimit.success) {
+      console.error("❌ Rate limit exceeded");
       const retryAfter = Math.ceil((llmRateLimit.reset - Date.now()) / 1000);
       return NextResponse.json(
         {
@@ -222,25 +339,31 @@ export async function POST(request: NextRequest) {
         }
       );
     }
+    console.log("✅ Rate limits passed");
 
     // 9. Sanitize prompt input
     const sanitizedPrompt = sanitizeInput(prompt);
+    console.log("✅ Prompt sanitized");
 
     // Continue with existing authentication and logic...
     const authData = await auth();
     if (!authData.userId) {
+      console.error("❌ Auth data missing userId");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    console.log("✅ Auth data validated");
 
     // Set up authenticated Convex client
     const token = await authData.getToken({ template: "convex" });
     if (!token) {
+      console.error("❌ Failed to get Convex token");
       return NextResponse.json(
         { error: "Failed to get auth token" },
         { status: 401 }
       );
     }
     convex.setAuth(token);
+    console.log("✅ Convex client authenticated");
 
     // Get the agent step to check if it belongs to the authenticated user
     const agentStep = await convex.query(api.queries.getAgentStep, {
@@ -248,11 +371,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!agentStep) {
+      console.error("❌ Agent step not found:", stepId);
       return NextResponse.json(
         { error: "Agent step not found" },
         { status: 404 }
       );
     }
+    console.log("✅ Agent step found and validated");
 
     // Mark execution start and streaming state
     await convex.mutation(api.mutations.updateAgentStep, {
@@ -280,6 +405,7 @@ export async function POST(request: NextRequest) {
     };
 
     const provider = getProvider(model);
+    console.log("🤖 Provider determined:", provider);
 
     // Create unified thinking manager - DISABLED FOR SPEED
     let thinkingManager = null;

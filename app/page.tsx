@@ -37,7 +37,6 @@ import {
   Twitter,
   XIcon,
 } from "lucide-react";
-import Video from "next-video";
 
 // Feature data structure matching welcome screen pattern
 interface FeatureDetail {
@@ -770,7 +769,7 @@ export default function LandingPage() {
             {/* Chain Interface Preview */}
             <div className="relative max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
               <div className="bg-gray-800/50 p-1 rounded-2xl overflow-hidden">
-                <Video
+                <video
                   src="/videos/chained_demo.mp4"
                   controls
                   autoPlay
@@ -1052,7 +1051,7 @@ export default function LandingPage() {
 
             {/* Demo Video Placeholder */}
             <div className="relative rounded-xl animate-in fade-in slide-in-from-right-8 duration-700 delay-300">
-              <Video
+              <video
                 src="/videos/chained_demo.mp4"
                 controls
                 autoPlay

@@ -1,5 +1,6 @@
 "use client";
 
+import clsx from "clsx";
 import { useState } from "react";
 import {
   Sparkles,
@@ -396,44 +397,48 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
     : null;
 
   return (
-    <div className="h-full flex flex-col pb-20 md:pb-40">
+    <div className="h-auto flex flex-col pb-20 md:pb-40">
       {/* Main content area */}
-      <div className="flex-1 flex items-center justify-center px-4">
-        <div className="max-w-7xl mx-auto text-center space-y-4 md:space-y-8">
+      <div className="flex-1 flex items-center justify-center px-4 md:px-6">
+        <div className="w-full max-w-7xl mx-auto text-center space-y-4 md:space-y-8 welcome-screen-container md:!w-auto md:!margin-0 md:!padding-0">
           {/* Welcome Message */}
           <div className="space-y-2 md:space-y-4">
             <div
               className="flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700 ease-out"
               style={{ animationDelay: "0.1s", animationFillMode: "both" }}
             >
-              <h1 className="text-xl md:text-4xl lg:text-5xl font-bold text-white">
-                What would you like to{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-lavender-400 to-purple-400">
-                  chain
-                </span>{" "}
-                today?
+              <h1 className="text-3xl sm:text-4xl md:text-4xl lg:text-5xl font-semibold text-white tracking-wide leading-tight whitespace-nowrap welcome-screen-title">
+                What do you want to chain?
               </h1>
             </div>
 
-            <p
+            {/* <p
               className="text-xs md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-top-4 duration-700 ease-out"
               style={{ animationDelay: "0.3s", animationFillMode: "both" }}
             >
               {selectedCategory
                 ? `${selectedCategory} workflow templates`
                 : "Choose a preset workflow or create your own"}
-            </p>
+            </p> */}
           </div>
 
           {/* Category Selection Buttons - Show immediately if no category selected */}
           {!selectedCategory && (
-            <div className="mt-4 md:mt-8">
-              <div className="grid grid-cols-3 md:flex md:flex-row md:items-center md:justify-center gap-2 md:gap-4">
+            <div className="mt-6 md:mt-8">
+              <div className="grid grid-cols-3 md:flex md:flex-row md:items-center md:justify-center gap-2 md:gap-4 px-2 md:px-0">
                 {COLUMN_THEMES.map((theme, index) => (
                   <button
                     key={theme.title}
                     onClick={() => handleCategoryClick(theme.title)}
-                    className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3 px-2 md:px-6 py-3 md:py-3 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg md:rounded-full hover:text-lavender-400 text-gray-300 transition-all duration-200 group backdrop-blur-sm hover:scale-105 animate-in fade-in slide-in-from-bottom-4 ease-out min-w-0"
+                    className={clsx(
+                      "flex items-center justify-center gap-1 md:gap-3",
+                      "px-2 sm:px-3 md:px-6 py-2.5 md:py-3",
+                      "bg-gray-800/70 border border-gray-600/50 rounded-lg",
+                      "text-gray-300 hover:text-lavender-400",
+                      "hover:bg-gray-700/70 hover:border-lavender-400/50",
+                      "backdrop-blur-sm transition-all duration-200 hover:scale-105",
+                      "group animate-in fade-in slide-in-from-bottom-4 ease-out min-w-0"
+                    )}
                     style={{
                       animationDelay: `${0.5 + index * 0.1}s`,
                       animationDuration: "0.6s",
@@ -444,7 +449,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                       size={16}
                       className={`${theme.iconColor} group-hover:scale-110 transition-transform duration-200 flex-shrink-0 md:w-4 md:h-4`}
                     />
-                    <span className="font-medium text-xs md:text-sm text-center">
+                    <span className="font-medium text-xs md:text-sm text-center leading-tight">
                       {theme.title}
                     </span>
                   </button>
@@ -458,7 +463,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
             <div className="space-y-4 md:space-y-6">
               {/* Back Button and Category Header */}
               <div
-                className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-4 animate-in fade-in slide-in-from-top-4 duration-500 ease-out"
+                className="flex flex-row items-center justify-center gap-3 md:gap-4 animate-in fade-in slide-in-from-top-4 duration-500 ease-out"
                 style={{ animationDelay: "0.1s", animationFillMode: "both" }}
               >
                 <button
@@ -509,12 +514,12 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                       <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-lavender-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                       {/* Info Button */}
-                      <button
+                      <div
                         onClick={(e) => handleShowPresetInfo(preset.id, e)}
-                        className="absolute top-2 right-2 p-1 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-300 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100 hover:scale-110"
+                        className="absolute top-2 right-2 p-1 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-300 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100 hover:scale-110 cursor-pointer"
                       >
                         <Eye size={12} className="md:w-3.5 md:h-3.5" />
-                      </button>
+                      </div>
 
                       {/* Content */}
                       <div className="relative space-y-2 md:space-y-4">

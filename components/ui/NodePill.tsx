@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
   Pencil,
   Plus,
   ChevronDown,
-  UserMinus,
+  Trash2,
   Search,
   X,
   Sparkles,
@@ -22,6 +22,14 @@ interface NodePillProps {
   isLastAgent?: boolean;
   onRemove?: () => void;
   canRemove?: boolean;
+  // Mobile-specific props
+  isExpanded?: boolean;
+  onToggleExpansion?: () => void;
+  onLongPressStart?: (e: React.TouchEvent) => void;
+  onLongPressEnd?: () => void;
+  onTouchStart?: () => void;
+  // Indicates if this agent can be collapsed (false for last agent)
+  isCollapsible?: boolean;
 }
 
 // Enhanced model-specific example prompts with categories
@@ -185,6 +193,27 @@ function getModelCategory(model: string): keyof typeof MODEL_PROMPTS {
   return "gpt"; // Default for GPT and other models
 }
 
+// Hook to detect if we're on mobile (below lg breakpoint)
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+
+    // Check on mount
+    checkIsMobile();
+
+    // Add resize listener
+    window.addEventListener("resize", checkIsMobile);
+
+    return () => window.removeEventListener("resize", checkIsMobile);
+  }, []);
+
+  return isMobile;
+};
+
 export function NodePill({
   agent,
   onUpdate,
@@ -194,6 +223,12 @@ export function NodePill({
   isLastAgent,
   onRemove,
   canRemove,
+  isExpanded,
+  onToggleExpansion,
+  onLongPressStart,
+  onLongPressEnd,
+  onTouchStart,
+  isCollapsible,
 }: NodePillProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(agent.name || `Node ${index + 1}`);
@@ -201,6 +236,7 @@ export function NodePill({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const pillRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   const nodeName = agent.name || `Node ${index + 1}`;
   const modelCategory = getModelCategory(agent.model);
@@ -263,9 +299,33 @@ export function NodePill({
   return (
     <>
       {/* Compact Pill */}
-      <div ref={pillRef} className="relative mb-2 px-2 md:px-0">
+      <div
+        ref={pillRef}
+        className={`relative ${!isLastAgent || isExpanded ? "mb-2" : "mb-0"} px-2 lg:px-0`}
+      >
         {/* Base Pill */}
-        <div className="bg-gray-900/75 backdrop-blur-sm mx-auto border border-gray-600/50 rounded-xl px-4 py-2 transition-all duration-200 hover:bg-gray-800/90 hover:border-lavender-400/20 w-full max-w-xl hover:max-w-4xl group shadow-lg shadow-gray-950/50 animate-in fade-in slide-in-from-bottom-4 md:slide-in-from-bottom-8 ease-out">
+        <div
+          className={`bg-gray-900/75 backdrop-blur-sm mx-auto border border-gray-600/50 rounded-xl px-4 py-2 transition-all duration-200 hover:bg-gray-800/90 hover:border-lavender-400/20 w-full max-w-xl hover:max-w-4xl group shadow-lg shadow-gray-950/50 animate-in fade-in slide-in-from-bottom-4 lg:slide-in-from-bottom-8 ease-out ${isExpanded ? "bg-gray-800/90 border-lavender-400/30" : ""} ${
+            // Add visual indication for non-collapsible (last) agents on mobile
+            isMobile && !isCollapsible
+              ? "border-green-400/20 bg-green-900/10"
+              : ""
+          }`}
+          onClick={
+            // Only enable click-to-expand on mobile (below lg breakpoint) and if collapsible
+            isMobile && isCollapsible ? onToggleExpansion : undefined
+          }
+          onTouchStart={
+            isMobile && isCollapsible
+              ? (e) => {
+                  onTouchStart?.();
+                  onLongPressStart?.(e);
+                }
+              : undefined
+          }
+          onTouchEnd={isMobile && isCollapsible ? onLongPressEnd : undefined}
+          onTouchCancel={isMobile && isCollapsible ? onLongPressEnd : undefined}
+        >
           <div className="flex items-center justify-between">
             {/* Left: Node Name */}
             <div className="flex items-center gap-3">
@@ -284,6 +344,7 @@ export function NodePill({
                   }}
                   className="bg-gray-700/50 whitespace-nowrap border border-gray-500/50 rounded px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-lavender-400/50"
                   autoFocus
+                  onClick={(e) => e.stopPropagation()}
                 />
               ) : (
                 <>
@@ -297,8 +358,11 @@ export function NodePill({
               {/* Desktop: Pencil icon on hover, Mobile: Always visible */}
               {!isEditing && (
                 <button
-                  onClick={() => setIsEditing(true)}
-                  className="md:opacity-0 md:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 hover:bg-gray-700/50 rounded"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditing(true);
+                  }}
+                  className="lg:opacity-0 lg:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 hover:bg-gray-700/50 rounded"
                 >
                   <Pencil
                     size={12}
@@ -309,15 +373,18 @@ export function NodePill({
 
               {/* Prompts Button */}
               <button
-                onClick={() => setShowPromptsModal(true)}
-                className="md:opacity-0 md:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 whitespace-nowrap hover:bg-gray-700/50 rounded flex items-center gap-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowPromptsModal(true);
+                }}
+                className="lg:opacity-0 lg:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 whitespace-nowrap hover:bg-gray-700/50 rounded flex items-center gap-1"
                 title="Example prompts"
               >
                 <Sparkles
                   size={12}
                   className="text-gray-400 hover:text-lavender-400"
                 />
-                <span className="text-xs whitespace-nowrap text-gray-400 hover:text-lavender-400 hidden lg:inline">
+                <span className="text-xs whitespace-nowrap text-gray-400 hover:text-lavender-400 hidden xl:inline">
                   Ideas
                 </span>
               </button>
@@ -325,17 +392,51 @@ export function NodePill({
 
             {/* Right: Status + Controls */}
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400 whitespace-nowrap hidden md:block">
+              {/* Mobile: Prompt Preview + Status Icon */}
+              <div className="lg:hidden flex items-center gap-2">
+                {agent.prompt?.trim() ? (
+                  <span className="text-xs text-gray-300 truncate w-24 sm:w-48">
+                    {agent.prompt.length > 32
+                      ? `${agent.prompt.substring(0, 32)}...`
+                      : agent.prompt}
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-500">No prompt</span>
+                )}
+                <div className="w-3 h-3 rounded-full bg-green-500 flex items-center justify-center">
+                  <svg
+                    width="8"
+                    height="6"
+                    viewBox="0 0 8 6"
+                    fill="none"
+                    className="text-white"
+                  >
+                    <path
+                      d="M7 1L3 5L1 3"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Desktop: Original Status */}
+              <span className="text-xs text-gray-400 whitespace-nowrap hidden lg:block">
                 Ready for task
               </span>
 
               {/* Close Agent Button - only show if canRemove */}
               {canRemove && onRemove && (
                 <button
-                  onClick={onRemove}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove();
+                  }}
                   className="flex items-center gap-1 px-2 py-1 bg-gray-700/50 hover:bg-red-600/80 text-gray-400 hover:text-white rounded-xl text-xs font-medium transition-colors"
                 >
-                  <UserMinus size={12} />
+                  <Trash2 size={12} />
                   <span className="hidden sm:inline">Close</span>
                 </button>
               )}
@@ -343,7 +444,10 @@ export function NodePill({
               {/* Add Agent Button - only on last agent */}
               {isLastAgent && canAddAgent && onAddAgent && (
                 <button
-                  onClick={onAddAgent}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddAgent();
+                  }}
                   className="flex items-center gap-1 px-2 py-1 bg-lavender-500 hover:bg-lavender-600 text-white rounded-md text-xs font-medium transition-colors"
                 >
                   <Plus size={12} />
@@ -465,7 +569,7 @@ export function NodePill({
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                             {category.prompts.map((prompt, promptIndex) => (
                               <button
                                 key={promptIndex}
