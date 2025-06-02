@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowRight,
   Zap,
@@ -368,10 +368,13 @@ const AnimatedBackground = () => {
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {/* Morphing Gradient Orbs */}
       <motion.div
-        className="absolute w-[800px] h-[800px] rounded-full opacity-30"
+        className="absolute w-[800px] h-[800px] rounded-full opacity-40"
         style={{
           background:
-            "radial-gradient(circle, rgba(147,112,219,0.4) 0%, rgba(138,43,226,0.2) 50%, transparent 100%)",
+            "radial-gradient(circle, rgba(147,112,219,0.5) 0%, rgba(138,43,226,0.3) 50%, transparent 100%)",
+          filter: "blur(1px)",
+          boxShadow:
+            "0 0 100px rgba(147,112,219,0.3), 0 0 200px rgba(147,112,219,0.1)",
         }}
         animate={{
           x: [-100, 100, -100],
@@ -388,10 +391,13 @@ const AnimatedBackground = () => {
       />
 
       <motion.div
-        className="absolute w-[600px] h-[600px] rounded-full opacity-20"
+        className="absolute w-[600px] h-[600px] rounded-full opacity-35"
         style={{
           background:
-            "radial-gradient(circle, rgba(64,224,208,0.3) 0%, rgba(0,255,127,0.1) 50%, transparent 100%)",
+            "radial-gradient(circle, rgba(64,224,208,0.4) 0%, rgba(0,255,127,0.2) 50%, transparent 100%)",
+          filter: "blur(1px)",
+          boxShadow:
+            "0 0 80px rgba(64,224,208,0.2), 0 0 160px rgba(64,224,208,0.1)",
         }}
         animate={{
           x: [200, -200, 200],
@@ -411,10 +417,13 @@ const AnimatedBackground = () => {
       />
 
       <motion.div
-        className="absolute w-[400px] h-[400px] rounded-full opacity-25"
+        className="absolute w-[400px] h-[400px] rounded-full opacity-40"
         style={{
           background:
-            "radial-gradient(circle, rgba(255,20,147,0.2) 0%, rgba(138,43,226,0.1) 50%, transparent 100%)",
+            "radial-gradient(circle, rgba(255,20,147,0.3) 0%, rgba(138,43,226,0.2) 50%, transparent 100%)",
+          filter: "blur(1px)",
+          boxShadow:
+            "0 0 60px rgba(255,20,147,0.2), 0 0 120px rgba(255,20,147,0.1)",
         }}
         animate={{
           x: [0, 300, -300, 0],
@@ -433,7 +442,13 @@ const AnimatedBackground = () => {
       {particles.map((particle) => (
         <motion.div
           key={particle}
-          className="absolute w-1 h-1 bg-lavender-400/30 rounded-full"
+          className="absolute w-1 h-1 bg-lavender-400/40 rounded-full"
+          style={{
+            boxShadow:
+              "0 0 4px rgba(147,112,219,0.4), 0 0 8px rgba(147,112,219,0.2)",
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
           animate={{
             y: [-20, -100, -20],
             x: [
@@ -450,10 +465,6 @@ const AnimatedBackground = () => {
             delay: Math.random() * 5,
             ease: "easeOut",
           }}
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
         />
       ))}
 
@@ -461,18 +472,20 @@ const AnimatedBackground = () => {
       {geometricShapes.map((shape) => (
         <motion.div
           key={shape}
-          className="absolute border border-lavender-400/10"
+          className="absolute border border-lavender-400/20"
           style={{
             width: Math.random() * 100 + 50,
             height: Math.random() * 100 + 50,
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
             borderRadius: Math.random() > 0.5 ? "50%" : "0%",
+            boxShadow:
+              "0 0 10px rgba(147,112,219,0.15), inset 0 0 10px rgba(147,112,219,0.05)",
           }}
           animate={{
             rotate: [0, 360],
             scale: [1, 1.2, 1],
-            opacity: [0.1, 0.3, 0.1],
+            opacity: [0.1, 0.4, 0.1],
           }}
           transition={{
             duration: Math.random() * 20 + 15,
@@ -491,18 +504,26 @@ const AnimatedBackground = () => {
             <stop offset="50%" stopColor="rgba(64,224,208,0.2)" />
             <stop offset="100%" stopColor="rgba(147,112,219,0.1)" />
           </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
         {Array.from({ length: 6 }, (_, i) => (
           <motion.path
             key={i}
             d={`M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`}
             stroke="url(#lineGradient)"
-            strokeWidth="1"
+            strokeWidth="2"
             fill="none"
+            filter="url(#glow)"
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{
               pathLength: [0, 1, 0],
-              opacity: [0, 0.5, 0],
+              opacity: [0, 0.7, 0],
               d: [
                 `M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`,
                 `M${Math.random() * 200 + 100},${Math.random() * 200 + 100} Q${Math.random() * 400 + 300},${Math.random() * 400 + 300} ${Math.random() * 200 + 700},${Math.random() * 200 + 500}`,
@@ -523,7 +544,7 @@ const AnimatedBackground = () => {
       <motion.div
         className="absolute inset-0"
         initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 0.1, 0] }}
+        animate={{ opacity: [0, 0.15, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       >
         <svg className="w-full h-full">
@@ -533,10 +554,11 @@ const AnimatedBackground = () => {
                 cx={`${(i % 5) * 25 + 10}%`}
                 cy={`${Math.floor(i / 5) * 25 + 10}%`}
                 r="2"
-                fill="rgba(147,112,219,0.3)"
+                fill="rgba(147,112,219,0.4)"
+                filter="url(#glow)"
                 animate={{
                   r: [1, 3, 1],
-                  opacity: [0.2, 0.6, 0.2],
+                  opacity: [0.3, 0.8, 0.3],
                 }}
                 transition={{
                   duration: 3,
@@ -550,10 +572,11 @@ const AnimatedBackground = () => {
                   y1={`${Math.floor(i / 5) * 25 + 10}%`}
                   x2={`${((i + 1) % 5) * 25 + 10}%`}
                   y2={`${Math.floor((i + 1) / 5) * 25 + 10}%`}
-                  stroke="rgba(147,112,219,0.1)"
+                  stroke="rgba(147,112,219,0.2)"
                   strokeWidth="0.5"
+                  filter="url(#glow)"
                   animate={{
-                    opacity: [0, 0.3, 0],
+                    opacity: [0, 0.4, 0],
                   }}
                   transition={{
                     duration: 4,
@@ -569,13 +592,14 @@ const AnimatedBackground = () => {
 
       {/* Subtle Grid Animation */}
       <motion.div
-        className="absolute inset-0 opacity-5"
+        className="absolute inset-0 opacity-3"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(147,112,219,0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(147,112,219,0.1) 1px, transparent 1px)
+            linear-gradient(rgba(147,112,219,0.15) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(147,112,219,0.15) 1px, transparent 1px)
           `,
           backgroundSize: "60px 60px",
+          filter: "blur(0.5px)",
         }}
         animate={{
           backgroundPosition: ["0px 0px", "60px 60px", "0px 0px"],
@@ -594,6 +618,16 @@ export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
+
+  const { scrollY } = useScroll();
+
+  // Transform values for scroll-based animations
+  const containerMaxWidth = useTransform(scrollY, [0, 20], ["100%", "70%"]);
+  const containerPadding = useTransform(scrollY, [0, 20], ["0px", "1rem"]);
+  const containerMargin = useTransform(scrollY, [0, 20], ["0px", "1rem"]);
+  const containerRadius = useTransform(scrollY, [0, 20], ["0px", "9999px"]);
+  const navBackgroundOpacity = useTransform(scrollY, [0, 20], [0.8, 0.85]);
+  const navBlur = useTransform(scrollY, [0, 20], [12, 20]);
 
   useEffect(() => {
     setMounted(true);
@@ -622,104 +656,169 @@ export default function LandingPage() {
       <AnimatedBackground />
 
       {/* Navigation */}
-      <nav className="relative z-50 px-4 sm:px-6 py-4 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800/50">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2 group">
-            <div className="relative">
-              <Link2 className="h-6 w-6 text-lavender-400/80 group-hover:text-lavender-400 transition-all duration-200 group-hover:-rotate-45" />
-              <div className="absolute inset-0 bg-lavender-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </div>
-            <span className="text-xl font-bold text-lavender-400 group-hover:text-white transition-colors duration-300">
-              Ch<span className="text-lavender-400">ai</span>ned
-            </span>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link
-              href="#features"
-              className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
-            >
-              Features
-              <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
-            </Link>
-            <Link
-              href="#demo"
-              className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
-            >
-              Demo
-              <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
-            </Link>
-            <Link
-              href="#workflow"
-              className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
-            >
-              Workflow
-              <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
-            </Link>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <Link
-              href="/chat"
-              className="hidden sm:inline-flex items-center bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group"
-            >
-              Start Building
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+      <header className="fixed top-0 left-0 right-0 z-50 w-full">
+        <motion.div
+          style={{
+            maxWidth: containerMaxWidth,
+            paddingLeft: containerPadding,
+            paddingRight: containerPadding,
+            marginTop: containerMargin,
+            marginLeft: "auto",
+            marginRight: "auto",
+            borderRadius: containerRadius,
+          }}
+          className="transition-all duration-300 ease-out border-y border-gray-800/50 bg-gray-950/80 backdrop-blur-xl"
+          animate={{
+            backgroundColor:
+              scrollY.get() > 20
+                ? "rgba(3, 7, 18, 0.85)"
+                : "rgba(3, 7, 18, 0.8)",
+            backdropFilter: scrollY.get() > 20 ? "blur(20px)" : "blur(12px)",
+            borderColor:
+              scrollY.get() > 20
+                ? "rgba(75, 85, 99, 0.3)"
+                : "rgba(75, 85, 99, 0.5)",
+          }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          <div className="flex h-16 items-center justify-between px-4 sm:px-16">
+            <Link href="/" className="flex items-center space-x-2 group">
+              <div className="relative">
+                <Link2 className="h-6 w-6 text-lavender-400/80 group-hover:text-lavender-400 transition-all duration-200 group-hover:-rotate-45" />
+                <div className="absolute inset-0 bg-lavender-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </div>
+              <span className="text-xl font-semibold text-lavender-400 group-hover:text-white transition-colors duration-300">
+                Ch<span className="text-lavender-400">ai</span>ned
+              </span>
             </Link>
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-800/50 transition-colors duration-300"
-            >
-              {isMenuOpen ? (
-                <X className="h-5 w-5 text-gray-400" />
-              ) : (
-                <Menu className="h-5 w-5 text-gray-400" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 right-0 bg-gray-950/95 backdrop-blur-xl border-b border-gray-800/50 animate-in slide-in-from-top-2 duration-200">
-            <div className="px-4 py-6 space-y-4">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8">
               <Link
                 href="#features"
-                className="block text-gray-400 hover:text-lavender-400 transition-colors duration-300 py-2"
-                onClick={() => setIsMenuOpen(false)}
+                className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
               >
                 Features
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
               </Link>
               <Link
                 href="#demo"
-                className="block text-gray-400 hover:text-lavender-400 transition-colors duration-300 py-2"
-                onClick={() => setIsMenuOpen(false)}
+                className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
               >
                 Demo
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
               </Link>
               <Link
                 href="#workflow"
-                className="block text-gray-400 hover:text-lavender-400 transition-colors duration-300 py-2"
-                onClick={() => setIsMenuOpen(false)}
+                className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
               >
                 Workflow
+                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
               </Link>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <motion.div
+                style={{
+                  borderRadius: containerRadius,
+                }}
+                className="hidden sm:block transition-all duration-300 ease-out"
+              >
+                <Link
+                  href="/chat"
+                  className="inline-flex items-center bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white px-6 py-2 font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group rounded-xl"
+                >
+                  Start Building
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+                </Link>
+              </motion.div>
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="md:hidden p-2 rounded-lg hover:bg-gray-800/50 transition-colors duration-300"
+              >
+                {isMenuOpen ? (
+                  <X className="h-5 w-5 text-gray-400" />
+                ) : (
+                  <Menu className="h-5 w-5 text-gray-400" />
+                )}
+              </button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Mobile Menu Overlay */}
+        <motion.div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 md:hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isMenuOpen ? 1 : 0 }}
+          transition={{ duration: 0.2 }}
+          style={{ pointerEvents: isMenuOpen ? "auto" : "none" }}
+        />
+
+        {/* Mobile Menu Panel */}
+        <motion.div
+          className="fixed right-0 top-0 w-80 h-full bg-gray-950/95 backdrop-blur-xl border-l border-gray-800/50 z-40 md:hidden"
+          initial={{ x: "100%" }}
+          animate={{ x: isMenuOpen ? 0 : "100%" }}
+          transition={{ type: "spring", damping: 25, stiffness: 150 }}
+        >
+          <div className="flex h-16 items-center justify-between px-6 border-b border-gray-800/50">
+            <span className="font-semibold text-white">Menu</span>
+            <button
+              onClick={() => setIsMenuOpen(false)}
+              className="p-2 rounded-lg hover:bg-gray-800/50 transition-colors duration-300"
+            >
+              <X className="h-5 w-5 text-gray-400" />
+            </button>
+          </div>
+
+          <nav className="p-6 flex flex-col justify-between h-[calc(100%-4rem)]">
+            <div className="flex flex-col space-y-6 pt-4">
+              {[
+                { name: "Features", href: "#features" },
+                { name: "Demo", href: "#demo" },
+                { name: "Workflow", href: "#workflow" },
+              ].map((item, index) => (
+                <motion.div
+                  key={item.name}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{
+                    opacity: isMenuOpen ? 1 : 0,
+                    y: isMenuOpen ? 0 : 10,
+                  }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
+                  <Link
+                    href={item.href}
+                    className="block py-3 text-xl font-medium text-gray-300 hover:text-lavender-400 transition-colors duration-300"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div
+              className="mt-auto pb-8"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: isMenuOpen ? 1 : 0, y: isMenuOpen ? 0 : 10 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+            >
               <Link
                 href="/chat"
-                className="inline-flex items-center bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 mt-4"
                 onClick={() => setIsMenuOpen(false)}
+                className="w-full inline-flex items-center justify-center bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white px-6 py-3 rounded-full font-medium transition-all duration-300"
               >
                 Start Building
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
-            </div>
-          </div>
-        )}
-      </nav>
-
+            </motion.div>
+          </nav>
+        </motion.div>
+      </header>
       {/* Hero Section */}
       <main className="relative z-10 px-4 sm:px-6 py-16 sm:py-24">
         <div className="max-w-8xl mx-auto">
@@ -727,7 +826,7 @@ export default function LandingPage() {
             {/* Hero Badge */}
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-gray-900/50 border border-gray-700/50 text-sm text-gray-300 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
               <Sparkles className="h-4 w-4 text-lavender-400 mr-2" />
-              <span>Chain AI Models Together</span>
+              <span>Chain LLMs Together</span>
               <div className="ml-2 w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
             </div>
 
@@ -742,10 +841,9 @@ export default function LandingPage() {
             </h1>
 
             {/* Hero Subtitle */}
-            <p className="text-lg sm:text-xl text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
-              Chain multiple AI models together to create sophisticated
-              workflows. Connect GPT-4, Claude, Gemini, and more in powerful
-              sequences.
+            <p className="text-lg sm:text-xl text-gray-400 mb-12 max-w-4xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
+              ChatGPT, Claude, Gemini, Grok, and more—all your favorite LLMs,
+              one intuitive workspace.
             </p>
 
             {/* CTA Buttons */}
@@ -782,7 +880,6 @@ export default function LandingPage() {
           </div>
         </div>
       </main>
-
       {/* Features Section */}
       <section
         id="features"
@@ -857,7 +954,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
       {/* Feature Detail Modal */}
       {selectedFeature &&
         featureDetail &&
@@ -1063,7 +1159,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
       {/* Workflow Section */}
       <section
         id="workflow"
@@ -1165,7 +1260,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
       {/* Final CTA Section */}
       <section className="relative z-10 px-4 sm:px-6 py-20 sm:py-32">
         <div className="max-w-4xl mx-auto text-center">
@@ -1193,16 +1287,20 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
       {/* Footer */}
-      <footer className="relative z-10 px-4 sm:px-6 py-12 border-t border-gray-800/50">
+      <footer className="relative z-10 px-4 sm:px-6 py-12 bg-gray-950/80 backdrop-blur-xl border-t border-gray-800/50">
         <div className="max-w-7xl mx-auto">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="lg:col-span-2">
-              <div className="flex items-center space-x-2 mb-4">
-                <Link2 className="h-6 w-6 text-lavender-400" />
-                <span className="text-xl font-bold text-white">Chained</span>
-              </div>
+              <Link href="/" className="flex items-center space-x-2 group mb-4">
+                <div className="relative">
+                  <Link2 className="h-6 w-6 text-lavender-400/80 group-hover:text-lavender-400 transition-all duration-200 group-hover:-rotate-45" />
+                  <div className="absolute inset-0 bg-lavender-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                <span className="text-xl font-semibold text-lavender-400 group-hover:text-white transition-colors duration-300">
+                  Ch<span className="text-lavender-400">ai</span>ned
+                </span>
+              </Link>
               <p className="text-gray-400 mb-6 max-w-md">
                 Create powerful AI workflows by chaining multiple models
                 together for enhanced results.

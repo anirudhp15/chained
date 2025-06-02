@@ -517,7 +517,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                         {/* Info Button */}
                         <div
                           onClick={(e) => handleShowPresetInfo(preset.id, e)}
-                          className="absolute top-2 right-2 p-1 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-300 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100 hover:scale-110 cursor-pointer"
+                          className="absolute top-2 right-2 p-1 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-400 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100 hover:scale-110 cursor-pointer"
                         >
                           <Eye size={12} className="md:w-3.5 md:h-3.5" />
                         </div>
@@ -537,7 +537,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
 
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1 md:mb-2">
-                                <h3 className="text-sm md:text-lg font-semibold text-white group-hover:text-lavender-300 transition-colors duration-300 truncate">
+                                <h3 className="text-sm md:text-lg font-semibold text-white group-hover:text-lavender-400 transition-colors duration-300 truncate">
                                   {preset.title}
                                 </h3>
                               </div>

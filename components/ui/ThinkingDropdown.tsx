@@ -33,7 +33,7 @@ export function ThinkingDropdown({
     <div className={`border-t border-gray-600/50 py-2 ${className}`}>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-2 text-xs text-lavender-400/80 hover:text-lavender-300 transition-colors group"
+        className="flex items-center gap-2 text-xs text-lavender-400/80 hover:text-lavender-400 transition-colors group"
       >
         {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         <Brain size={12} className="text-lavender-400" />

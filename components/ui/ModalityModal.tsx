@@ -213,7 +213,7 @@ export function ModalityModal({
                       Web search enabled
                     </span>
                   </div>
-                  <p className="text-xs text-lavender-300/80 mt-1">
+                  <p className="text-xs text-lavender-400/80 mt-1">
                     The AI can now search for current information to enhance
                     responses
                   </p>

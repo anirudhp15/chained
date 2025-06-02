@@ -800,7 +800,7 @@ export function Sidebar({
                   </p>
                   <button
                     onClick={clearSearch}
-                    className="mt-4 text-xs text-lavender-400 hover:text-lavender-300 transition-colors duration-200 font-medium"
+                    className="mt-4 text-xs text-lavender-400/80 hover:text-lavender-400 transition-colors duration-200 font-medium"
                   >
                     Clear search
                   </button>
