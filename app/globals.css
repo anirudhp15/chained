@@ -173,6 +173,16 @@
     scrollbar-color: rgba(55, 65, 81, 0.6) rgba(0, 0, 0, 0.1);
   }
 
+  /* Hide scrollbar for mobile sidebar */
+  .scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none; /* WebKit */
+  }
+
   /* Specific scrollbar styles for agent content areas */
   .agent-content::-webkit-scrollbar {
     width: 4px;

@@ -399,7 +399,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
   return (
     <div className="h-min flex flex-col">
       {/* Main content area */}
-      <div className="relative flex-1 flex items-start justify-center p-4 lg:p-8 ">
+      <div className="relative flex-1 flex items-start justify-center px-4 lg:px-8 ">
         <div className="fixed top-0 w-full h-full flex items-center justify-center">
           <div className="w-full max-w-7xl mx-auto text-center space-y-4 md:space-y-8 welcome-screen-container md:w-auto md:margin-0 md:padding-0">
             {/* Welcome Message */}
@@ -469,7 +469,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                 >
                   <button
                     onClick={handleBackToCategories}
-                    className="flex items-center gap-2 px-3 md:px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500/50 rounded-full text-lavender-400 hover:text-white transition-all duration-200 group"
+                    className="flex items-center gap-2 px-3 md:px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500/50 rounded-lg text-lavender-400 hover:text-white transition-all duration-200 group"
                   >
                     <ArrowLeft
                       size={14}

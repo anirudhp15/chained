@@ -20,11 +20,15 @@ import type { Agent } from "../../components/agent-input";
 function ChatLandingContent() {
   const router = useRouter();
   const createSession = useMutation(api.mutations.createSession);
+  const recentChats = useQuery(api.queries.getChatSessions);
   const [presetAgents, setPresetAgents] = useState<Agent[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [queuedAgents, setQueuedAgents] = useState<Agent[]>([]);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // Only show sidebar if there are chats to display
+  const shouldShowSidebar = recentChats && recentChats.length > 0;
 
   const handleLoadPreset = async (agents: Agent[]) => {
     try {
@@ -71,15 +75,21 @@ function ChatLandingContent() {
 
   return (
     <div className="flex h-screen bg-gray-950">
-      <Sidebar
-        currentSessionId={undefined}
-        isMobileOpen={isMobileSidebarOpen}
-        onMobileToggle={toggleMobileSidebar}
-      />
-      <MobileSidebarToggle
-        isOpen={isMobileSidebarOpen}
-        onToggle={toggleMobileSidebar}
-      />
+      {/* Only render sidebar if there are chats */}
+      {shouldShowSidebar && (
+        <Sidebar
+          currentSessionId={undefined}
+          isMobileOpen={isMobileSidebarOpen}
+          onMobileToggle={toggleMobileSidebar}
+        />
+      )}
+      {/* Only render mobile toggle if there are chats */}
+      {shouldShowSidebar && (
+        <MobileSidebarToggle
+          isOpen={isMobileSidebarOpen}
+          onToggle={toggleMobileSidebar}
+        />
+      )}
       <div className="flex-1 flex flex-col relative w-full">
         {/* Welcome Screen - only show if no preset agents are loaded */}
         {!presetAgents && (
