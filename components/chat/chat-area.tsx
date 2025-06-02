@@ -14,7 +14,10 @@ import {
   Grid3X3,
   Link2,
   User,
+  GitCommitHorizontal,
+  GitFork,
 } from "lucide-react";
+import { IoGitBranchOutline } from "react-icons/io5";
 import { useState, useMemo, useRef, useCallback } from "react";
 import { ModelAvatar } from "./model-avatar";
 import { MarkdownRenderer } from "./markdown-renderer";
@@ -52,6 +55,204 @@ interface MobileAgentCardProps {
   UserDisplay: React.ComponentType;
 }
 
+// Live Status Indicator Component
+const LiveStatusIndicator = ({ agent }: { agent: any }) => {
+  if (agent.isStreaming) {
+    return (
+      <div className="flex items-center gap-1">
+        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full status-indicator-dot status-indicator-generating"></div>
+        <span className="text-gray-400 text-xs status-indicator-text">
+          Generating
+        </span>
+      </div>
+    );
+  }
+
+  if (agent.response || agent.streamedContent) {
+    return (
+      <div className="flex items-center gap-1">
+        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full status-indicator-dot status-indicator-complete"></div>
+        <span className="text-gray-400 text-xs status-indicator-text">
+          Complete
+        </span>
+      </div>
+    );
+  }
+
+  if (agent.wasSkipped) {
+    return (
+      <div className="flex items-center gap-1">
+        <div className="w-1.5 h-1.5 bg-gray-500 rounded-full status-indicator-dot"></div>
+        <span className="text-gray-500 text-xs status-indicator-text">
+          Skipped
+        </span>
+      </div>
+    );
+  }
+
+  if (agent.error) {
+    return (
+      <div className="flex items-center gap-1">
+        <div className="w-1.5 h-1.5 bg-gray-500 rounded-full status-indicator-dot"></div>
+        <span className="text-gray-500 text-xs status-indicator-text">
+          Error
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <div className="w-1.5 h-1.5 bg-gray-600 rounded-full status-indicator-dot"></div>
+      <span className="text-gray-600 text-xs status-indicator-text">
+        Waiting
+      </span>
+    </div>
+  );
+};
+
+// Response Preview Line Component
+const ResponsePreviewLine = ({ agent }: { agent: any }) => {
+  const getPromptPreview = () => {
+    if (!agent.prompt?.trim()) return null;
+    const preview = agent.prompt.substring(0, 80);
+    return preview + (agent.prompt.length > 80 ? "..." : "");
+  };
+
+  const getResponsePreview = () => {
+    const content = agent.response || agent.streamedContent;
+    if (!content) return null;
+    const preview = content.substring(0, 90);
+    return preview + (content.length > 90 ? "..." : "");
+  };
+
+  const getAgentDisplayName = () => {
+    // Debug: Log the agent object to see what's available
+    console.log("Agent object in ResponsePreviewLine:", {
+      name: agent.name,
+      agentName: agent.agentName,
+      index: agent.index,
+      allKeys: Object.keys(agent),
+    });
+
+    // Try multiple sources for the agent name with proper fallback
+    return agent.name || agent.agentName || `Node ${(agent.index || 0) + 1}`;
+  };
+
+  const getConnectionIcon = () => {
+    if (!agent.connectionType || agent.index === 0) return null;
+
+    // Define connection types with proper typing
+    type ConnectionType = "direct" | "conditional" | "parallel";
+
+    const connectionIcons: Record<ConnectionType, React.ComponentType<any>> = {
+      direct: GitCommitHorizontal,
+      conditional: IoGitBranchOutline,
+      parallel: GitFork,
+    };
+
+    const connectionColors: Record<ConnectionType, string> = {
+      direct: "bg-blue-500/20 text-blue-400",
+      conditional: "bg-amber-500/20 text-amber-400",
+      parallel: "bg-purple-500/20 text-purple-400",
+    };
+
+    // Type guard to ensure we have a valid connection type
+    const isValidConnectionType = (type: any): type is ConnectionType => {
+      return type && typeof type === "string" && type in connectionIcons;
+    };
+
+    if (!isValidConnectionType(agent.connectionType)) return null;
+
+    // Now TypeScript knows agent.connectionType is ConnectionType
+    const connectionType = agent.connectionType as ConnectionType;
+    const IconComponent = connectionIcons[connectionType];
+    const colorClass = connectionColors[connectionType];
+
+    return (
+      <div
+        className={`w-4 h-4 rounded-full flex items-center justify-center ${colorClass} flex-shrink-0`}
+      >
+        <IconComponent size={16} />
+      </div>
+    );
+  };
+
+  const promptPreview = getPromptPreview();
+  const responsePreview = getResponsePreview();
+  const { user } = useUser();
+  return (
+    <div className="overflow-hidden mt-2">
+      {/* Prompt Preview Row */}
+      {promptPreview && (
+        <div className="text-xs text-left mobile-card-content-row pl-2">
+          <div className="text-gray-400 leading-relaxed line-clamp-1">
+            <span className="font-normal text-lavender-400">
+              {user?.fullName || user?.firstName || "User"}
+            </span>{" "}
+            {promptPreview}
+          </div>
+        </div>
+      )}
+
+      {/* Response/Status Row */}
+      <div className="text-xs text-left mobile-card-content-row pl-2">
+        {agent.isStreaming ? (
+          <>
+            <div className="text-gray-400 leading-relaxed flex items-center gap-2">
+              {getConnectionIcon()}
+              <span className="font-normal whitespace-nowrap text-lavender-400">
+                {getAgentDisplayName()}
+              </span>{" "}
+              Generating response...
+            </div>
+          </>
+        ) : responsePreview ? (
+          <>
+            <div className="text-gray-400 whitespace-nowrap  leading-relaxed line-clamp-1 flex items-center gap-2">
+              {getConnectionIcon()}
+              <span className="font-normal text-lavender-400">
+                {getAgentDisplayName()}
+              </span>{" "}
+              {responsePreview}
+            </div>
+          </>
+        ) : agent.wasSkipped ? (
+          <>
+            <div className="text-gray-400 leading-relaxed flex items-center gap-2">
+              {getConnectionIcon()}
+              <span className="font-normal text-lavender-400">
+                {getAgentDisplayName()}:
+              </span>{" "}
+              Skipped due to condition
+            </div>
+          </>
+        ) : agent.error ? (
+          <>
+            <div className="text-gray-400 leading-relaxed flex items-center gap-2">
+              {getConnectionIcon()}
+              <span className="font-normal text-lavender-400">
+                {getAgentDisplayName()}:
+              </span>{" "}
+              Failed to complete
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-gray-400 leading-relaxed flex items-center gap-2">
+              {getConnectionIcon()}
+              <span className="font-normal text-lavender-400">
+                {getAgentDisplayName()}:
+              </span>{" "}
+              Pending execution
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 function MobileAgentCard({
   agent,
   index,
@@ -68,63 +269,60 @@ function MobileAgentCard({
 
   return (
     <div className="bg-gray-950/50 border border-gray-700/50 rounded-xl overflow-hidden">
-      {/* Collapsible Header */}
+      {/* Enhanced Collapsible Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-3 hover:bg-gray-800/50 transition-colors"
+        className="w-full flex flex-col items-start justify-between p-4 hover:bg-gray-800/50 transition-colors "
       >
-        <div className="flex items-center gap-3">
-          <ModelAvatar model={agent.model} size="sm" />
-          <div className="flex flex-col items-start">
-            <span className="text-white font-medium text-sm">
-              {agent.name || `Node ${agent.index + 1}`}
-            </span>
-            <span className="text-gray-400 text-xs">{agent.model}</span>
-          </div>
-          {agent.isStreaming && (
-            <div className="flex items-center gap-1">
-              <div className="flex space-x-1">
-                <div className="w-1 h-1 bg-lavender-400 rounded-full animate-pulse"></div>
-                <div
-                  className="w-1 h-1 bg-lavender-400 rounded-full animate-pulse"
-                  style={{ animationDelay: "0.2s" }}
-                ></div>
-                <div
-                  className="w-1 h-1 bg-lavender-400 rounded-full animate-pulse"
-                  style={{ animationDelay: "0.4s" }}
-                ></div>
+        <div
+          className={`flex flex-row justify-between w-full ${
+            !isExpanded ? "border-b border-gray-700/50 pb-4" : ""
+          }`}
+        >
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <ModelAvatar model={agent.model} size="sm" />
+            <div className="flex-1 min-w-0 space-y-3">
+              {/* Header: Agent info + live status */}
+              <div className="flex flex-col text-left min-w-0">
+                <span className="text-white font-medium text-sm sm:text-base truncate">
+                  {agent.name || `Node ${agent.index + 1}`}
+                </span>
+                <span className="text-gray-400 text-xs sm:text-sm truncate">
+                  {agent.model}
+                </span>
               </div>
-              <span className="text-xs text-lavender-400">generating</span>
             </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              onFocusToggle(agent.index);
-            }}
-            className="p-1 hover:bg-gray-700/50 rounded flex items-center gap-1 text-xs text-gray-400 transition-colors cursor-pointer"
-            title="Focus on this agent"
-          >
-            <Focus
-              size={14}
-              className="text-gray-400 hover:text-lavender-400"
-            />
-            Focus
           </div>
-          <ChevronDown
-            size={16}
-            className={`text-gray-400 transition-transform duration-200 ${
-              isExpanded ? "rotate-180" : ""
-            }`}
-          />
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                onFocusToggle(agent.index);
+              }}
+              className="flex text-xs items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-800/30 rounded-lg px-2 py-1 transition-all cursor-pointer"
+              title="Focus on this agent"
+            >
+              Focus
+              <Focus
+                size={14}
+                className="text-gray-400 hover:text-lavender-400 flex-shrink-0"
+              />
+            </div>
+            <ChevronDown
+              size={18}
+              className={`text-gray-400 transition-transform duration-200 flex-shrink-0 ${
+                isExpanded ? "rotate-180" : ""
+              }`}
+            />
+          </div>
         </div>
+        {/* Content Preview */}
+        {!isExpanded && <ResponsePreviewLine agent={agent} />}
       </button>
 
       {/* Expandable Content */}
       {isExpanded && (
-        <div className="border-t border-gray-700/50 p-3 space-y-3 animate-in slide-in-from-top-2 duration-200">
+        <div className="border-t border-gray-700/50 p-2 space-y-3 animate-in slide-in-from-top-2 duration-200">
           {/* User Prompt */}
           <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
             <div className="flex items-center justify-between">
@@ -403,7 +601,8 @@ export function ChatArea({
       agent.executionDuration = step.executionDuration;
       agent.tokensPerSecond = step.tokensPerSecond;
       agent.estimatedCost = step.estimatedCost;
-      if (step.name) {
+      // Preserve the name - update it if step has a name, otherwise keep the existing one
+      if (step.name && step.name.trim()) {
         agent.name = step.name;
       }
     });
@@ -461,7 +660,7 @@ export function ChatArea({
   const renderFocusedAgent = (agent: any) => (
     <div className="h-full flex flex-col">
       {/* Individual Agent Performance Summary */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-gray-700/30">
+      <div className="flex-shrink-0 p-2 border-b border-gray-700/30">
         <ChainPerformanceSummary
           steps={[
             {
@@ -489,7 +688,7 @@ export function ChatArea({
           </div>
           <button
             onClick={() => handleFocusToggle(agent.index)}
-            className="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-800/30 rounded-lg px-2 py-1 transition-all group"
+            className="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-800/30 rounded-lg px-2 py-1 transition-all group cursor-pointer"
           >
             <span className="text-xs group-hover:text-lavender-400 transition-all duration-200">
               Chain
@@ -808,9 +1007,6 @@ export function ChatArea({
                           agents={agentGroups}
                         />
                       )}
-                      <div className="ml-auto">
-                        <CopyButton text={agent.prompt} size="sm" />
-                      </div>
                     </div>
                     <TruncatedText
                       text={agent.prompt}
@@ -835,20 +1031,20 @@ export function ChatArea({
 
                 {/* Skipped Agent State */}
                 {agent.wasSkipped && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-4">
                     <ModelAvatar model={agent.model} size="sm" />
                     <div className="flex-1">
-                      <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
-                        <div className="text-xs text-orange-400 mb-1 flex items-center gap-2">
+                      <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4">
+                        <div className="text-sm text-orange-400 mb-2 flex items-center gap-2">
                           <span>Skipped</span>
                           <span className="font-mono">→?</span>
                         </div>
-                        <p className="text-orange-300 text-sm">
+                        <p className="text-orange-300 text-base">
                           {agent.skipReason ||
                             "Agent was skipped due to conditional logic"}
                         </p>
                         {agent.connectionCondition && (
-                          <div className="mt-2 text-xs text-orange-400/70">
+                          <div className="mt-3 text-sm text-orange-400/70">
                             Condition:{" "}
                             <span className="font-mono">
                               {agent.connectionCondition}
@@ -867,7 +1063,7 @@ export function ChatArea({
                     {(agent.response ||
                       agent.streamedContent ||
                       agent.isStreaming) && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-4">
                         {/* <ModelAvatar model={agent.model} size="sm" /> */}
                         <div className="flex-1">
                           <div className="p-2 ">
@@ -953,7 +1149,7 @@ export function ChatArea({
                                     <div className="text-xs text-gray-400 mb-2">
                                       Model Reasoning:
                                     </div>
-                                    <div className="text-sm text-gray-300 break-words overflow-hidden">
+                                    <div className="text-base text-gray-300 break-words overflow-hidden">
                                       <MarkdownRenderer
                                         content={agent.reasoning}
                                         className="break-words overflow-wrap-anywhere"
@@ -974,7 +1170,7 @@ export function ChatArea({
                       !agent.response &&
                       !agent.streamedContent &&
                       !agent.error && (
-                        <div className="flex gap-2">
+                        <div className="flex gap-4">
                           <ModelAvatar model={agent.model} size="sm" />
                           <div className="flex-1">
                             <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
@@ -997,12 +1193,12 @@ export function ChatArea({
 
                 {/* Error State */}
                 {!agent.wasSkipped && agent.error && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-4">
                     <ModelAvatar model={agent.model} size="sm" />
                     <div className="flex-1">
                       <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
                         <div className="text-xs text-red-400 mb-1">Error</div>
-                        <p className="text-red-300 text-sm">{agent.error}</p>
+                        <p className="text-red-300 text-base">{agent.error}</p>
                       </div>
                     </div>
                   </div>

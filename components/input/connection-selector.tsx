@@ -138,11 +138,9 @@ export function ConnectionBadge({
     }
   };
 
-  const textSize = size === "sm" ? "text-xs" : "text-xs md:text-sm";
+  const textSize = size === "sm" ? "text-xs" : "text-xs ";
   const paddingSize =
-    size === "sm"
-      ? "px-2 py-0.5 md:px-2.5 md:py-1"
-      : "px-2.5 py-1 md:px-3 md:py-1.5";
+    size === "sm" ? "px-2 py-0.5 md:px-2.5 md:py-1" : "px-2.5 py-1 ";
 
   return (
     <div className={`flex items-center ${className}`}>

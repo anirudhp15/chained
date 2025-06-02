@@ -336,6 +336,112 @@
     }
   }
 
+  /* Enhanced Status Indicators for Mobile Cards */
+  .status-indicator-dot {
+    transition: all 0.2s ease-in-out;
+    contain: layout style;
+  }
+
+  .status-indicator-generating {
+    animation: statusGeneratingPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .status-indicator-complete {
+    animation: statusCompleteGlow 0.5s ease-out;
+  }
+
+  .status-indicator-text {
+    font-weight: 500;
+    letter-spacing: 0.025em;
+    transition: opacity 0.2s ease-in-out;
+  }
+
+  @keyframes statusGeneratingPulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.2);
+    }
+  }
+
+  @keyframes statusCompleteGlow {
+    0% {
+      opacity: 0.5;
+      transform: scale(0.8);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Response Preview Line Enhancements */
+  .response-preview-line {
+    transition: all 0.2s ease-in-out;
+    contain: layout style;
+  }
+
+  /* Enhanced Mobile Agent Card Interactions */
+  .mobile-agent-card {
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    min-height: 120px; /* Increased minimum height for column layout */
+  }
+
+  .mobile-agent-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .mobile-agent-card-header {
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .mobile-agent-card-header:active {
+    background-color: rgba(55, 65, 81, 0.7);
+  }
+
+  /* Mobile Card Content Spacing */
+  .mobile-card-content-row {
+    padding: 0.5rem 0;
+    border-radius: 0.375rem;
+    transition: background-color 0.15s ease-in-out;
+  }
+
+  .mobile-card-content-row:hover {
+    background-color: rgba(55, 65, 81, 0.15);
+  }
+
+  /* Enhanced content readability */
+  .mobile-card-content-row .text-gray-400 {
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .mobile-card-content-row .text-gray-300 {
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Icon and text alignment improvements */
+  .mobile-preview-icon {
+    opacity: 0.8;
+    transition: opacity 0.2s ease-in-out;
+  }
+
+  .mobile-agent-card:hover .mobile-preview-icon {
+    opacity: 1;
+  }
+
   /* Multi-Agent Layout Animations */
   .agent-container {
     transform: translateX(0);
