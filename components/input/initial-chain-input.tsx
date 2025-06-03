@@ -516,18 +516,13 @@ const DesktopConnectionSelector = ({
 
   return (
     <div className="hidden md:flex items-center justify-center relative mb-36">
-      {/* Connection Line/Background */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-12 h-0.5 bg-gray-600/30"></div>
-      </div>
-
       {/* Tilted Interactive Connection Button */}
       <button
         onClick={(e) => {
           setButtonPosition(e.currentTarget.getBoundingClientRect());
           setIsDropdownOpen(!isDropdownOpen);
         }}
-        className="relative z-10 w-8 h-8 bg-gray-800/90 hover:bg-gray-700/90 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg flex items-center justify-center transform rotate-45 backdrop-blur-sm transition-all group"
+        className="relative z-10 w-10 h-10 bg-gray-800/90 hover:bg-gray-700/90 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg flex items-center justify-center transform rotate-45 backdrop-blur-sm transition-all group"
         title={`Connection: ${currentConnection?.label}`}
       >
         <div className="transform -rotate-45">

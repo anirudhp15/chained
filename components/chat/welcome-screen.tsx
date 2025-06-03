@@ -400,7 +400,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
     <div className="h-min flex flex-col">
       {/* Main content area */}
       <div className="relative flex-1 flex items-start justify-center px-4 lg:px-8 ">
-        <div className="fixed top-0 w-full h-full flex items-center justify-center">
+        <div className="fixed top-0 pb-24 lg:pb-0 w-full h-full flex items-center justify-center">
           <div className="w-full max-w-7xl mx-auto text-center space-y-4 md:space-y-8 welcome-screen-container md:w-auto md:margin-0 md:padding-0">
             {/* Welcome Message */}
             <div className="space-y-2 md:space-y-4">

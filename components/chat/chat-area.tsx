@@ -322,14 +322,58 @@ function MobileAgentCard({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <UserDisplay />
-                {agent.connectionType && agent.index > 0 && (
-                  <ConnectionBadge
-                    type={agent.connectionType}
-                    sourceAgentIndex={agent.index - 1}
-                    condition={agent.connectionCondition}
-                    agents={agentGroups}
-                  />
-                )}
+                {/* Show ConnectionBadge for all agents with connections (including parallel agents) */}
+                {(() => {
+                  // Simple parallel detection: if this agent is parallel OR any adjacent agent is parallel
+                  const isParallel =
+                    agent.connectionType === "parallel" ||
+                    (agent.index > 0 &&
+                      agentGroups[agent.index - 1]?.connectionType ===
+                        "parallel") ||
+                    (agent.index < agentGroups.length - 1 &&
+                      agentGroups[agent.index + 1]?.connectionType ===
+                        "parallel");
+
+                  // Show parallel badge for parallel agents
+                  if (isParallel) {
+                    return (
+                      <ConnectionBadge
+                        type="parallel"
+                        sourceAgentIndex={agent.index}
+                        condition={agent.connectionCondition}
+                        agents={agentGroups.map((a) => ({
+                          index: a.index,
+                          name: a.name,
+                          connectionType: a.connectionType,
+                        }))}
+                      />
+                    );
+                  }
+
+                  // For non-parallel agents with connections, show normal badge
+                  if (
+                    agent.connectionType &&
+                    agent.index > 0 &&
+                    agent.connectionType !== "parallel"
+                  ) {
+                    return (
+                      <ConnectionBadge
+                        type={agent.connectionType}
+                        sourceAgentIndex={
+                          agent.sourceAgentIndex || agent.index - 1
+                        }
+                        condition={agent.connectionCondition}
+                        agents={agentGroups.map((a) => ({
+                          index: a.index,
+                          name: a.name,
+                          connectionType: a.connectionType,
+                        }))}
+                      />
+                    );
+                  }
+
+                  return null;
+                })()}
               </div>
               <CopyButton text={agent.prompt} size="sm" />
             </div>
@@ -471,15 +515,70 @@ function MobileAgentCard({
             !agent.response &&
             !agent.streamedContent &&
             !agent.error && (
-              <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
+              <div
+                className={`border rounded-lg p-3 ${
+                  agent.connectionType === "parallel"
+                    ? "bg-purple-500/10 border-purple-500/30"
+                    : "bg-gray-800/50 border-gray-700/50"
+                }`}
+              >
                 <div className="flex items-center gap-3">
-                  <div className="thinking-dots">
-                    <div className="thinking-dot"></div>
-                    <div className="thinking-dot"></div>
-                    <div className="thinking-dot"></div>
-                  </div>
+                  {agent.connectionType === "parallel" ? (
+                    <div className="flex items-center gap-1">
+                      <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+                      <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-100"></div>
+                      <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-200"></div>
+                    </div>
+                  ) : (
+                    <div className="thinking-dots">
+                      <div className="thinking-dot"></div>
+                      <div className="thinking-dot"></div>
+                      <div className="thinking-dot"></div>
+                    </div>
+                  )}
                   <span className="text-xs text-lavender-400/80">
-                    Thinking...
+                    {(() => {
+                      // Check if this agent is waiting for a previous agent to complete
+                      if (
+                        agent.connectionType === "direct" &&
+                        agent.index > 0
+                      ) {
+                        const previousAgent = agentGroups.find(
+                          (a) => a.index === agent.index - 1
+                        );
+                        if (
+                          previousAgent &&
+                          !previousAgent.isComplete &&
+                          !previousAgent.wasSkipped
+                        ) {
+                          return `Waiting for Node ${previousAgent.index + 1} to complete...`;
+                        }
+                      }
+
+                      if (
+                        agent.connectionType === "conditional" &&
+                        agent.index > 0
+                      ) {
+                        const sourceAgent = agentGroups.find(
+                          (a) =>
+                            a.index ===
+                            (agent.sourceAgentIndex || agent.index - 1)
+                        );
+                        if (
+                          sourceAgent &&
+                          !sourceAgent.isComplete &&
+                          !sourceAgent.wasSkipped
+                        ) {
+                          return `Waiting for Node ${sourceAgent.index + 1} to complete...`;
+                        }
+                      }
+
+                      if (agent.connectionType === "parallel") {
+                        return "Executing in parallel...";
+                      }
+
+                      return "Thinking...";
+                    })()}
                   </span>
                 </div>
               </div>
@@ -783,17 +882,61 @@ export function ChatArea({
           {/* User Prompt */}
           <div className="w-full">
             <div className="bg-gray-800/90 border border-gray-700/50 rounded-xl p-4">
-              <div className="flex flex-row items-center justify-between">
+              <div className="flex flex-row items-center justify-between pb-2">
                 <div className="flex flex-row items-center gap-3">
                   <UserDisplay />
-                  {agent.connectionType && agent.index > 0 && (
-                    <ConnectionBadge
-                      type={agent.connectionType}
-                      sourceAgentIndex={agent.index - 1}
-                      condition={agent.connectionCondition}
-                      agents={agentGroups}
-                    />
-                  )}
+                  {/* Show ConnectionBadge for all agents with connections (including parallel agents) */}
+                  {(() => {
+                    // Simple parallel detection: if this agent is parallel OR any adjacent agent is parallel
+                    const isParallel =
+                      agent.connectionType === "parallel" ||
+                      (agent.index > 0 &&
+                        agentGroups[agent.index - 1]?.connectionType ===
+                          "parallel") ||
+                      (agent.index < agentGroups.length - 1 &&
+                        agentGroups[agent.index + 1]?.connectionType ===
+                          "parallel");
+
+                    // Show parallel badge for parallel agents
+                    if (isParallel) {
+                      return (
+                        <ConnectionBadge
+                          type="parallel"
+                          sourceAgentIndex={agent.index}
+                          condition={agent.connectionCondition}
+                          agents={agentGroups.map((a) => ({
+                            index: a.index,
+                            name: a.name,
+                            connectionType: a.connectionType,
+                          }))}
+                        />
+                      );
+                    }
+
+                    // For non-parallel agents with connections, show normal badge
+                    if (
+                      agent.connectionType &&
+                      agent.index > 0 &&
+                      agent.connectionType !== "parallel"
+                    ) {
+                      return (
+                        <ConnectionBadge
+                          type={agent.connectionType}
+                          sourceAgentIndex={
+                            agent.sourceAgentIndex || agent.index - 1
+                          }
+                          condition={agent.connectionCondition}
+                          agents={agentGroups.map((a) => ({
+                            index: a.index,
+                            name: a.name,
+                            connectionType: a.connectionType,
+                          }))}
+                        />
+                      );
+                    }
+
+                    return null;
+                  })()}
                 </div>
                 <div className="flex justify-end">
                   <CopyButton text={agent.prompt} size="sm" />
@@ -961,43 +1104,71 @@ export function ChatArea({
             !agent.response &&
             !agent.streamedContent &&
             !agent.error && (
-              <div className="flex gap-4">
-                <ModelAvatar model={agent.model} size="sm" />
-                <div className="flex-1">
-                  <div
-                    className={`border rounded-lg p-3 ${
-                      agent.connectionType === "parallel"
-                        ? "bg-purple-500/10 border-purple-500/30"
-                        : "bg-gray-800/50 border-gray-700/50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {agent.connectionType === "parallel" ? (
-                        <div className="flex items-center gap-1">
-                          <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse"></div>
-                          <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse delay-100"></div>
-                          <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse delay-200"></div>
-                        </div>
-                      ) : (
-                        <div className="thinking-dots">
-                          <div className="thinking-dot"></div>
-                          <div className="thinking-dot"></div>
-                          <div className="thinking-dot"></div>
-                        </div>
-                      )}
-                      <span
-                        className={`text-xs ${
-                          agent.connectionType === "parallel"
-                            ? "text-purple-400"
-                            : "text-lavender-400/80"
-                        }`}
-                      >
-                        {agent.connectionType === "parallel"
-                          ? "Preparing parallel execution..."
-                          : "Thinking..."}
-                      </span>
+              <div
+                className={`border rounded-lg p-3 ${
+                  agent.connectionType === "parallel"
+                    ? "bg-purple-500/10 border-purple-500/30"
+                    : "bg-gray-800/50 border-gray-700/50"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {agent.connectionType === "parallel" ? (
+                    <div className="flex items-center gap-1">
+                      <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+                      <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-100"></div>
+                      <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-200"></div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="thinking-dots">
+                      <div className="thinking-dot"></div>
+                      <div className="thinking-dot"></div>
+                      <div className="thinking-dot"></div>
+                    </div>
+                  )}
+                  <span className="text-xs text-lavender-400/80">
+                    {(() => {
+                      // Check if this agent is waiting for a previous agent to complete
+                      if (
+                        agent.connectionType === "direct" &&
+                        agent.index > 0
+                      ) {
+                        const previousAgent = agentGroups.find(
+                          (a) => a.index === agent.index - 1
+                        );
+                        if (
+                          previousAgent &&
+                          !previousAgent.isComplete &&
+                          !previousAgent.wasSkipped
+                        ) {
+                          return `Waiting for Node ${previousAgent.index + 1} to complete...`;
+                        }
+                      }
+
+                      if (
+                        agent.connectionType === "conditional" &&
+                        agent.index > 0
+                      ) {
+                        const sourceAgent = agentGroups.find(
+                          (a) =>
+                            a.index ===
+                            (agent.sourceAgentIndex || agent.index - 1)
+                        );
+                        if (
+                          sourceAgent &&
+                          !sourceAgent.isComplete &&
+                          !sourceAgent.wasSkipped
+                        ) {
+                          return `Waiting for Node ${sourceAgent.index + 1} to complete...`;
+                        }
+                      }
+
+                      if (agent.connectionType === "parallel") {
+                        return "Executing in parallel...";
+                      }
+
+                      return "Thinking...";
+                    })()}
+                  </span>
                 </div>
               </div>
             )}
@@ -1075,7 +1246,7 @@ export function ChatArea({
       className="flex-1 flex flex-col overflow-hidden bg-gray-950/50  w-full relative"
     >
       {/* Chain Performance Summary */}
-      {agentGroups.length > 1 && showDetailedPerformance && (
+      {agentGroups.length > 1 && (
         <div className="flex-shrink-0 px-2 md:px-4 py-2 md:py-3 border-b border-gray-700/30">
           <ChainPerformanceSummary
             steps={agentGroups.map((agent) => ({
@@ -1137,21 +1308,65 @@ export function ChatArea({
               {/* Agent Content - Individually Scrollable */}
               <div className="flex-1 overflow-y-auto px-3 py-4 pb-72 space-y-8 agent-content scrollbar-thin scrollbar-dark">
                 {/* User Prompt */}
-                <div className="w-full px-0.5">
-                  <div className="relative bg-gray-800/90  rounded-xl py-2 px-3">
-                    <div className="absolute right-3 -bottom-8">
+                <div className="w-full justify-end flex px-0.5">
+                  <div className="relative w-auto max-w-[80%] bg-gray-800/90  rounded-xl py-2 px-3 gap-2 flex flex-col">
+                    <div className="absolute right-2 -bottom-8 flex flex-row gap-2 items-center">
                       <CopyButton text={agent.prompt} size="sm" />
+
+                      {/* Show ConnectionBadge for all agents with connections (including parallel agents) */}
+                      {(() => {
+                        // Simple parallel detection: if this agent is parallel OR any adjacent agent is parallel
+                        const isParallel =
+                          agent.connectionType === "parallel" ||
+                          (agent.index > 0 &&
+                            agentGroups[agent.index - 1]?.connectionType ===
+                              "parallel") ||
+                          (agent.index < agentGroups.length - 1 &&
+                            agentGroups[agent.index + 1]?.connectionType ===
+                              "parallel");
+
+                        // Show parallel badge for parallel agents
+                        if (isParallel) {
+                          return (
+                            <ConnectionBadge
+                              type="parallel"
+                              sourceAgentIndex={agent.index}
+                              condition={agent.connectionCondition}
+                              agents={agentGroups.map((a) => ({
+                                index: a.index,
+                                name: a.name,
+                                connectionType: a.connectionType,
+                              }))}
+                            />
+                          );
+                        }
+
+                        // For non-parallel agents with connections, show normal badge
+                        if (
+                          agent.connectionType &&
+                          agent.index > 0 &&
+                          agent.connectionType !== "parallel"
+                        ) {
+                          return (
+                            <ConnectionBadge
+                              type={agent.connectionType}
+                              sourceAgentIndex={
+                                agent.sourceAgentIndex || agent.index - 1
+                              }
+                              condition={agent.connectionCondition}
+                              agents={agentGroups.map((a) => ({
+                                index: a.index,
+                                name: a.name,
+                                connectionType: a.connectionType,
+                              }))}
+                            />
+                          );
+                        }
+
+                        return null;
+                      })()}
                     </div>
-                    {agent.connectionType && agent.index > 0 && (
-                      <div className="mb-1">
-                        <ConnectionBadge
-                          type={agent.connectionType}
-                          sourceAgentIndex={agent.index - 1}
-                          condition={agent.connectionCondition}
-                          agents={agentGroups}
-                        />
-                      </div>
-                    )}
+
                     <TruncatedText
                       text={agent.prompt}
                       maxLines={3}
@@ -1207,7 +1422,7 @@ export function ChatArea({
                     {(agent.response ||
                       agent.streamedContent ||
                       agent.isStreaming) && (
-                      <div className="flex gap-4">
+                      <div className="flex gap-4 pt-8">
                         {/* <ModelAvatar model={agent.model} size="sm" /> */}
                         <div className="flex-1">
                           <div className="p-2 relative">
@@ -1253,6 +1468,7 @@ export function ChatArea({
                                     ""
                                   }
                                   size="sm"
+                                  variant="ghost"
                                 />
                               </div>
                             </div>
@@ -1335,43 +1551,59 @@ export function ChatArea({
                       !agent.response &&
                       !agent.streamedContent &&
                       !agent.error && (
-                        <div className="flex gap-4">
-                          <ModelAvatar model={agent.model} size="sm" />
-                          <div className="flex-1">
-                            <div
-                              className={`border rounded-lg p-3 ${
-                                agent.connectionType === "parallel"
-                                  ? "bg-purple-500/10 border-purple-500/30"
-                                  : "bg-gray-800/50 border-gray-700/50"
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                {agent.connectionType === "parallel" ? (
-                                  <div className="flex items-center gap-1">
-                                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse"></div>
-                                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse delay-100"></div>
-                                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse delay-200"></div>
-                                  </div>
-                                ) : (
-                                  <div className="thinking-dots">
-                                    <div className="thinking-dot"></div>
-                                    <div className="thinking-dot"></div>
-                                    <div className="thinking-dot"></div>
-                                  </div>
-                                )}
-                                <span
-                                  className={`text-xs ${
-                                    agent.connectionType === "parallel"
-                                      ? "text-purple-400"
-                                      : "text-lavender-400/80"
-                                  }`}
-                                >
-                                  {agent.connectionType === "parallel"
-                                    ? "Preparing parallel execution..."
-                                    : "Thinking..."}
-                                </span>
-                              </div>
-                            </div>
+                        <div className="pt-8">
+                          <div
+                            className={`flex items-center gap-3 border rounded-lg p-2 ${
+                              agent.connectionType === "parallel"
+                                ? "bg-purple-500/10 border-purple-500/30"
+                                : "bg-gray-800/50 border-gray-700/50"
+                            }`}
+                          >
+                            <span className="text-xs text-lavender-400/80">
+                              {(() => {
+                                // Check if this agent is waiting for a previous agent to complete
+                                if (
+                                  agent.connectionType === "direct" &&
+                                  agent.index > 0
+                                ) {
+                                  const previousAgent = agentGroups.find(
+                                    (a) => a.index === agent.index - 1
+                                  );
+                                  if (
+                                    previousAgent &&
+                                    !previousAgent.isComplete &&
+                                    !previousAgent.wasSkipped
+                                  ) {
+                                    return `Waiting for Node ${previousAgent.index + 1} to complete...`;
+                                  }
+                                }
+
+                                if (
+                                  agent.connectionType === "conditional" &&
+                                  agent.index > 0
+                                ) {
+                                  const sourceAgent = agentGroups.find(
+                                    (a) =>
+                                      a.index ===
+                                      (agent.sourceAgentIndex ||
+                                        agent.index - 1)
+                                  );
+                                  if (
+                                    sourceAgent &&
+                                    !sourceAgent.isComplete &&
+                                    !sourceAgent.wasSkipped
+                                  ) {
+                                    return `Waiting for Node ${sourceAgent.index + 1} to complete...`;
+                                  }
+                                }
+
+                                if (agent.connectionType === "parallel") {
+                                  return "Executing in parallel...";
+                                }
+
+                                return "Thinking...";
+                              })()}
+                            </span>
                           </div>
                         </div>
                       )}

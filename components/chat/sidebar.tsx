@@ -21,6 +21,10 @@ import {
   Search,
   Command,
   Unlink,
+  Clock,
+  Calendar,
+  Archive,
+  Sun,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
@@ -154,6 +158,22 @@ const groupChatsByTime = (chats: any[]): ChatGroup[] => {
 
   // Filter out empty groups
   return groups.filter((group) => group.chats.length > 0);
+};
+
+// Helper function to get icon for each time period
+const getGroupIcon = (groupTitle: string) => {
+  switch (groupTitle) {
+    case "Today":
+      return <Sun size={12} className="text-lavender-400/70" />;
+    case "Yesterday":
+      return <Clock size={12} className="text-gray-500" />;
+    case "Last 7 days":
+      return <Calendar size={12} className="text-gray-500" />;
+    case "Older":
+      return <Archive size={12} className="text-gray-600" />;
+    default:
+      return <MessageSquare size={12} className="text-gray-500" />;
+  }
 };
 
 export function Sidebar({
@@ -430,6 +450,22 @@ export function Sidebar({
         {/* Desktop Chat List */}
         <div className="flex-1 overflow-y-auto">
           <div className="px-2">
+            {/* Collapsed Search Icon - only show when collapsed and there are chats */}
+            {isCollapsed && recentChats && recentChats.length > 0 && (
+              <div className="flex justify-center mb-4 pt-2">
+                <button
+                  onClick={() => setIsCollapsed(false)}
+                  className="p-2 text-gray-400 hover:text-lavender-400 transition-all duration-200 hover:scale-110 hover:bg-gray-800/50 rounded-lg group"
+                  title="Expand to search chains"
+                >
+                  <Search
+                    size={16}
+                    className="group-hover:rotate-12 transition-transform duration-200"
+                  />
+                </button>
+              </div>
+            )}
+
             {recentChats === undefined ? (
               // Loading state
               <LoadingAnimation />
@@ -485,6 +521,14 @@ export function Sidebar({
                       {group.title}
                     </h3>
                   )}
+
+                  {/* Collapsed state separator - small visual indicator between groups */}
+                  {isCollapsed && groupIndex > 0 && (
+                    <div className="flex justify-center py-2 mb-2">
+                      {getGroupIcon(group.title)}
+                    </div>
+                  )}
+
                   {group.chats.map((chat, chatIndex) => (
                     <div
                       key={chat._id}

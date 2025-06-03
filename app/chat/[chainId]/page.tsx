@@ -743,7 +743,7 @@ function ChatPageContent() {
 
   const runChain = async (sessionId: Id<"chatSessions">, agents: Agent[]) => {
     setIsLoading(true);
-    // Set all agents in queue immediately for instant column display
+    // Set all agents in queue immediately for instant column display - KEEP THEM VISIBLE
     setQueuedAgents([...agents]);
 
     // Immediately switch to supervisor mode when chain starts
@@ -763,17 +763,7 @@ function ChatPageContent() {
           `Processing group: ${group.type} with ${group.agents.length} agents`
         );
 
-        // Update queued agents to show which ones are remaining (not currently executing)
-        const remainingAgents = agents.slice(
-          processedAgentCount + group.agents.length
-        );
-        setQueuedAgents([
-          ...agents.slice(
-            processedAgentCount,
-            processedAgentCount + group.agents.length
-          ),
-          ...remainingAgents,
-        ]);
+        // DO NOT update queued agents anymore - keep all columns visible permanently
 
         if (group.type === "sequential") {
           // Handle sequential execution (existing logic)
@@ -783,8 +773,7 @@ function ChatPageContent() {
               `Executing sequential agent ${agentIndex}: ${agent.name || `Node ${agentIndex + 1}`}`
             );
 
-            // Update queue to remove current agent
-            setQueuedAgents(agents.slice(processedAgentCount + 1));
+            // DO NOT remove agents from queue - keep all columns visible
 
             // For conditional agents, evaluate the condition
             if (
@@ -864,18 +853,14 @@ function ChatPageContent() {
             `Executing parallel group with ${group.agents.length} agents starting at index ${group.startIndex}`
           );
 
-          // For parallel execution, keep all parallel agents visible during execution
-          // Then remove them from queue after execution
+          // Keep all parallel agents visible during execution - NO removal from queue
           const parallelResults = await executeParallelGroup(
             group,
             sessionId,
             lastOutput
           );
 
-          // Update queue to remove all parallel agents that just completed
-          setQueuedAgents(
-            agents.slice(processedAgentCount + group.agents.length)
-          );
+          // DO NOT remove parallel agents from queue - keep all columns visible
 
           // Format and aggregate results
           lastOutput = formatParallelResults(parallelResults);
@@ -896,7 +881,8 @@ function ChatPageContent() {
       console.error("Failed to run chain:", error);
     } finally {
       setIsLoading(false);
-      setQueuedAgents([]); // Clear all queued agents when done
+      // DO NOT clear queued agents - keep all columns visible permanently
+      // setQueuedAgents([]); // REMOVED - columns stay open permanently
     }
   };
 

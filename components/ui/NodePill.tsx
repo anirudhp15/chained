@@ -454,7 +454,7 @@ export function NodePill({
                   className="flex items-center gap-1 px-2 py-1 bg-lavender-500 hover:bg-lavender-600 text-white rounded-md text-xs font-medium transition-colors"
                 >
                   <Plus size={12} />
-                  <span className="hidden sm:inline">Add</span>
+                  <span className="hidden sm:inline">LLM</span>
                 </button>
               )}
             </div>

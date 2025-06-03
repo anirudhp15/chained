@@ -30,7 +30,7 @@ interface ConnectionBadgeProps {
   condition?: string;
   className?: string;
   size?: "sm" | "default";
-  agents?: Array<{ index: number; name?: string }>;
+  agents?: Array<{ index: number; name?: string; connectionType?: string }>;
 }
 
 const CONNECTION_TYPES = [
@@ -121,7 +121,44 @@ export function ConnectionBadge({
   const iconSize = size === "sm" ? 12 : 14;
   const iconRotate = connection?.iconRotate || "";
 
-  // Get the source agent's name
+  // For parallel agents, find all other parallel agents in the same group
+  const getParallelAgentNames = () => {
+    if (type !== "parallel") return "";
+
+    // Find current agent
+    const currentAgent = agents.find(
+      (agent) => agent.index === sourceAgentIndex
+    );
+    if (!currentAgent) return "";
+
+    // Find all parallel agents (including current agent)
+    const allParallelAgents = agents.filter(
+      (agent) =>
+        agent.connectionType === "parallel" ||
+        // Also include agents adjacent to parallel agents (to catch first agent in parallel group)
+        (agent.index > 0 &&
+          agents[agent.index - 1]?.connectionType === "parallel") ||
+        (agent.index < agents.length - 1 &&
+          agents[agent.index + 1]?.connectionType === "parallel")
+    );
+
+    // Get other parallel agents (excluding current)
+    const otherParallelAgents = allParallelAgents.filter(
+      (agent) => agent.index !== sourceAgentIndex
+    );
+
+    // If no other parallel agents, show the current agent name
+    if (otherParallelAgents.length === 0) {
+      return currentAgent.name || `Node ${(sourceAgentIndex || 0) + 1}`;
+    }
+
+    // Return names of other parallel agents separated by "|"
+    return otherParallelAgents
+      .map((agent) => agent.name || `Node ${agent.index + 1}`)
+      .join(" | ");
+  };
+
+  // Get the source agent's name (for non-parallel connections)
   const sourceAgent = agents.find((agent) => agent.index === sourceAgentIndex);
   const sourceAgentName =
     sourceAgent?.name || `Node ${(sourceAgentIndex || 0) + 1}`;
@@ -129,11 +166,11 @@ export function ConnectionBadge({
   const getTypeColor = () => {
     switch (type) {
       case "direct":
-        return "text-blue-400 bg-blue-500/10 border-blue-500/20";
+        return "text-blue-400 bg-blue-500/20 border-blue-500/20";
       case "conditional":
-        return "text-amber-400 bg-amber-500/10 border-amber-500/20";
+        return "text-amber-400 bg-amber-500/20 border-amber-500/20";
       case "parallel":
-        return "text-purple-400 bg-purple-500/10 border-purple-500/20";
+        return "text-purple-400 bg-purple-500/20 border-purple-500/20";
     }
   };
 
@@ -141,11 +178,14 @@ export function ConnectionBadge({
   const paddingSize =
     size === "sm" ? "px-2 py-0.5 md:px-2.5 md:py-1" : "px-2.5 py-1 ";
 
+  // For parallel connections, get the parallel agent names
+  const displayName = type === "parallel" ? "Parallel" : sourceAgentName;
+
   return (
     <div className={`flex items-center ${className}`}>
       <div className="relative group">
         <div
-          className={`flex items-center gap-1 md:gap-1.5 ${paddingSize} rounded-full border ${getTypeColor()} ${textSize} font-medium`}
+          className={`flex items-center gap-1 md:gap-1.5 ${paddingSize} rounded-lg border ${getTypeColor()} ${textSize} font-medium`}
         >
           {IconComponent && (
             <span
@@ -156,13 +196,10 @@ export function ConnectionBadge({
           )}
 
           {/* <span className="text-gray-300">chained from</span> */}
-          <span className="font-semibold hidden md:inline">
-            {sourceAgentName}
-          </span>
+          <span className="font-semibold hidden md:inline">{displayName}</span>
           <span className="font-semibold md:hidden text-xs">
-            {sourceAgentName.split(" ")[0]}{" "}
-            {sourceAgentName.split(" ").length > 1 &&
-              sourceAgentName.split(" ")[1]}
+            {displayName.split(" ")[0]}{" "}
+            {displayName.split(" ").length > 1 && displayName.split(" ")[1]}
           </span>
         </div>
 
@@ -173,6 +210,20 @@ export function ConnectionBadge({
             <code className="text-xs font-mono text-amber-300">
               {condition}
             </code>
+            {/* Tooltip arrow */}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-600/50"></div>
+          </div>
+        )}
+
+        {/* Hover tooltip for parallel relationships */}
+        {type === "parallel" && (
+          <div className="absolute top-full mt-2 px-2 md:px-3 py-1.5 md:py-2 bg-gray-900/95 backdrop-blur-sm border border-gray-600/50 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap">
+            <div className="text-xs text-gray-300 mb-1">
+              Executing in parallel with:
+            </div>
+            <div className="text-xs font-medium text-purple-300">
+              {displayName}
+            </div>
             {/* Tooltip arrow */}
             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-600/50"></div>
           </div>
