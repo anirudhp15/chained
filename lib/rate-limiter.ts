@@ -75,10 +75,10 @@ export const rateLimiters = {
     uniqueTokenPerInterval: 100, // 100 requests per minute
   }),
 
-  // LLM endpoints (expensive)
+  // LLM endpoints (expensive) - Increased for parallel execution
   llm: new RateLimiter({
     interval: 60 * 1000, // 1 minute
-    uniqueTokenPerInterval: 10, // 10 LLM calls per minute
+    uniqueTokenPerInterval: 20, // 20 LLM calls per minute (increased from 10)
   }),
 
   // File upload endpoints

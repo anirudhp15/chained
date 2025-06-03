@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   Zap,
+  Forward,
   ChevronRight,
   ChevronLeft,
   Focus,
@@ -37,6 +38,7 @@ interface ChatAreaProps {
   focusedAgentIndex?: number | null;
   onFocusAgent?: (agentIndex: number | null) => void;
   onLoadPreset?: (agents: any[]) => void;
+  queuedAgents?: any[];
 }
 
 interface ColumnState {
@@ -114,29 +116,18 @@ const LiveStatusIndicator = ({ agent }: { agent: any }) => {
 // Response Preview Line Component
 const ResponsePreviewLine = ({ agent }: { agent: any }) => {
   const getPromptPreview = () => {
-    if (!agent.prompt?.trim()) return null;
-    const preview = agent.prompt.substring(0, 80);
-    return preview + (agent.prompt.length > 80 ? "..." : "");
+    if (!agent.prompt) return null;
+    return agent.prompt.slice(0, 80) + (agent.prompt.length > 80 ? "..." : "");
   };
 
   const getResponsePreview = () => {
-    const content = agent.response || agent.streamedContent;
-    if (!content) return null;
-    const preview = content.substring(0, 90);
-    return preview + (content.length > 90 ? "..." : "");
+    const response = agent.response || agent.streamedContent;
+    if (!response) return null;
+    return response.slice(0, 100) + (response.length > 100 ? "..." : "");
   };
 
-  const getAgentDisplayName = () => {
-    // Debug: Log the agent object to see what's available
-    console.log("Agent object in ResponsePreviewLine:", {
-      name: agent.name,
-      agentName: agent.agentName,
-      index: agent.index,
-      allKeys: Object.keys(agent),
-    });
-
-    // Try multiple sources for the agent name with proper fallback
-    return agent.name || agent.agentName || `Node ${(agent.index || 0) + 1}`;
+  const getAgentModelIcon = () => {
+    return <ModelAvatar model={agent.model} size="xs" />;
   };
 
   const getConnectionIcon = () => {
@@ -152,9 +143,9 @@ const ResponsePreviewLine = ({ agent }: { agent: any }) => {
     };
 
     const connectionColors: Record<ConnectionType, string> = {
-      direct: "bg-blue-500/20 text-blue-400",
-      conditional: "bg-amber-500/20 text-amber-400",
-      parallel: "bg-purple-500/20 text-purple-400",
+      direct: "text-blue-400",
+      conditional: "text-amber-400",
+      parallel: " text-purple-400",
     };
 
     // Type guard to ensure we have a valid connection type
@@ -178,17 +169,45 @@ const ResponsePreviewLine = ({ agent }: { agent: any }) => {
     );
   };
 
+  const getStatusMessage = () => {
+    if (agent.isStreaming) {
+      if (agent.connectionType === "parallel") {
+        return "Executing in parallel...";
+      }
+      return "Generating response...";
+    }
+
+    if (agent.wasSkipped) {
+      return "Skipped due to condition";
+    }
+
+    if (agent.error) {
+      return "Failed to complete";
+    }
+
+    if (!agent.response && !agent.streamedContent) {
+      if (agent.connectionType === "parallel") {
+        return "Pending parallel execution";
+      }
+      return "Pending execution";
+    }
+
+    return null;
+  };
+
   const promptPreview = getPromptPreview();
   const responsePreview = getResponsePreview();
+  const statusMessage = getStatusMessage();
   const { user } = useUser();
+
   return (
-    <div className="overflow-hidden mt-2">
+    <div className="overflow-hidden mt-2 max-w-[22rem] sm:max-w-[32rem] md:max-w-[36rem]">
       {/* Prompt Preview Row */}
       {promptPreview && (
         <div className="text-xs text-left mobile-card-content-row pl-2">
-          <div className="text-gray-400 leading-relaxed line-clamp-1">
+          <div className="text-gray-400  flex gap-2 leading-relaxed line-clamp-1">
             <span className="font-normal text-lavender-400">
-              {user?.fullName || user?.firstName || "User"}
+              <Forward size={16} />
             </span>{" "}
             {promptPreview}
           </div>
@@ -197,57 +216,32 @@ const ResponsePreviewLine = ({ agent }: { agent: any }) => {
 
       {/* Response/Status Row */}
       <div className="text-xs text-left mobile-card-content-row pl-2">
-        {agent.isStreaming ? (
-          <>
-            <div className="text-gray-400 leading-relaxed flex items-center gap-2">
-              {getConnectionIcon()}
-              <span className="font-normal whitespace-nowrap text-lavender-400">
-                {getAgentDisplayName()}
-              </span>{" "}
-              Generating response...
-            </div>
-          </>
+        {statusMessage ? (
+          <div className="text-gray-400 leading-relaxed flex items-center gap-2">
+            {getConnectionIcon()}
+            {getAgentModelIcon()}
+            {/* <span className="font-normal whitespace-nowrap text-lavender-400">
+              {agent.name || `Node ${agent.index + 1}`}
+            </span>{" "} */}
+            {statusMessage}
+            {agent.connectionType === "parallel" && agent.isStreaming && (
+              <div className="flex items-center gap-1 ml-2">
+                <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+                <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-100"></div>
+                <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-200"></div>
+              </div>
+            )}
+          </div>
         ) : responsePreview ? (
-          <>
-            <div className="text-gray-400 whitespace-nowrap  leading-relaxed line-clamp-1 flex items-center gap-2">
-              {getConnectionIcon()}
-              <span className="font-normal text-lavender-400">
-                {getAgentDisplayName()}
-              </span>{" "}
-              {responsePreview}
-            </div>
-          </>
-        ) : agent.wasSkipped ? (
-          <>
-            <div className="text-gray-400 leading-relaxed flex items-center gap-2">
-              {getConnectionIcon()}
-              <span className="font-normal text-lavender-400">
-                {getAgentDisplayName()}:
-              </span>{" "}
-              Skipped due to condition
-            </div>
-          </>
-        ) : agent.error ? (
-          <>
-            <div className="text-gray-400 leading-relaxed flex items-center gap-2">
-              {getConnectionIcon()}
-              <span className="font-normal text-lavender-400">
-                {getAgentDisplayName()}:
-              </span>{" "}
-              Failed to complete
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="text-gray-400 leading-relaxed flex items-center gap-2">
-              {getConnectionIcon()}
-              <span className="font-normal text-lavender-400">
-                {getAgentDisplayName()}:
-              </span>{" "}
-              Pending execution
-            </div>
-          </>
-        )}
+          <div className="text-gray-400 whitespace-nowrap overflow-x-hidden leading-relaxed line-clamp-1 flex items-center gap-2">
+            {getConnectionIcon()}
+            {getAgentModelIcon()}
+            {/* <span className="font-normal text-lavender-400">
+              {agent.name || `Node ${agent.index + 1}`}
+            </span>{" "} */}
+            {responsePreview}
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -493,9 +487,48 @@ function MobileAgentCard({
 
           {/* Error State */}
           {!agent.wasSkipped && agent.error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-              <div className="text-xs text-red-400 mb-1">Error</div>
-              <p className="text-red-300 text-sm">{agent.error}</p>
+            <div
+              className={`border rounded-lg p-3 ${
+                agent.error.includes("Rate limit") ||
+                agent.error.includes("rate limit")
+                  ? "bg-yellow-500/10 border-yellow-500/30"
+                  : "bg-red-500/10 border-red-500/30"
+              }`}
+            >
+              <div
+                className={`text-xs mb-1 ${
+                  agent.error.includes("Rate limit") ||
+                  agent.error.includes("rate limit")
+                    ? "text-yellow-400"
+                    : "text-red-400"
+                }`}
+              >
+                {agent.error.includes("Rate limit") ||
+                agent.error.includes("rate limit")
+                  ? "Rate Limited"
+                  : "Error"}
+              </div>
+              <p
+                className={`text-sm ${
+                  agent.error.includes("Rate limit") ||
+                  agent.error.includes("rate limit")
+                    ? "text-yellow-300"
+                    : "text-red-300"
+                }`}
+              >
+                {agent.error.includes("Rate limit") ||
+                agent.error.includes("rate limit")
+                  ? "Request rate limited. The system will automatically retry with intelligent spacing."
+                  : agent.error}
+              </p>
+              {agent.connectionType === "parallel" &&
+                (agent.error.includes("Rate limit") ||
+                  agent.error.includes("rate limit")) && (
+                  <div className="mt-2 text-xs text-yellow-400/70">
+                    💡 Parallel agents use staggered execution to avoid rate
+                    limits
+                  </div>
+                )}
             </div>
           )}
         </div>
@@ -509,6 +542,7 @@ export function ChatArea({
   focusedAgentIndex,
   onFocusAgent,
   onLoadPreset,
+  queuedAgents,
 }: ChatAreaProps) {
   const agentSteps = useQuery(
     api.queries.getAgentSteps,
@@ -546,18 +580,17 @@ export function ChatArea({
 
   // Group steps by agent and calculate layout
   const agentGroups = useMemo(() => {
-    if (!agentSteps) return [];
-
     const stepsByAgent = new Map();
 
-    agentSteps.forEach((step) => {
-      if (!stepsByAgent.has(step.index)) {
-        stepsByAgent.set(step.index, {
-          index: step.index,
-          model: step.model,
-          prompt: step.prompt,
-          name: step.name,
-          provider: step.provider,
+    // First, if we have queued agents, create placeholder entries for immediate UI display
+    if (queuedAgents && queuedAgents.length > 0) {
+      queuedAgents.forEach((agent, index) => {
+        stepsByAgent.set(index, {
+          index: index,
+          model: agent.model,
+          prompt: agent.prompt,
+          name: agent.name,
+          provider: agent.provider || agent.model,
           response: null,
           streamedContent: null,
           isStreaming: false,
@@ -567,45 +600,88 @@ export function ChatArea({
           tokenUsage: null,
           error: null,
           isComplete: false,
-          _id: step._id,
+          _id: `placeholder-${index}`, // Temporary ID
           wasSkipped: false,
           skipReason: null,
-          connectionType: null,
-          connectionCondition: null,
+          connectionType: agent.connection?.type || "direct",
+          connectionCondition: agent.connection?.condition,
           // Performance tracking fields
           executionStartTime: null,
           executionEndTime: null,
           executionDuration: null,
           tokensPerSecond: null,
           estimatedCost: null,
+          // Add multimodal data
+          images: agent.images,
+          audioBlob: agent.audioBlob,
+          audioDuration: agent.audioDuration,
+          webSearchData: agent.webSearchData,
         });
-      }
+      });
+    }
 
-      const agent = stepsByAgent.get(step.index);
-      agent.response = step.response;
-      agent.streamedContent = step.streamedContent;
-      agent.isStreaming = step.isStreaming;
-      agent.reasoning = step.reasoning;
-      agent.thinking = step.thinking;
-      agent.isThinking = step.isThinking;
-      agent.tokenUsage = step.tokenUsage;
-      agent.error = step.error;
-      agent.isComplete = step.isComplete;
-      agent.wasSkipped = step.wasSkipped || false;
-      agent.skipReason = step.skipReason;
-      agent.connectionType = step.connectionType;
-      agent.connectionCondition = step.connectionCondition;
-      // Performance tracking fields
-      agent.executionStartTime = step.executionStartTime;
-      agent.executionEndTime = step.executionEndTime;
-      agent.executionDuration = step.executionDuration;
-      agent.tokensPerSecond = step.tokensPerSecond;
-      agent.estimatedCost = step.estimatedCost;
-      // Preserve the name - update it if step has a name, otherwise keep the existing one
-      if (step.name && step.name.trim()) {
-        agent.name = step.name;
-      }
-    });
+    // Then update with actual database data
+    if (agentSteps) {
+      agentSteps.forEach((step) => {
+        if (!stepsByAgent.has(step.index)) {
+          stepsByAgent.set(step.index, {
+            index: step.index,
+            model: step.model,
+            prompt: step.prompt,
+            name: step.name,
+            provider: step.provider,
+            response: null,
+            streamedContent: null,
+            isStreaming: false,
+            reasoning: null,
+            thinking: null,
+            isThinking: false,
+            tokenUsage: null,
+            error: null,
+            isComplete: false,
+            _id: step._id,
+            wasSkipped: false,
+            skipReason: null,
+            connectionType: null,
+            connectionCondition: null,
+            // Performance tracking fields
+            executionStartTime: null,
+            executionEndTime: null,
+            executionDuration: null,
+            tokensPerSecond: null,
+            estimatedCost: null,
+          });
+        }
+
+        const agent = stepsByAgent.get(step.index);
+        // Update with database data
+        agent.response = step.response;
+        agent.streamedContent = step.streamedContent;
+        agent.isStreaming = step.isStreaming;
+        agent.reasoning = step.reasoning;
+        agent.thinking = step.thinking;
+        agent.isThinking = step.isThinking;
+        agent.tokenUsage = step.tokenUsage;
+        agent.error = step.error;
+        agent.isComplete = step.isComplete;
+        agent.wasSkipped = step.wasSkipped || false;
+        agent.skipReason = step.skipReason;
+        agent.connectionType = step.connectionType;
+        agent.connectionCondition = step.connectionCondition;
+        // Performance tracking fields
+        agent.executionStartTime = step.executionStartTime;
+        agent.executionEndTime = step.executionEndTime;
+        agent.executionDuration = step.executionDuration;
+        agent.tokensPerSecond = step.tokensPerSecond;
+        agent.estimatedCost = step.estimatedCost;
+        // Update with real ID
+        agent._id = step._id;
+        // Preserve the name - update it if step has a name, otherwise keep the existing one
+        if (step.name && step.name.trim()) {
+          agent.name = step.name;
+        }
+      });
+    }
 
     const groups = Array.from(stepsByAgent.values()).sort(
       (a, b) => a.index - b.index
@@ -632,7 +708,7 @@ export function ChatArea({
     }
 
     return groups;
-  }, [agentSteps, columnStates.length]);
+  }, [agentSteps, queuedAgents, columnStates.length]);
 
   // Get focused agent data
   const focusedAgent =
@@ -788,9 +864,22 @@ export function ChatArea({
                           size="sm"
                         />
                         {agent.isStreaming && (
-                          <div className="flex items-center gap-1">
-                            <div className="streaming-indicator"></div>
-                            <span className="text-sm">Streaming...</span>
+                          <div className="flex items-center gap-2">
+                            {agent.connectionType === "parallel" ? (
+                              <div className="flex items-center gap-1">
+                                <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+                                <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-100"></div>
+                                <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-200"></div>
+                                <span className="text-xs text-purple-400">
+                                  Parallel streaming...
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <div className="streaming-indicator"></div>
+                                <span className="text-xs">Streaming...</span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -866,21 +955,8 @@ export function ChatArea({
               </div>
             )}
 
-          {/* Error State */}
-          {!agent.wasSkipped && agent.error && (
-            <div className="flex gap-4">
-              <ModelAvatar model={agent.model} size="sm" />
-              <div className="flex-1">
-                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-                  <div className="text-sm text-red-400 mb-2">Error</div>
-                  <p className="text-red-300 text-base">{agent.error}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Loading State */}
-          {!agent.wasSkipped &&
+          {!agent.isStreaming &&
             !agent.isComplete &&
             !agent.response &&
             !agent.streamedContent &&
@@ -888,24 +964,90 @@ export function ChatArea({
               <div className="flex gap-4">
                 <ModelAvatar model={agent.model} size="sm" />
                 <div className="flex-1">
-                  <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
-                    <div className="text-sm text-lavender-400/80 mb-3">
-                      Thinking...
-                    </div>
+                  <div
+                    className={`border rounded-lg p-3 ${
+                      agent.connectionType === "parallel"
+                        ? "bg-purple-500/10 border-purple-500/30"
+                        : "bg-gray-800/50 border-gray-700/50"
+                    }`}
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="thinking-dots">
-                        <div className="thinking-dot"></div>
-                        <div className="thinking-dot"></div>
-                        <div className="thinking-dot"></div>
-                      </div>
-                      <span className="text-xs text-lavender-400/80">
-                        Thinking...
+                      {agent.connectionType === "parallel" ? (
+                        <div className="flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse"></div>
+                          <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse delay-100"></div>
+                          <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse delay-200"></div>
+                        </div>
+                      ) : (
+                        <div className="thinking-dots">
+                          <div className="thinking-dot"></div>
+                          <div className="thinking-dot"></div>
+                          <div className="thinking-dot"></div>
+                        </div>
+                      )}
+                      <span
+                        className={`text-xs ${
+                          agent.connectionType === "parallel"
+                            ? "text-purple-400"
+                            : "text-lavender-400/80"
+                        }`}
+                      >
+                        {agent.connectionType === "parallel"
+                          ? "Preparing parallel execution..."
+                          : "Thinking..."}
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
             )}
+
+          {/* Error State */}
+          {!agent.wasSkipped && agent.error && (
+            <div
+              className={`border rounded-lg p-3 ${
+                agent.error.includes("Rate limit") ||
+                agent.error.includes("rate limit")
+                  ? "bg-yellow-500/10 border-yellow-500/30"
+                  : "bg-red-500/10 border-red-500/30"
+              }`}
+            >
+              <div
+                className={`text-xs mb-1 ${
+                  agent.error.includes("Rate limit") ||
+                  agent.error.includes("rate limit")
+                    ? "text-yellow-400"
+                    : "text-red-400"
+                }`}
+              >
+                {agent.error.includes("Rate limit") ||
+                agent.error.includes("rate limit")
+                  ? "Rate Limited"
+                  : "Error"}
+              </div>
+              <p
+                className={`text-sm ${
+                  agent.error.includes("Rate limit") ||
+                  agent.error.includes("rate limit")
+                    ? "text-yellow-300"
+                    : "text-red-300"
+                }`}
+              >
+                {agent.error.includes("Rate limit") ||
+                agent.error.includes("rate limit")
+                  ? "Request rate limited. The system will automatically retry with intelligent spacing."
+                  : agent.error}
+              </p>
+              {agent.connectionType === "parallel" &&
+                (agent.error.includes("Rate limit") ||
+                  agent.error.includes("rate limit")) && (
+                  <div className="mt-2 text-xs text-yellow-400/70">
+                    💡 Parallel agents use staggered execution to avoid rate
+                    limits
+                  </div>
+                )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -933,7 +1075,7 @@ export function ChatArea({
       className="flex-1 flex flex-col overflow-hidden bg-gray-950/50  w-full relative"
     >
       {/* Chain Performance Summary */}
-      {agentGroups.length > 1 && (
+      {agentGroups.length > 1 && showDetailedPerformance && (
         <div className="flex-shrink-0 px-2 md:px-4 py-2 md:py-3 border-b border-gray-700/30">
           <ChainPerformanceSummary
             steps={agentGroups.map((agent) => ({
@@ -993,21 +1135,23 @@ export function ChatArea({
               </div>
 
               {/* Agent Content - Individually Scrollable */}
-              <div className="flex-1 overflow-y-auto px-3 py-4 pb-64 space-y-4 agent-content scrollbar-thin scrollbar-dark">
+              <div className="flex-1 overflow-y-auto px-3 py-4 pb-72 space-y-8 agent-content scrollbar-thin scrollbar-dark">
                 {/* User Prompt */}
                 <div className="w-full px-0.5">
-                  <div className="bg-gray-800/90 border border-gray-700/50 rounded-lg p-4">
-                    <div className="flex flex-row items-center gap-2 pb-2">
-                      <UserDisplay />
-                      {agent.connectionType && agent.index > 0 && (
+                  <div className="relative bg-gray-800/90  rounded-xl py-2 px-3">
+                    <div className="absolute right-3 -bottom-8">
+                      <CopyButton text={agent.prompt} size="sm" />
+                    </div>
+                    {agent.connectionType && agent.index > 0 && (
+                      <div className="mb-1">
                         <ConnectionBadge
                           type={agent.connectionType}
                           sourceAgentIndex={agent.index - 1}
                           condition={agent.connectionCondition}
                           agents={agentGroups}
                         />
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <TruncatedText
                       text={agent.prompt}
                       maxLines={3}
@@ -1066,19 +1210,40 @@ export function ChatArea({
                       <div className="flex gap-4">
                         {/* <ModelAvatar model={agent.model} size="sm" /> */}
                         <div className="flex-1">
-                          <div className="p-2 ">
-                            <div className="text-xs text-lavender-400/80 mb-1 flex items-center justify-between">
+                          <div className="p-2 relative">
+                            <div className="absolute left-2 -bottom-6">
+                              <CopyButton
+                                text={
+                                  agent.response || agent.streamedContent || ""
+                                }
+                                size="sm"
+                              />
+                            </div>
+                            <div className="text-xs text-lavender-400/80 mb-1 items-center hidden justify-between">
                               <span className="flex items-center gap-2">
                                 <ModelAvatar model={agent.model} size="sm" />
                                 {agent.name || `Node ${agent.index + 1}`}
                               </span>
                               <div className="flex items-center gap-2">
                                 {agent.isStreaming && (
-                                  <div className="flex items-center gap-1">
-                                    <div className="streaming-indicator"></div>
-                                    <span className="text-xs">
-                                      Streaming...
-                                    </span>
+                                  <div className="flex items-center gap-2">
+                                    {agent.connectionType === "parallel" ? (
+                                      <div className="flex items-center gap-1">
+                                        <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+                                        <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-100"></div>
+                                        <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-200"></div>
+                                        <span className="text-xs text-purple-400">
+                                          Parallel streaming...
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <div className="streaming-indicator"></div>
+                                        <span className="text-xs">
+                                          Streaming...
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                                 <CopyButton
@@ -1173,15 +1338,37 @@ export function ChatArea({
                         <div className="flex gap-4">
                           <ModelAvatar model={agent.model} size="sm" />
                           <div className="flex-1">
-                            <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
+                            <div
+                              className={`border rounded-lg p-3 ${
+                                agent.connectionType === "parallel"
+                                  ? "bg-purple-500/10 border-purple-500/30"
+                                  : "bg-gray-800/50 border-gray-700/50"
+                              }`}
+                            >
                               <div className="flex items-center gap-3">
-                                <div className="thinking-dots">
-                                  <div className="thinking-dot"></div>
-                                  <div className="thinking-dot"></div>
-                                  <div className="thinking-dot"></div>
-                                </div>
-                                <span className="text-xs text-lavender-400/80">
-                                  Thinking...
+                                {agent.connectionType === "parallel" ? (
+                                  <div className="flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse"></div>
+                                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse delay-100"></div>
+                                    <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse delay-200"></div>
+                                  </div>
+                                ) : (
+                                  <div className="thinking-dots">
+                                    <div className="thinking-dot"></div>
+                                    <div className="thinking-dot"></div>
+                                    <div className="thinking-dot"></div>
+                                  </div>
+                                )}
+                                <span
+                                  className={`text-xs ${
+                                    agent.connectionType === "parallel"
+                                      ? "text-purple-400"
+                                      : "text-lavender-400/80"
+                                  }`}
+                                >
+                                  {agent.connectionType === "parallel"
+                                    ? "Preparing parallel execution..."
+                                    : "Thinking..."}
                                 </span>
                               </div>
                             </div>
@@ -1193,14 +1380,48 @@ export function ChatArea({
 
                 {/* Error State */}
                 {!agent.wasSkipped && agent.error && (
-                  <div className="flex gap-4">
-                    <ModelAvatar model={agent.model} size="sm" />
-                    <div className="flex-1">
-                      <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                        <div className="text-xs text-red-400 mb-1">Error</div>
-                        <p className="text-red-300 text-base">{agent.error}</p>
-                      </div>
+                  <div
+                    className={`border rounded-lg p-3 ${
+                      agent.error.includes("Rate limit") ||
+                      agent.error.includes("rate limit")
+                        ? "bg-yellow-500/10 border-yellow-500/30"
+                        : "bg-red-500/10 border-red-500/30"
+                    }`}
+                  >
+                    <div
+                      className={`text-xs mb-1 ${
+                        agent.error.includes("Rate limit") ||
+                        agent.error.includes("rate limit")
+                          ? "text-yellow-400"
+                          : "text-red-400"
+                      }`}
+                    >
+                      {agent.error.includes("Rate limit") ||
+                      agent.error.includes("rate limit")
+                        ? "Rate Limited"
+                        : "Error"}
                     </div>
+                    <p
+                      className={`text-sm ${
+                        agent.error.includes("Rate limit") ||
+                        agent.error.includes("rate limit")
+                          ? "text-yellow-300"
+                          : "text-red-300"
+                      }`}
+                    >
+                      {agent.error.includes("Rate limit") ||
+                      agent.error.includes("rate limit")
+                        ? "Request rate limited. The system will automatically retry with intelligent spacing."
+                        : agent.error}
+                    </p>
+                    {agent.connectionType === "parallel" &&
+                      (agent.error.includes("Rate limit") ||
+                        agent.error.includes("rate limit")) && (
+                        <div className="mt-2 text-xs text-yellow-400/70">
+                          💡 Parallel agents use staggered execution to avoid
+                          rate limits
+                        </div>
+                      )}
                   </div>
                 )}
               </div>

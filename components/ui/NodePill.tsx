@@ -437,7 +437,7 @@ export function NodePill({
                     e.stopPropagation();
                     onRemove();
                   }}
-                  className="flex items-center gap-1 px-2 py-1 bg-gray-700/50 hover:bg-red-600/80 text-gray-400 hover:text-white rounded-xl text-xs font-medium transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 bg-gray-700/50 hover:bg-red-600/80 text-gray-400 hover:text-white rounded-md text-xs font-medium transition-colors"
                 >
                   <Trash2 size={12} />
                   <span className="hidden sm:inline">Remove</span>

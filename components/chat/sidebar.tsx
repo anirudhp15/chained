@@ -20,6 +20,7 @@ import {
   X,
   Search,
   Command,
+  Unlink,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
@@ -351,14 +352,18 @@ export function Sidebar({
         <div className="p-4 flex justify-center">
           <button
             onClick={() => router.push("/chat")}
-            className={`flex items-center text-sm justify-between font-semibold gap-2 p-2.5 bg-lavender-500 hover:bg-lavender-600 text-gray-200 rounded-lg transition-all duration-200 lavender-glow hover:shadow-lavender-500/25 ${
+            className={`flex items-center text-sm justify-between font-semibold gap-2 p-2.5 bg-lavender-500 hover:bg-lavender-600 group text-gray-200 rounded-lg transition-all duration-200 lavender-glow hover:shadow-lavender-500/25 ${
               isCollapsed ? "w-8 h-8 justify-center" : "w-full"
             }`}
           >
             <div className="flex items-center gap-4">
               <LinkIcon
                 size={16}
-                className={`${isCollapsed ? "text-white block " : "text-gray-200"} transition-transform duration-200 hover:rotate-90`}
+                className={`${isCollapsed ? "text-white block " : "text-gray-200"} transition-transform duration-200 group-hover:hidden block hover:rotate-90`}
+              />
+              <Unlink
+                size={16}
+                className={`${isCollapsed ? "text-white block " : "text-gray-200"} transition-transform duration-200 group-hover:block hidden hover:rotate-90`}
               />
               {!isCollapsed && <span>New Chain</span>}
             </div>
@@ -489,7 +494,7 @@ export function Sidebar({
                     >
                       <button
                         onClick={() => router.push(`/chat/${chat._id}`)}
-                        className={`flex relative z-10 items-center text-xs gap-2 rounded-lg text-left transition-all duration-200 hover:scale-[1.02] ${
+                        className={`flex relative z-10 items-center text-xs gap-2 group rounded-lg text-left transition-all duration-200 hover:scale-[1.02] ${
                           currentSessionId === chat._id
                             ? "bg-lavender-500/20 text-lavender-400 shadow-md shadow-lavender-500/10"
                             : "text-gray-300 hover:bg-gray-800 hover:text-white"
@@ -501,7 +506,11 @@ export function Sidebar({
                       >
                         <LinkIcon
                           size={16}
-                          className={`${isCollapsed ? "text-lavender-400/50 block " : "text-gray-400"} transition-transform duration-200 hover:rotate-90`}
+                          className={`${isCollapsed ? "text-lavender-400/50 block " : "text-gray-400"} transition-transform duration-200 group-hover:hidden block hover:rotate-90`}
+                        />
+                        <Unlink
+                          size={16}
+                          className={`${isCollapsed ? "text-lavender-400/50 block " : "text-gray-400"} transition-transform duration-200 group-hover:block hidden hover:rotate-90`}
                         />
                         {!isCollapsed && (
                           <>

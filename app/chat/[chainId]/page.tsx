@@ -27,6 +27,22 @@ import Link from "next/link";
 import { ArrowLeft, Bot, MessageSquare } from "lucide-react";
 import { SupervisorInterface } from "../../../components/supervisor/supervisor-interface";
 
+// Parallel execution type definitions
+interface ExecutionGroup {
+  type: "sequential" | "parallel";
+  agents: Agent[];
+  startIndex: number;
+}
+
+interface ParallelResult {
+  agent: Agent;
+  stepId: Id<"agentSteps">;
+  result: string;
+  success: boolean;
+  error?: string;
+  completedAt: number;
+}
+
 function ChatPageContent() {
   const params = useParams();
   const router = useRouter();
@@ -421,16 +437,14 @@ function ChatPageContent() {
   ): Promise<string> => {
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
-        const previousSteps = await convex.query(
-          api.queries.getPreviousAgentSteps,
-          {
-            sessionId,
-            beforeIndex,
-          }
-        );
+        const previousSteps = await convex.query(api.queries.getAgentSteps, {
+          sessionId,
+        });
 
-        // Get the most recent non-skipped agent's output
-        for (let i = previousSteps.length - 1; i >= 0; i--) {
+        if (!previousSteps || previousSteps.length === 0) return "";
+
+        // Get the output from the agent immediately before this one
+        for (let i = beforeIndex - 1; i >= 0; i--) {
           const step = previousSteps[i];
 
           if (
@@ -461,107 +475,428 @@ function ChatPageContent() {
     return "";
   };
 
+  // Helper function to group agents by execution type
+  const groupAgentsByExecution = (agents: Agent[]): ExecutionGroup[] => {
+    const groups: ExecutionGroup[] = [];
+    let currentGroup: ExecutionGroup | null = null;
+
+    for (let i = 0; i < agents.length; i++) {
+      const agent = agents[i];
+      const connectionType = agent.connection?.type || "direct";
+
+      // First agent is always sequential
+      if (i === 0) {
+        currentGroup = {
+          type: "sequential",
+          agents: [agent],
+          startIndex: i,
+        };
+        groups.push(currentGroup);
+        continue;
+      }
+
+      // If this agent is parallel and the previous group is also parallel, add to existing group
+      if (connectionType === "parallel" && currentGroup?.type === "parallel") {
+        currentGroup.agents.push(agent);
+      }
+      // If this agent is parallel but previous wasn't, start new parallel group
+      else if (connectionType === "parallel") {
+        currentGroup = {
+          type: "parallel",
+          agents: [agent],
+          startIndex: i,
+        };
+        groups.push(currentGroup);
+      }
+      // If this agent is not parallel, start new sequential group
+      else {
+        currentGroup = {
+          type: "sequential",
+          agents: [agent],
+          startIndex: i,
+        };
+        groups.push(currentGroup);
+      }
+    }
+
+    return groups;
+  };
+
+  // TRULY CONCURRENT Helper function to execute parallel agents with rate limit handling
+  const executeParallelGroup = async (
+    group: ExecutionGroup,
+    sessionId: Id<"chatSessions">,
+    sharedContext: string
+  ): Promise<ParallelResult[]> => {
+    console.log(
+      `🚀 PARALLEL-EXECUTION: Starting ${group.agents.length} agents with intelligent spacing`
+    );
+
+    // Generate a shared execution group ID for all parallel agents
+    const executionGroupId = Math.floor(Date.now() / 1000);
+    const executionStartTime = Date.now();
+
+    // Function to execute a single agent with retry logic
+    const executeAgentWithRetry = async (
+      agent: Agent,
+      groupIndex: number,
+      delay: number = 0
+    ): Promise<ParallelResult & { agentIndex: number; duration: number }> => {
+      const agentIndex = group.startIndex + groupIndex;
+
+      // Add staggered delay to prevent simultaneous API hits
+      if (delay > 0) {
+        console.log(
+          `🚀 PARALLEL-EXECUTION: Agent ${agentIndex} waiting ${delay}ms to prevent rate limit`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+
+      const agentStartTime = Date.now();
+
+      console.log(
+        `🚀 PARALLEL-EXECUTION: Agent ${agentIndex} (${agent.name || "Unnamed"}) starting...`
+      );
+
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          // Build prompt with shared context
+          const prompt = sharedContext
+            ? `${sharedContext}\n\nNow, based on that context: ${agent.prompt}`
+            : agent.prompt;
+
+          // CREATE DATABASE RECORD AND START STREAMING
+          const stepId = await addAgentStep({
+            sessionId,
+            index: agentIndex,
+            model: agent.model,
+            prompt: agent.prompt,
+            name: agent.name,
+            connectionType: agent.connection?.type || "parallel",
+            connectionCondition: agent.connection?.condition,
+            sourceAgentIndex: agent.connection?.sourceAgentId
+              ? parseInt(agent.connection.sourceAgentId)
+              : undefined,
+            executionGroup: executionGroupId,
+          });
+
+          // Start streaming
+          await streamAgentResponse(stepId, agent.model, prompt, agent);
+
+          const duration = Date.now() - agentStartTime;
+          console.log(
+            `✅ PARALLEL-EXECUTION: Agent ${agentIndex} completed in ${duration}ms (attempt ${attempt + 1})`
+          );
+
+          return {
+            agent,
+            stepId,
+            agentIndex,
+            success: true,
+            completedAt: Date.now(),
+            duration,
+          } as ParallelResult & { agentIndex: number; duration: number };
+        } catch (error: any) {
+          lastError = error;
+          const errorMessage = error?.message || String(error);
+
+          // Check if it's a rate limit error
+          if (
+            errorMessage.includes("Rate limit exceeded") ||
+            errorMessage.includes("rate limit") ||
+            errorMessage.includes("429")
+          ) {
+            console.warn(
+              `⚠️ PARALLEL-EXECUTION: Agent ${agentIndex} hit rate limit (attempt ${attempt + 1}/${maxRetries})`
+            );
+
+            if (attempt < maxRetries - 1) {
+              // Exponential backoff with jitter for rate limit errors
+              const backoffDelay = Math.min(
+                1000 * Math.pow(2, attempt) + Math.random() * 1000,
+                10000
+              );
+              console.log(
+                `🚀 PARALLEL-EXECUTION: Agent ${agentIndex} retrying in ${backoffDelay}ms`
+              );
+              await new Promise((resolve) => setTimeout(resolve, backoffDelay));
+              continue;
+            }
+          } else {
+            // For non-rate-limit errors, don't retry as aggressively
+            console.error(
+              `❌ PARALLEL-EXECUTION: Agent ${agentIndex} failed with non-rate-limit error:`,
+              errorMessage
+            );
+            break;
+          }
+        }
+      }
+
+      const duration = Date.now() - agentStartTime;
+      console.error(
+        `❌ PARALLEL-EXECUTION: Agent ${agentIndex} failed after all retries in ${duration}ms`
+      );
+
+      return {
+        agent,
+        stepId: null as any,
+        agentIndex,
+        success: false,
+        error: lastError?.message || "Unknown error after retries",
+        completedAt: Date.now(),
+        duration,
+      } as ParallelResult & { agentIndex: number; duration: number };
+    };
+
+    // Execute agents with staggered delays to prevent rate limit collisions
+    const concurrentExecutionPromises = group.agents.map(
+      (agent, groupIndex) => {
+        // Stagger requests by 500ms intervals to avoid hitting rate limits
+        const staggerDelay = groupIndex * 500;
+        return executeAgentWithRetry(agent, groupIndex, staggerDelay);
+      }
+    );
+
+    // Wait for ALL agents to complete
+    const results = await Promise.all(concurrentExecutionPromises);
+    const totalExecutionTime = Date.now() - executionStartTime;
+
+    console.log(
+      `🚀 PARALLEL-EXECUTION: All ${results.length} agents completed in ${totalExecutionTime}ms`
+    );
+    console.log(
+      `🚀 PARALLEL-EXECUTION: Individual timings:`,
+      results.map((r) => `Agent ${r.agentIndex}: ${r.duration}ms`).join(", ")
+    );
+
+    // Log success/failure summary
+    const successCount = results.filter((r) => r.success).length;
+    const failureCount = results.filter((r) => !r.success).length;
+
+    if (failureCount > 0) {
+      console.warn(
+        `⚠️ PARALLEL-EXECUTION: ${successCount} successful, ${failureCount} failed due to rate limits`
+      );
+    }
+
+    // Fetch final results from database
+    console.log(
+      `🚀 PARALLEL-EXECUTION: Fetching final results from database...`
+    );
+    const agentSteps = await convex.query(api.queries.getAgentSteps, {
+      sessionId,
+    });
+
+    // Match results with database responses
+    const finalResults = results.map((result) => {
+      if (result.success) {
+        const completedStep = agentSteps?.find(
+          (step) =>
+            step.index === result.agentIndex &&
+            step.isComplete &&
+            !step.wasSkipped
+        );
+
+        const responseText =
+          completedStep?.response || completedStep?.streamedContent || "";
+        console.log(
+          `🚀 PARALLEL-EXECUTION: Agent ${result.agentIndex} result length: ${responseText.length} chars`
+        );
+
+        return {
+          ...result,
+          result: responseText,
+        };
+      }
+      return {
+        ...result,
+        result: "",
+      };
+    });
+
+    console.log(`✅ PARALLEL-EXECUTION: Parallel group execution completed`);
+    return finalResults;
+  };
+
+  // Helper function to format parallel results
+  const formatParallelResults = (results: ParallelResult[]): string => {
+    let formattedOutput = "--- Parallel Analysis Results ---\n\n";
+
+    results.forEach((result, index) => {
+      const agentName = result.agent.name || `Agent ${index + 1}`;
+      const modelName = result.agent.model;
+
+      if (result.success) {
+        formattedOutput += `**${agentName} (${modelName}):**\n${result.result}\n\n`;
+      } else {
+        formattedOutput += `**${agentName} (${modelName}) - FAILED:**\n${result.error || "Unknown error"}\n\n`;
+      }
+    });
+
+    formattedOutput += "--- End Parallel Results ---";
+    return formattedOutput;
+  };
+
   const runChain = async (sessionId: Id<"chatSessions">, agents: Agent[]) => {
     setIsLoading(true);
-    setQueuedAgents(agents.slice(1)); // Set all agents except the first as queued
+    // Set all agents in queue immediately for instant column display
+    setQueuedAgents([...agents]);
 
     // Immediately switch to supervisor mode when chain starts
     setInputMode("supervisor");
     setSupervisorStatus("orchestrating");
 
     try {
-      // Process agents sequentially with connection logic
-      for (let i = 0; i < agents.length; i++) {
-        const agent = agents[i];
+      // Group agents by execution type
+      const executionGroups = groupAgentsByExecution(agents);
+      console.log("Execution groups created:", executionGroups);
 
-        // Update queued agents (remove current agent from queue)
-        setQueuedAgents(agents.slice(i + 1));
+      let lastOutput = ""; // Track output from previous group
+      let processedAgentCount = 0;
 
-        // For conditional agents, evaluate the condition
-        if (
-          agent.connection?.type === "conditional" &&
-          agent.connection?.condition
-        ) {
-          // First get the previous agent output to evaluate against
-          const previousOutput = await getPreviousAgentOutput(sessionId, i);
-          const shouldSkip = !evaluateCondition(
-            agent.connection.condition,
-            previousOutput
-          );
+      for (const group of executionGroups) {
+        console.log(
+          `Processing group: ${group.type} with ${group.agents.length} agents`
+        );
 
-          if (shouldSkip) {
-            // Skip this agent and add a step showing it was skipped
+        // Update queued agents to show which ones are remaining (not currently executing)
+        const remainingAgents = agents.slice(
+          processedAgentCount + group.agents.length
+        );
+        setQueuedAgents([
+          ...agents.slice(
+            processedAgentCount,
+            processedAgentCount + group.agents.length
+          ),
+          ...remainingAgents,
+        ]);
+
+        if (group.type === "sequential") {
+          // Handle sequential execution (existing logic)
+          for (const agent of group.agents) {
+            const agentIndex = processedAgentCount;
+            console.log(
+              `Executing sequential agent ${agentIndex}: ${agent.name || `Node ${agentIndex + 1}`}`
+            );
+
+            // Update queue to remove current agent
+            setQueuedAgents(agents.slice(processedAgentCount + 1));
+
+            // For conditional agents, evaluate the condition
+            if (
+              agent.connection?.type === "conditional" &&
+              agent.connection?.condition
+            ) {
+              const shouldSkip = !evaluateCondition(
+                agent.connection.condition,
+                lastOutput
+              );
+
+              if (shouldSkip) {
+                const stepId = await addAgentStep({
+                  sessionId,
+                  index: agentIndex,
+                  model: agent.model,
+                  prompt: agent.prompt,
+                  name: agent.name,
+                  connectionType: agent.connection.type,
+                  connectionCondition: agent.connection.condition,
+                  sourceAgentIndex: agent.connection.sourceAgentId
+                    ? parseInt(agent.connection.sourceAgentId)
+                    : undefined,
+                });
+
+                await updateAgentSkipped({
+                  stepId,
+                  skipReason: "Condition not met",
+                });
+                processedAgentCount++;
+                continue;
+              }
+            }
+
+            // Build context for sequential agent
+            let prompt = agent.prompt;
+            if (agentIndex > 0) {
+              const connectionType = agent.connection?.type || "direct";
+
+              if (
+                connectionType === "direct" ||
+                connectionType === "conditional"
+              ) {
+                if (lastOutput) {
+                  prompt = `Previous agent's output:\n${lastOutput}\n\nNow, based on that output: ${agent.prompt}`;
+                }
+              }
+            }
+
+            // Add agent step to database
             const stepId = await addAgentStep({
               sessionId,
-              index: i,
+              index: agentIndex,
               model: agent.model,
               prompt: agent.prompt,
               name: agent.name,
-              connectionType: agent.connection.type,
-              connectionCondition: agent.connection.condition,
-              sourceAgentIndex: agent.connection.sourceAgentId
+              connectionType: agent.connection?.type || "direct",
+              connectionCondition: agent.connection?.condition,
+              sourceAgentIndex: agent.connection?.sourceAgentId
                 ? parseInt(agent.connection.sourceAgentId)
                 : undefined,
             });
 
-            await updateAgentSkipped({
-              stepId,
-              skipReason: "Condition not met",
-            });
-            continue;
+            // Execute the agent
+            await streamAgentResponse(stepId, agent.model, prompt, agent);
+
+            // Get the output for next agent
+            lastOutput = await getPreviousAgentOutput(
+              sessionId,
+              agentIndex + 1
+            );
+            processedAgentCount++;
           }
+        } else {
+          // Handle parallel execution
+          console.log(
+            `Executing parallel group with ${group.agents.length} agents starting at index ${group.startIndex}`
+          );
+
+          // For parallel execution, keep all parallel agents visible during execution
+          // Then remove them from queue after execution
+          const parallelResults = await executeParallelGroup(
+            group,
+            sessionId,
+            lastOutput
+          );
+
+          // Update queue to remove all parallel agents that just completed
+          setQueuedAgents(
+            agents.slice(processedAgentCount + group.agents.length)
+          );
+
+          // Format and aggregate results
+          lastOutput = formatParallelResults(parallelResults);
+          processedAgentCount += group.agents.length;
+
+          console.log(
+            "Parallel execution completed. Successful results:",
+            parallelResults.filter((r) => r.success).length,
+            "Failed results:",
+            parallelResults.filter((r) => !r.success).length
+          );
+          console.log("Aggregated results length:", lastOutput.length);
         }
-
-        // Build context based on connection type
-        let prompt = agent.prompt;
-
-        // For agents after the first one, build appropriate context
-        if (i > 0) {
-          const connectionType = agent.connection?.type || "direct";
-
-          if (connectionType === "direct") {
-            // For direct connections, get the immediate previous agent's output
-            const previousOutput = await getPreviousAgentOutput(sessionId, i);
-            if (previousOutput) {
-              prompt = `Previous agent's output:\n${previousOutput}\n\nNow, based on that output: ${agent.prompt}`;
-            }
-          } else if (connectionType === "conditional") {
-            // For conditional connections, also include context if condition passes
-            const previousOutput = await getPreviousAgentOutput(sessionId, i);
-            if (previousOutput) {
-              prompt = `Previous agent's output:\n${previousOutput}\n\nNow, based on that output: ${agent.prompt}`;
-            }
-          } else if (connectionType === "parallel") {
-            // For parallel connections, build full conversation context
-            const context = await buildConversationContext(sessionId, i);
-            if (context) {
-              prompt = context + agent.prompt;
-            }
-          }
-        }
-
-        // Add agent step to database
-        const stepId = await addAgentStep({
-          sessionId,
-          index: i,
-          model: agent.model,
-          prompt: agent.prompt,
-          name: agent.name,
-          connectionType: agent.connection?.type || "direct",
-          connectionCondition: agent.connection?.condition,
-          sourceAgentIndex: agent.connection?.sourceAgentId
-            ? parseInt(agent.connection.sourceAgentId)
-            : undefined,
-        });
-
-        // Stream the AI response with enhanced options
-        await streamAgentResponse(stepId, agent.model, prompt, agent);
       }
+
+      console.log("Chain execution completed successfully");
     } catch (error) {
       console.error("Failed to run chain:", error);
     } finally {
       setIsLoading(false);
-      setQueuedAgents([]);
+      setQueuedAgents([]); // Clear all queued agents when done
     }
   };
 
@@ -596,13 +931,41 @@ function ChatPageContent() {
 
     if (!response.ok) {
       let errorMessage = `Failed to start streaming: ${response.statusText}`;
+      let isRateLimit = false;
+
       try {
         const errorData = await response.json();
         errorMessage = errorData.error || errorMessage;
-        console.error("API Error Details:", errorData);
+
+        // Check if it's a rate limit error
+        if (
+          response.status === 429 ||
+          errorMessage.includes("Rate limit") ||
+          errorMessage.includes("rate limit")
+        ) {
+          isRateLimit = true;
+          const retryAfter = response.headers.get("Retry-After");
+          if (retryAfter) {
+            errorMessage = `Rate limit exceeded. Please wait ${retryAfter} seconds before trying again.`;
+          } else {
+            errorMessage =
+              "Rate limit exceeded. Please wait a moment before trying again.";
+          }
+          console.warn("⚠️ RATE-LIMIT:", errorMessage);
+        } else {
+          console.error("API Error Details:", errorData);
+        }
       } catch (e) {
         console.error("Could not parse error response");
       }
+
+      // For rate limit errors, throw a specific error type that can be caught and retried
+      if (isRateLimit) {
+        const rateLimitError = new Error(errorMessage);
+        rateLimitError.name = "RateLimitError";
+        throw rateLimitError;
+      }
+
       console.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -719,6 +1082,7 @@ function ChatPageContent() {
           focusedAgentIndex={focusedAgentIndex}
           onFocusAgent={handleFocusAgent}
           onLoadPreset={handleLoadPreset}
+          queuedAgents={queuedAgents}
         />
         {inputMode === "supervisor" ? (
           <SupervisorInterface

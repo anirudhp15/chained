@@ -50,7 +50,6 @@ const CONNECTION_TYPES = [
     Icon: GitFork,
     description: "Run simultaneously",
     color: "text-purple-400",
-    disabled: true,
     iconRotate: "rotate-90",
   },
   {
