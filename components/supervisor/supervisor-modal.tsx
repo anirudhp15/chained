@@ -452,7 +452,7 @@ function SupervisorConversationContent({
                           animate={{ scale: [1, 1.2, 1] }}
                           transition={{ duration: 1, repeat: Infinity }}
                         />
-                        <span>Supervisor thinking...</span>
+                        <span>Processing...</span>
                       </div>
                     ) : (
                       <MarkdownRenderer
@@ -461,113 +461,6 @@ function SupervisorConversationContent({
                     )}
                   </div>
                 </div>
-              </motion.div>
-            )}
-
-            {/* Agent Executions */}
-            {turn.parsedMentions && turn.parsedMentions.length > 0 && (
-              <motion.div
-                className="ml-12 space-y-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.3 }}
-              >
-                {turn.parsedMentions.map(
-                  (mention: any, mentionIndex: number) => {
-                    // Find the corresponding agent step
-                    const agentStep = agentSteps?.find(
-                      (step) => step.index === mention.agentIndex
-                    );
-
-                    return (
-                      <motion.div
-                        key={mentionIndex}
-                        className="flex items-start gap-4"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{
-                          delay: 0.5 + mentionIndex * 0.1,
-                          duration: 0.3,
-                        }}
-                      >
-                        <motion.div
-                          className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
-                          whileHover={{ scale: 1.05 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <span className="text-xs font-medium text-white">
-                            A
-                          </span>
-                        </motion.div>
-                        <div className="flex-1 pt-1">
-                          <div className="mb-2">
-                            <span className="text-gray-300 font-medium">
-                              {mention.agentName}
-                            </span>
-                            <span className="ml-3 text-sm text-gray-400">
-                              {agentStep
-                                ? agentStep.isStreaming
-                                  ? "Working..."
-                                  : agentStep.isComplete && !agentStep.error
-                                    ? "Complete"
-                                    : agentStep.error
-                                      ? "Error"
-                                      : "Pending"
-                                : "Queued"}
-                            </span>
-                          </div>
-
-                          <div className="text-sm text-gray-400 mb-3">
-                            {mention.taskPrompt}
-                          </div>
-
-                          {agentStep &&
-                            (agentStep.response ||
-                              agentStep.streamedContent ||
-                              agentStep.error ||
-                              agentStep.isStreaming) && (
-                              <motion.div
-                                className="text-gray-200 text-base leading-relaxed"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2, duration: 0.3 }}
-                              >
-                                {agentStep.error ? (
-                                  <div className="text-red-400">
-                                    Error: {agentStep.error}
-                                  </div>
-                                ) : agentStep.response ? (
-                                  <div>
-                                    {agentStep.response.length > 200
-                                      ? `${agentStep.response.slice(0, 200)}...`
-                                      : agentStep.response}
-                                  </div>
-                                ) : agentStep.streamedContent ? (
-                                  <div>
-                                    {agentStep.streamedContent.length > 200
-                                      ? `${agentStep.streamedContent.slice(0, 200)}...`
-                                      : agentStep.streamedContent}
-                                  </div>
-                                ) : agentStep.isStreaming ? (
-                                  <div className="flex items-center gap-3 text-gray-400">
-                                    <motion.div
-                                      className="w-2 h-2 bg-gray-400 rounded-full"
-                                      animate={{ scale: [1, 1.2, 1] }}
-                                      transition={{
-                                        duration: 1,
-                                        repeat: Infinity,
-                                      }}
-                                    />
-                                    <span>Processing...</span>
-                                  </div>
-                                ) : null}
-                              </motion.div>
-                            )}
-                        </div>
-                      </motion.div>
-                    );
-                  }
-                )}
               </motion.div>
             )}
           </motion.div>

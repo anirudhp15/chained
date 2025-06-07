@@ -143,96 +143,86 @@ export async function POST(request: NextRequest) {
               new TextEncoder().encode(`data: ${mentionData}\n\n`)
             );
 
-            // Execute mentioned agents sequentially (internally)
+            // Process agent mentions sequentially (simplified event streaming)
             for (const mention of validMentions) {
               try {
-                const agentStep = recentSteps[mention.agentIndex];
-
-                // Signal internal execution start
+                // Only send minimal status update
                 controller.enqueue(
                   new TextEncoder().encode(
                     `data: ${JSON.stringify({
-                      type: "agent_execution_internal",
-                      agentName: mention.agentName,
-                      agentIndex: mention.agentIndex,
+                      type: "status",
+                      message: "Processing request...",
                     })}\n\n`
                   )
                 );
 
-                // Build context for the agent
-                const chainContext = recentSteps
-                  .filter((_, index) => index !== mention.agentIndex)
-                  .map(
-                    (step) =>
-                      `${step.name || `Agent ${step.index + 1}`}: ${step.response || "No response"}`
-                  )
-                  .join("\n\n");
-
-                const agentHistory = agentStep.response || "";
-                const agentPrompt = buildAgentTaskPrompt(
-                  mention.taskPrompt,
-                  chainContext,
-                  agentHistory,
-                  userInput
+                // Find the corresponding agent step
+                const agentStep = recentSteps.find(
+                  (step: any) => step.index === mention.agentIndex
                 );
 
-                // Execute agent internally with existing step updates
+                if (!agentStep) {
+                  console.error(`Agent step not found for index ${mention.agentIndex}`);
+                  continue;
+                }
+
+                // Build context from chain history
+                const chainContext = await convex.query(
+                  api.queries.getChainContext,
+                  {
+                    sessionId: sessionId as Id<"chatSessions">,
+                    beforeIndex: mention.agentIndex,
+                  }
+                );
+
+                // Get agent's conversation history
+                const agentHistory = await convex.query(
+                  api.queries.getAgentConversationHistory,
+                  {
+                    sessionId: sessionId as Id<"chatSessions">,
+                    agentIndex: mention.agentIndex,
+                  }
+                );
+
+                // Build the internal prompt for the agent
+                const agentPrompt = buildAgentTaskPrompt(
+                  mention.taskPrompt,
+                  chainContext || "",
+                  agentHistory || "",
+                  supervisorResponse // Pass supervisor's synthesized instruction
+                );
+
+                // Execute agent internally
                 const agentResponse = await executeAgentInternally({
                   model: agentStep.model,
                   prompt: agentPrompt,
                   sessionId: sessionId as Id<"chatSessions">,
                   agentIndex: mention.agentIndex,
-                  stepId: agentStep._id, // Update existing step
-                  convexClient: convex, // Pass authenticated client
+                  stepId: agentStep._id,
+                  convexClient: convex,
                 });
 
-                // Update agent's conversation history directly
+                // Update agent conversation history
                 await convex.mutation(api.mutations.appendAgentConversation, {
                   sessionId: sessionId as Id<"chatSessions">,
                   agentIndex: mention.agentIndex,
-                  userPrompt: mention.taskPrompt, // User-facing task, not internal prompt
+                  userPrompt: mention.taskPrompt,
                   agentResponse: agentResponse,
                   triggeredBy: "supervisor",
                 });
 
-                // Store reference for supervisor turn
+                // Store reference for supervisor turn (but don't send to client)
                 executedAgentUpdates.push({
                   agentIndex: mention.agentIndex,
                   userFacingTask: mention.taskPrompt,
                   responsePreview: agentResponse.slice(0, 200),
                 });
-
-                // Signal completion to client
-                controller.enqueue(
-                  new TextEncoder().encode(
-                    `data: ${JSON.stringify({
-                      type: "agent_execution_complete",
-                      agentName: mention.agentName,
-                      agentIndex: mention.agentIndex,
-                      responsePreview: agentResponse.slice(0, 200),
-                    })}\n\n`
-                  )
-                );
               } catch (agentError) {
                 console.error(
                   `Agent execution failed for ${mention.agentName}:`,
                   agentError
                 );
-
-                // Signal agent execution error to client
-                controller.enqueue(
-                  new TextEncoder().encode(
-                    `data: ${JSON.stringify({
-                      type: "agent_execution_error",
-                      agentName: mention.agentName,
-                      agentIndex: mention.agentIndex,
-                      error:
-                        agentError instanceof Error
-                          ? agentError.message
-                          : "Unknown error",
-                    })}\n\n`
-                  )
-                );
+                // Don't send error details to client - let supervisor handle gracefully
               }
             }
           }
