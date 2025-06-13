@@ -22,6 +22,14 @@ export function parseSupervisorPrompt(
   userInput: string,
   agentSteps: AgentStep[]
 ): ParsedSupervisorPrompt {
+  // 🔍 DEBUG - Parsing supervisor prompt
+  console.log("🔍 PARSING SUPERVISOR PROMPT");
+  console.log("🔍 Input:", userInput);
+  console.log(
+    "🔍 Available agents:",
+    agentSteps.map((s) => ({ index: s.index, name: s.name }))
+  );
+
   const mentions: MentionTask[] = [];
   let generalPrompt = userInput;
 
@@ -47,13 +55,19 @@ export function parseSupervisorPrompt(
   });
 
   // Enhanced @mention regex that captures the task after the mention
-  const mentionRegex = /@(\w+(?:\s+\w+)*)/gi;
+  const mentionRegex = /@((?:Agent\s*)?\d+|Agent\s+\w+|\w+)(?=\s|$)/gi;
   let match;
   const processedMentions = new Set<number>();
 
+  console.log("🔍 Looking for @mentions with regex:", mentionRegex);
+  console.log("🔍 Agent name map:", Array.from(agentNameMap.entries()));
+
   while ((match = mentionRegex.exec(userInput)) !== null) {
+    console.log("🔍 FOUND MENTION MATCH:", match);
     const mentionText = match[1].toLowerCase().trim();
+    console.log("🔍 MENTION TEXT:", mentionText);
     const agentIndex = agentNameMap.get(mentionText);
+    console.log("🔍 MAPPED TO AGENT INDEX:", agentIndex);
 
     if (agentIndex !== undefined && !processedMentions.has(agentIndex)) {
       processedMentions.add(agentIndex);
@@ -76,20 +90,35 @@ export function parseSupervisorPrompt(
       const agentName =
         agentSteps[agentIndex]?.name || `Agent ${agentIndex + 1}`;
 
+      const finalTaskPrompt =
+        cleanTask || extractImplicitTask(userInput, agentName);
+
+      console.log("🔍 CREATING MENTION TASK:", {
+        agentIndex,
+        agentName,
+        taskPrompt: finalTaskPrompt,
+      });
+
       mentions.push({
         agentIndex,
         agentName,
-        taskPrompt: cleanTask || extractImplicitTask(userInput, agentName),
+        taskPrompt: finalTaskPrompt,
       });
     }
   }
 
   // If no mentions found, try to infer from context
   if (mentions.length === 0) {
+    console.log("🔍 NO MENTIONS FOUND, trying to infer from context");
     const inferredMention = inferAgentFromContext(userInput, agentSteps);
     if (inferredMention) {
+      console.log("🔍 INFERRED MENTION:", inferredMention);
       mentions.push(inferredMention);
+    } else {
+      console.log("🔍 NO INFERENCE POSSIBLE");
     }
+  } else {
+    console.log("🔍 FINAL MENTIONS FOUND:", mentions);
   }
 
   return {
@@ -168,24 +197,20 @@ export function buildAgentTaskPrompt(
   agentHistory: string,
   userPrompt: string
 ): string {
-  // Build comprehensive context for agent execution
+  // Simplified prompt that focuses on the task without exposing orchestration
   let prompt = "";
 
-  if (agentHistory) {
-    prompt += `Previous conversation with this agent:\n${agentHistory}\n\n`;
-  }
-
   if (chainContext) {
-    prompt += `Chain context from other agents:\n${chainContext}\n\n`;
+    prompt += `Context:\n${chainContext}\n\n`;
   }
 
-  prompt += `Supervisor instruction: ${userPrompt}\n\n`;
+  prompt += `Task: ${userPrompt}\n\n`;
 
   if (originalTask && originalTask !== userPrompt) {
-    prompt += `Specific task: ${originalTask}\n\n`;
+    prompt += `Additional details: ${originalTask}\n\n`;
   }
 
-  prompt += `Please respond to the supervisor's instruction, taking into account your previous work and the context from other agents. Keep your response conversational and appropriately sized - brief for simple questions, more detailed only when specifically requested or when the complexity requires it.`;
+  prompt += `Please complete this task directly. Provide a clear, actionable response without mentioning other agents, coordination details, or your position in any workflow. Focus solely on delivering value for this specific request.`;
 
   return prompt;
 }
@@ -195,16 +220,50 @@ export function buildSupervisorPrompt(
   agentSteps: AgentStep[],
   supervisorHistory: string = ""
 ): string {
-  let prompt = `You are an AI Chain Supervisor - think of yourself as a skilled project coordinator who helps users get the most out of their multi-agent workflows. You're the friendly face that makes complex AI coordination feel effortless.
+  // Check if this is an @mention request
+  const hasMentions = userInput.includes("@");
 
-**Your Core Abilities:**
-- Understand user intentions and route tasks to the optimal agents
-- Provide real-time progress updates and explain what each agent brings to the table
-- Handle @mentions to coordinate specific agent interactions seamlessly
-- Suggest intelligent agent combinations for complex tasks
-- Make the entire experience feel conversational and intuitive
+  if (hasMentions) {
+    // For @mentions, supervisor should be silent during execution
+    let prompt = `You are a silent background orchestrator. The user is directing a task to a specific agent.
 
-**Current Agent Chain Status:**
+**Your Role for @mentions:**
+- DO NOT respond with coordination messages
+- DO NOT say things like "@Agent 1 will handle this" or "I'll have Agent X do that"
+- You will execute the mentioned agent in the background
+- Only give a brief completion status AFTER the agent finishes
+
+**Available Agents (for your reference only):**
+`;
+
+    agentSteps.forEach((step, index) => {
+      const agentName = step.name || `Agent ${index + 1}`;
+      prompt += `• ${agentName} (${step.model})\n`;
+    });
+
+    prompt += `\n**Current Request:** "${userInput}"
+
+**Your Response:** Stay silent. The agent will execute and stream directly to their node column. You only respond with completion status after they finish.`;
+
+    return prompt;
+  }
+
+  // Original prompt for non-mention requests
+  let prompt = `You are an LLM Chain Supervisor that seamlessly orchestrates multiple agents to complete user tasks. Your role is to act as an intelligent abstraction layer - the user should NOT see the internal coordination details.
+
+**Core Principles:**
+- Operate quietly in the background, like a skilled conductor
+- NEVER expose agent names, numbers, or internal coordination to the user
+- Present unified, coherent responses as if from a single intelligent system
+- Only mention specific capabilities when directly relevant to the user's question
+
+**Your Workflow:**
+1. Understand the user's intent
+2. Internally route to appropriate agents (DO NOT mention this routing)
+3. Synthesize agent outputs into a single, polished response
+4. Present the final result conversationally
+
+**Internal Agent Status (for your reference only - DO NOT share with user):**
 `;
 
   agentSteps.forEach((step, index) => {
@@ -216,27 +275,26 @@ export function buildSupervisorPrompt(
         : "Queued";
     const modelStrength = getModelStrength(step.model);
 
-    prompt += `• **${agentName}** (${step.model}) - ${status}\n  Specialty: ${modelStrength}\n`;
+    prompt += `• ${agentName} (${step.model}) - ${status} - ${modelStrength}\n`;
   });
 
   if (supervisorHistory) {
-    prompt += `\n**Recent Conversation:**\n${supervisorHistory}\n`;
+    prompt += `\n**Previous Context:**\n${supervisorHistory}\n`;
   }
 
   prompt += `\n**User Request:** "${userInput}"
 
-**Your Response Style:**
-- Be conversational, engaging, and slightly enthusiastic about the AI capabilities
-- If you see @mentions, acknowledge them specifically and explain how you'll coordinate
-- Proactively suggest agent combinations when helpful ("Let me have Claude analyze the code first, then GPT can create the business strategy")
-- Keep responses concise but informative (2-3 sentences max) unless the user asks for detailed explanations
-- Show excitement about what the agents can accomplish together
-- Match the user's energy - if they ask a quick question, give a quick answer; if they want detailed planning, provide more depth
+**Response Guidelines:**
+- If the user uses @mentions, acknowledge the task but DO NOT expose the routing
+- Present results as your own analysis, not as "Agent X said..."
+- Be helpful and conversational, matching the user's tone
+- Keep internal orchestration completely hidden
+- Only show progress if explicitly asked or if the task will take significant time
 
-**Example Response Tone:**
-"Great question! I'll have @Claude analyze the technical architecture first since it excels at code analysis, then @GPT can create a go-to-market strategy based on those insights. This combination should give you both technical depth and business strategy!"
+Example good response: "I'll analyze your code and create a business strategy for you. Let me work on that..."
+Example bad response: "I'll have @Claude analyze the code first, then @GPT will create the strategy..."
 
-Respond as an enthusiastic, competent supervisor who maximizes the potential of this agent chain.`;
+Remember: You ARE the system, not a coordinator of visible agents.`;
 
   return prompt;
 }

@@ -169,7 +169,7 @@ export default defineSchema({
     userId: v.id("users"),
     title: v.string(),
     createdAt: v.number(),
-    updatedAt: v.number(),
+    updatedAt: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
     .index("by_user_created", ["userId", "createdAt"]),

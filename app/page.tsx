@@ -684,30 +684,7 @@ export default function LandingPage() {
 
       {/* Navigation */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full">
-        <motion.div
-          style={{
-            maxWidth: containerMaxWidth,
-            paddingLeft: containerPadding,
-            paddingRight: containerPadding,
-            marginTop: containerMargin,
-            marginLeft: "auto",
-            marginRight: "auto",
-            borderRadius: containerRadius,
-          }}
-          className="transition-all duration-300 ease-out border-y border-gray-800/50 bg-gray-950/80 backdrop-blur-xl"
-          animate={{
-            backgroundColor:
-              scrollY.get() > 20
-                ? "rgba(3, 7, 18, 0.85)"
-                : "rgba(3, 7, 18, 0.8)",
-            backdropFilter: scrollY.get() > 20 ? "blur(20px)" : "blur(12px)",
-            borderColor:
-              scrollY.get() > 20
-                ? "rgba(75, 85, 99, 0.3)"
-                : "rgba(75, 85, 99, 0.5)",
-          }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-        >
+        <motion.div className="transition-all duration-300 ease-out border-y border-gray-800/50 bg-gray-950/80 backdrop-blur-xl">
           <div className="flex h-16 items-center justify-between px-4 sm:px-16">
             <Link href="/" className="flex items-center space-x-2 group">
               <div className="relative">
@@ -753,7 +730,7 @@ export default function LandingPage() {
               >
                 <Link
                   href="/chat"
-                  className="inline-flex items-center bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white px-6 py-2 font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group rounded-xl"
+                  className="inline-flex items-center bg-lavender-600/20 border border-lavender-600/50 hover:bg-lavender-600/30 text-lavender-400 px-6 py-2 font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group rounded-xl"
                 >
                   Start Building
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
@@ -851,7 +828,7 @@ export default function LandingPage() {
             <div className="flex flex-row gap-4 justify-center mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-600">
               <Link
                 href="/chat"
-                className="group inline-flex items-center justify-center bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white lg:px-8 lg:py-4 px-4 py-2 rounded-xl text-sm lg:text-lg font-medium transition-all duration-300 shadow-2xl hover:shadow-lavender-500/25 relative overflow-hidden"
+                className="group inline-flex items-center justify-center bg-lavender-600/20 hover:bg-lavender-600/30 text-lavender-400 border border-lavender-600/50 hover:border-lavender-600/10 lg:px-8 lg:py-4 px-4 py-2 rounded-xl text-sm lg:text-lg font-medium transition-all duration-300 shadow-2xl hover:shadow-lavender-500/25 relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                 <Zap className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
@@ -1257,7 +1234,7 @@ export default function LandingPage() {
 
               <Link
                 href="/chat"
-                className="inline-flex items-center bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white px-8 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group"
+                className="inline-flex items-center bg-lavender-600/20 border border-lavender-600/50 hover:bg-lavender-600/30 text-lavender-400 px-8 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group"
               >
                 <Zap className="mr-2 h-5 w-5" />
                 Create Your Chain

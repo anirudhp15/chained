@@ -160,6 +160,7 @@ export const updateAgentStep = mutation({
     provider: v.optional(v.string()),
     estimatedCost: v.optional(v.number()),
     tokensPerSecond: v.optional(v.number()),
+    suppressResponseUpdate: v.optional(v.boolean()), // Flag to prevent response field updates in supervisor mode
   },
   handler: async (ctx, args) => {
     // Use optimized user lookup for streaming operations
@@ -176,7 +177,9 @@ export const updateAgentStep = mutation({
       isStreaming: args.isStreaming,
     };
 
-    if (args.response !== undefined) updateData.response = args.response;
+    // SUPERVISOR MODE FIX: Only update response field if not suppressed
+    if (args.response !== undefined && !args.suppressResponseUpdate)
+      updateData.response = args.response;
     if (args.reasoning !== undefined) updateData.reasoning = args.reasoning;
     if (args.thinking !== undefined) updateData.thinking = args.thinking;
     if (args.isThinking !== undefined) updateData.isThinking = args.isThinking;

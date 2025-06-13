@@ -324,19 +324,23 @@ export function Sidebar({
         }`}
       >
         {/* Desktop Header */}
-        <div className="border-b-2 border-gray-700 flex items-center justify-center relative">
+        <div className="border-b-2 border-gray-700 flex items-center justify-center relative group">
           {isCollapsed ? (
             // Collapsed state - just the link icon
             <button
               onClick={() => setIsCollapsed(false)}
-              className="m-4 text-lavender-400/80 hover:text-lavender-400 transition-all duration-200 hover:scale-110"
+              className="m-4 text-lavender-400/80 hover:text-lavender-400  transition-all duration-200 hover:scale-110"
               onMouseEnter={() => setIsLinkHovered(true)}
               onMouseLeave={() => setIsLinkHovered(false)}
             >
-              <div className="transition-transform duration-200 ease-out">
+              <div className="transition-transform duration-200 ease-out group/header-icon">
                 <Link2Off
                   size={24}
-                  className="hover:-rotate-45 -rotate-12 transition-transform duration-200 ease-out"
+                  className="group-hover:-rotate-45 group-hover/header-icon:hidden block transition-transform duration-200 ease-out"
+                />
+                <Link2
+                  size={24}
+                  className="-rotate-45 group-hover/header-icon:block hidden transition-transform duration-200 ease-out"
                 />
               </div>
             </button>
@@ -346,13 +350,17 @@ export function Sidebar({
               <Link href="/">
                 <h1 className="text-xl group font-medium text-lavender-400 hover:text-white flex items-center transition-colors duration-200">
                   <span
-                    className="mx-1 text-lavender-400  transition-transform duration-200 hover:scale-110"
+                    className="mx-1 text-lavender-400 group/header-icon transition-transform duration-200 hover:scale-110"
                     onMouseEnter={() => setIsLinkHovered(true)}
                     onMouseLeave={() => setIsLinkHovered(false)}
                   >
                     <Link2
                       size={24}
-                      className="rotate-0 group-hover:-rotate-45 transition-transform duration-200 ease-out"
+                      className="rotate-0 group-hover:-rotate-45 group-hover/header-icon:hidden block transition-transform duration-200 ease-out"
+                    />
+                    <Unlink
+                      size={24}
+                      className="rotate-0 group-hover/header-icon:block hidden transition-transform duration-200 ease-out"
                     />
                   </span>
                   Ch<span className="text-lavender-400">ai</span>ned
@@ -369,10 +377,10 @@ export function Sidebar({
         </div>
 
         {/* Desktop New Chat Button */}
-        <div className="p-4 flex justify-center">
+        <div className="p-4 pb-2 flex justify-center">
           <button
             onClick={() => router.push("/chat")}
-            className={`flex items-center text-sm justify-between font-semibold gap-2 p-2.5 bg-lavender-500 hover:bg-lavender-600 group text-gray-200 rounded-lg transition-all duration-200 lavender-glow hover:shadow-lavender-500/25 ${
+            className={`flex items-center text-sm justify-between font-semibold gap-2 p-2.5 bg-lavender-600/80 hover:bg-lavender-600 group text-gray-200 rounded-lg transition-all duration-200 lavender-glow hover:shadow-lavender-500/25 ${
               isCollapsed ? "w-8 h-8 justify-center" : "w-full"
             }`}
           >
@@ -386,6 +394,24 @@ export function Sidebar({
                 className={`${isCollapsed ? "text-white block " : "text-gray-200"} transition-transform duration-200 group-hover:block hidden hover:rotate-90`}
               />
               {!isCollapsed && <span>New Chain</span>}
+            </div>
+          </button>
+        </div>
+
+        {/* Desktop Chains Button */}
+        <div className="px-4 pb-2 flex justify-center">
+          <button
+            onClick={() => router.push("/chains")}
+            className={`flex items-center text-sm justify-between font-medium gap-2 p-2.5 bg-gray-800 hover:bg-gray-700 group text-gray-300 hover:text-white rounded-lg transition-all duration-200 ${
+              isCollapsed ? "w-8 h-8 justify-center" : "w-full"
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <MessageSquare
+                size={16}
+                className="transition-transform duration-200 group-hover:scale-110"
+              />
+              {!isCollapsed && <span>All Chains</span>}
             </div>
           </button>
         </div>
@@ -791,6 +817,20 @@ export function Sidebar({
           >
             <LinkIcon size={16} />
             <span>New Chain</span>
+          </button>
+        </div>
+
+        {/* Mobile Chains Button */}
+        <div className="px-4 pb-4">
+          <button
+            onClick={() => {
+              router.push("/chains");
+              if (onMobileToggle) onMobileToggle();
+            }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg transition-all duration-200 text-sm font-medium"
+          >
+            <MessageSquare size={16} />
+            <span>Chains</span>
           </button>
         </div>
 

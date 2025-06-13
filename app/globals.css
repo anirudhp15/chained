@@ -1,4 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Asap:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -219,10 +221,18 @@
 
   .markdown-content pre {
     @apply overflow-x-auto;
+    font-family:
+      "JetBrains Mono", "Cascadia Code", "Cascadia Mono", "Fira Code", Consolas,
+      "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", "Source Code Pro",
+      Menlo, "Liberation Mono", monospace;
   }
 
   .markdown-content code {
     @apply font-mono text-sm;
+    font-family:
+      "JetBrains Mono", "Cascadia Code", "Cascadia Mono", "Fira Code", Consolas,
+      "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", "Source Code Pro",
+      Menlo, "Liberation Mono", monospace;
   }
 
   .markdown-content blockquote {
@@ -958,4 +968,41 @@
       opacity: 0.4;
     }
   }
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src:
+    url("/JetBrainsMono-Regular.woff2") format("woff2"),
+    url("/JetBrainsMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src:
+    url("/JetBrainsMono-Bold.woff2") format("woff2"),
+    url("/JetBrainsMono-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src:
+    url("/JetBrainsMono-Italic.woff2") format("woff2"),
+    url("/JetBrainsMono-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src:
+    url("/JetBrainsMono-BoldItalic.woff2") format("woff2"),
+    url("/JetBrainsMono-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
 }

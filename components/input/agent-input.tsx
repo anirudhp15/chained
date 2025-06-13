@@ -17,6 +17,8 @@ import {
   Globe,
   Pencil,
   BarChart3,
+  ArrowUp,
+  LoaderCircle,
 } from "lucide-react";
 import { SiOpenai, SiClaude } from "react-icons/si";
 import { UploadedImage } from "../modality/ImageUpload";
@@ -390,9 +392,9 @@ const STYLES = {
   button:
     "bg-gray-800/90 border border-gray-600/50 text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 transition-all text-xs backdrop-blur-sm",
   modal:
-    "fixed bg-gray-800/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-[999999] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200",
+    "fixed bg-gray-800/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-[9999999] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-auto",
   backdrop: "fixed inset-0 z-[999999] bg-black/20",
-  backdropBlur: "fixed inset-0 z-[999999] bg-black/30",
+  backdropBlur: "fixed inset-0 z-[999999] bg-black/30 pointer-events-auto",
   input:
     "bg-gray-800/90 border border-gray-600/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400/50",
   // New consolidated styles
@@ -597,15 +599,12 @@ export function AgentInput({
 
       {isModelDropdownOpen &&
         createPortal(
-          <>
+          <div className="fixed inset-0 z-[99999]">
             <div
-              className={STYLES.backdropBlur}
+              className="fixed inset-0 bg-black/30"
               onClick={() => setIsModelDropdownOpen(false)}
             />
-            <div
-              className={`${STYLES.modal} w-[90vw] md:w-96 max-h-[80vh] flex flex-col`}
-              style={getModalPosition(buttonPositions.model || undefined, 384)}
-            >
+            <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 border border-gray-600 rounded-lg shadow-xl w-[90vw] md:w-96 max-h-[80vh] z-[999999] flex flex-col overflow-hidden">
               {/* Header with Search */}
               <div className="p-3 border-b border-gray-700/50 bg-gray-800/30">
                 <div className={`flex items-center ${STYLES.gap} mb-2`}>
@@ -667,7 +666,9 @@ export function AgentInput({
                         return (
                           <button
                             key={model.value}
-                            onClick={() => {
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
                               onUpdate({ ...agent, model: model.value });
                               setIsModelDropdownOpen(false);
                             }}
@@ -746,7 +747,7 @@ export function AgentInput({
                 ))}
               </div>
             </div>
-          </>,
+          </div>,
           document.body
         )}
     </div>
@@ -800,7 +801,7 @@ export function AgentInput({
 
   return (
     <div
-      className={`relative flex flex-col mx-2 lg:mx-0 rounded-xl border border-gray-600/50 bg-gray-800/70 backdrop-blur-sm hover:bg-gray-800/90 hover:border-lavender-400/20 transition-all duration-200 animate-in slide-in-from-top-4 fade-in ${!isLastAgent ? "mb-2 lg:mb-0" : "pm-0"} ease-out lg:animate-none`}
+      className={`relative flex flex-col mx-2 lg:mx-0 rounded-3xl border border-gray-600/50 bg-gray-600/25 backdrop-blur-lg hover:backdrop-blur-xl hover:border-lavender-400/20 transition-all duration-200 animate-in slide-in-from-top-4 fade-in ${!isLastAgent ? "mb-2 lg:mb-0" : "pm-0"} ease-out lg:animate-none`}
     >
       <textarea
         value={agent.prompt}
@@ -810,52 +811,31 @@ export function AgentInput({
           setTimeout(adjustTextareaHeight, 0);
         }}
         placeholder="Ask anything"
-        className="w-full p-4 h-auto rounded-t-xl min-h-12 lg:min-h-[7.5rem] max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-base lg:text-sm overflow-y-auto"
+        className="w-full p-4 h-auto rounded-t-3xl min-h-12  max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-base lg:text-sm overflow-y-auto"
         ref={textareaRef}
       />
 
-      {/* Bottom controls container */}
-      <div className="relative h-full min-h-10 lg:min-h-16">
-        {/* Bottom controls - absolutely positioned */}
-        <div className="absolute bottom-0 left-0 right-0 flex flex-row lg:items-center justify-between px-2 lg:px-4 py-1.5 lg:py-3 overflow-hidden gap-1.5 lg:gap-2">
-          <div className="block lg:hidden">
-            {/* Modality Icons */}
-            <div className="flex items-center gap-1.5">
-              <ModalityIcons
-                selectedModel={effectiveModelValue}
-                onImagesChange={(images) => onUpdate({ ...agent, images })}
-                onWebSearchToggle={(enabled) =>
-                  onUpdate({ ...agent, webSearchEnabled: enabled })
-                }
-                isWebSearchEnabled={agent.webSearchEnabled}
-                images={agent.images || []}
-              />
-
-              {/* Tool Button for mobile */}
-              {renderEnhancedOptions()}
-            </div>
-          </div>
-          {/* Left side controls */}
-          <div className="hidden lg:flex items-center gap-1.5 lg:gap-2 flex-wrap">
+      {/* Bottom controls - absolutely positioned */}
+      <div className=" flex flex-row lg:items-center justify-between p-2 lg:p-3 overflow-hidden gap-1.5 lg:gap-2">
+        <div className="block lg:hidden">
+          {/* Modality Icons */}
+          <div className="flex items-center gap-1">
             {renderModelSelector()}
-            {/* Tool Button */}
+            {/* Tool Button for mobile */}
             {renderEnhancedOptions()}
-            {/* Modality Icons */}
-            <ModalityIcons
-              selectedModel={effectiveModelValue}
-              onImagesChange={(images) => onUpdate({ ...agent, images })}
-              onWebSearchToggle={(enabled) =>
-                onUpdate({ ...agent, webSearchEnabled: enabled })
-              }
-              isWebSearchEnabled={agent.webSearchEnabled}
-              images={agent.images || []}
-            />
           </div>
+        </div>
+        {/* Left side controls */}
+        <div className="hidden lg:flex items-center gap-1 flex-wrap">
+          {renderModelSelector()}
+          {/* Tool Button */}
+          {renderEnhancedOptions()}
+        </div>
 
-          {/* Right side controls */}
-          <div className="flex items-center gap-1.5">
-            {/* Performance Toggle */}
-            <button
+        {/* Right side controls */}
+        <div className="flex items-center gap-1.5">
+          {/* Performance Toggle */}
+          {/* <button
               onClick={togglePerformance}
               className={`flex items-center justify-center p-1.5 lg:p-2 rounded-md transition-all ${
                 showDetailedPerformance
@@ -869,35 +849,36 @@ export function AgentInput({
               }
             >
               <BarChart3 size={16} className="lg:w-4 lg:h-4" />
+            </button> */}
+
+          {/* Modality Icons */}
+          <ModalityIcons
+            selectedModel={effectiveModelValue}
+            onImagesChange={(images) => onUpdate({ ...agent, images })}
+            onWebSearchToggle={(enabled) =>
+              onUpdate({ ...agent, webSearchEnabled: enabled })
+            }
+            isWebSearchEnabled={agent.webSearchEnabled}
+            images={agent.images || []}
+          />
+
+          {isLastAgent && onSendChain && (
+            <button
+              onClick={onSendChain}
+              disabled={!canSend}
+              className={`flex items-center gap-2 p-2 rounded-full transition-all ${
+                canSend && !isLoading
+                  ? "bg-lavender-500 hover:bg-lavender-600 text-white shadow-lg hover:shadow-lavender-500/25 hover:scale-105"
+                  : "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              {isLoading ? (
+                <LoaderCircle size={16} className="animate-spin" />
+              ) : (
+                <ArrowUp size={16} />
+              )}
             </button>
-
-            {isLastAgent && onSendChain && (
-              <button
-                onClick={onSendChain}
-                disabled={!canSend}
-                className="flex items-center gap-1.5 lg:gap-2 px-3 lg:px-4 py-1.5 lg:py-2 bg-lavender-500 hover:bg-lavender-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 whitespace-nowrap rounded-lg font-bold transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none text-xs backdrop-blur-sm w-min justify-center"
-              >
-                <span className="truncate">
-                  {isLoading ? "Running..." : "Chain"}
-                </span>
-
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="lg:w-3.5 lg:h-3.5 flex-shrink-0"
-                >
-                  <path d="m22 2-7 20-4-9-9-4Z" />
-                  <path d="M22 2 11 13" />
-                </svg>
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>
