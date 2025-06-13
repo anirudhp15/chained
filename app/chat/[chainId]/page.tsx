@@ -1272,7 +1272,7 @@ function ChatPageContent() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-950">
+    <div className="flex h-screen bg-gray-950 scrollbar-none">
       <Sidebar
         currentSessionId={chainId}
         isMobileOpen={isMobileSidebarOpen}
@@ -1282,7 +1282,7 @@ function ChatPageContent() {
         isOpen={isMobileSidebarOpen}
         onToggle={toggleMobileSidebar}
       />
-      <div className="flex-1 flex flex-col relative w-full">
+      <div className="flex-1 flex flex-col relative w-full scrollbar-none">
         {/* Conditional rendering based on input mode */}
 
         <ChatArea
