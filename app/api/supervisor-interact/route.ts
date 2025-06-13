@@ -65,6 +65,17 @@ export async function POST(request: NextRequest) {
     const { valid: validMentions, invalid: invalidMentions } =
       validateAgentMentions(parsedPrompt.mentionTasks, recentSteps);
 
+    // 🔍 DEBUG - Critical supervisor flow debugging
+    console.log("🔍 DEBUG - User input:", userInput);
+    console.log("🔍 DEBUG - Parsed mentions:", parsedPrompt.mentionTasks);
+    console.log("🔍 DEBUG - Valid mentions:", validMentions);
+    console.log("🔍 DEBUG - Invalid mentions:", invalidMentions);
+    console.log("🔍 DEBUG - Recent steps count:", recentSteps.length);
+    console.log(
+      "🔍 DEBUG - All agent steps:",
+      agentSteps.map((s) => ({ index: s.index, name: s.name }))
+    );
+
     // Build supervisor context
     const supervisorHistory = supervisorTurns
       .slice(-3) // Last 3 turns for context
@@ -79,6 +90,13 @@ export async function POST(request: NextRequest) {
       recentSteps,
       supervisorHistory
     );
+
+    // 🔍 DEBUG - Supervisor prompt debugging
+    console.log(
+      "🔍 DEBUG - Supervisor prompt (first 500 chars):",
+      supervisorPrompt.substring(0, 500)
+    );
+    console.log("🔍 DEBUG - Supervisor history:", supervisorHistory);
 
     // Start supervisor turn in database
     const turnId = await convex.mutation(api.mutations.startSupervisorTurn, {
@@ -103,77 +121,60 @@ export async function POST(request: NextRequest) {
             )
           );
 
-          // Stream supervisor response
-          await streamLLM({
-            model: "gpt-4", // Use GPT-4 for supervisor intelligence
-            prompt: supervisorPrompt,
-            onChunk: async (chunk: string) => {
-              supervisorResponse += chunk;
-
-              // Send chunk to client
-              const data = JSON.stringify({
-                type: "supervisor_chunk",
-                content: chunk,
-                turnId,
-              });
-              controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
-
-              // Update database with streaming content
-              await convex.mutation(api.mutations.updateSupervisorTurn, {
-                turnId,
-                streamedContent: supervisorResponse,
-              });
-            },
-            onComplete: async () => {
-              // Supervisor response complete, now handle mentions
-            },
-            onError: async (error: Error) => {
-              throw error;
-            },
-          });
-
-          // If there are valid mentions, execute agent tasks internally
+          // NEW FLOW: For @mentions, execute agents FIRST, then supervisor completion
           if (validMentions.length > 0) {
-            // Send mention execution start signal
-            const mentionData = JSON.stringify({
-              type: "mention_execution_start",
-              mentions: validMentions,
-            });
-            controller.enqueue(
-              new TextEncoder().encode(`data: ${mentionData}\n\n`)
+            // 🔍 DEBUG - Agent execution flow
+            console.log(
+              "🚀 AGENT EXECUTION START - Valid mentions found:",
+              validMentions.length
+            );
+            console.log(
+              "🚀 AGENT EXECUTION - Mentions to process:",
+              validMentions
             );
 
-            // Process agent mentions sequentially (simplified event streaming)
+            // For @mentions, supervisor stays silent until agents complete
+            // No "Processing..." message - just execute agents directly
+
+            // Execute mentioned agents with UNIFIED streaming (eliminates duplication)
+            const executedAgentUpdates: any[] = [];
             for (const mention of validMentions) {
               try {
-                // Only send minimal status update
-                controller.enqueue(
-                  new TextEncoder().encode(
-                    `data: ${JSON.stringify({
-                      type: "status",
-                      message: "Processing request...",
-                    })}\n\n`
-                  )
-                );
-
-                // Find the corresponding agent step
-                const agentStep = recentSteps.find(
-                  (step: any) => step.index === mention.agentIndex
+                // Find agent by actual index, not array position
+                const agentStep = agentSteps.find(
+                  (step) => step.index === mention.agentIndex
                 );
 
                 if (!agentStep) {
-                  console.error(`Agent step not found for index ${mention.agentIndex}`);
+                  console.error(
+                    `❌ Agent step not found for index ${mention.agentIndex}`
+                  );
                   continue;
                 }
 
+                console.log(
+                  "✅ FOUND AGENT STEP:",
+                  agentStep.name,
+                  agentStep.model,
+                  "at index",
+                  agentStep.index
+                );
+
                 // Build context from chain history
-                const chainContext = await convex.query(
-                  api.queries.getChainContext,
+                const previousSteps = await convex.query(
+                  api.queries.getPreviousAgentSteps,
                   {
                     sessionId: sessionId as Id<"chatSessions">,
                     beforeIndex: mention.agentIndex,
                   }
                 );
+
+                const chainContext = previousSteps
+                  .map(
+                    (step) =>
+                      `${step.name || `Agent ${step.index + 1}`}: ${step.response || step.streamedContent || "No response"}`
+                  )
+                  .join("\n\n");
 
                 // Get agent's conversation history
                 const agentHistory = await convex.query(
@@ -187,44 +188,155 @@ export async function POST(request: NextRequest) {
                 // Build the internal prompt for the agent
                 const agentPrompt = buildAgentTaskPrompt(
                   mention.taskPrompt,
-                  chainContext || "",
-                  agentHistory || "",
-                  supervisorResponse // Pass supervisor's synthesized instruction
+                  chainContext,
+                  agentHistory?.conversationHistory
+                    ?.map((h) => h.agentResponse)
+                    .join("\n") || "",
+                  mention.taskPrompt
                 );
 
-                // Execute agent internally
-                const agentResponse = await executeAgentInternally({
+                console.log(
+                  "🚀 EXECUTING AGENT with prompt (first 200 chars):",
+                  agentPrompt.substring(0, 200) + "..."
+                );
+                console.log("🚀 AGENT MODEL:", agentStep.model);
+                console.log("🚀 AGENT INDEX:", mention.agentIndex);
+
+                // SINGLE UNIFIED STREAM - eliminates duplicate prompts and streaming
+                let agentResponse = "";
+                await streamLLM({
                   model: agentStep.model,
                   prompt: agentPrompt,
-                  sessionId: sessionId as Id<"chatSessions">,
-                  agentIndex: mention.agentIndex,
-                  stepId: agentStep._id,
-                  convexClient: convex,
+                  onChunk: async (chunk: string) => {
+                    agentResponse += chunk;
+
+                    // Stream only to agent column (no supervisor stream duplication)
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        `data: ${JSON.stringify({
+                          type: "agent_chunk",
+                          agentIndex: mention.agentIndex,
+                          content: chunk,
+                          userPrompt: mention.taskPrompt, // Include user prompt for UI
+                          turnId,
+                        })}\n\n`
+                      )
+                    );
+                  },
+                  onComplete: async () => {
+                    // Signal agent completion with full context
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        `data: ${JSON.stringify({
+                          type: "agent_complete",
+                          agentIndex: mention.agentIndex,
+                          agentName: mention.agentName,
+                          response: agentResponse,
+                          userPrompt: mention.taskPrompt,
+                          turnId,
+                        })}\n\n`
+                      )
+                    );
+
+                    // Store in conversation history for persistence
+                    await convex.mutation(
+                      api.mutations.appendAgentConversation,
+                      {
+                        sessionId: sessionId as Id<"chatSessions">,
+                        agentIndex: mention.agentIndex,
+                        userPrompt: mention.taskPrompt,
+                        agentResponse: agentResponse,
+                        triggeredBy: "supervisor",
+                      }
+                    );
+
+                    executedAgentUpdates.push({
+                      agentIndex: mention.agentIndex,
+                      userFacingTask: mention.taskPrompt,
+                      responsePreview: agentResponse.slice(0, 200),
+                    });
+                  },
+                  onError: async (error: Error) => {
+                    console.error(
+                      `Agent ${mention.agentIndex} streaming error:`,
+                      error
+                    );
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        `data: ${JSON.stringify({
+                          type: "agent_error",
+                          agentIndex: mention.agentIndex,
+                          error: error.message,
+                          turnId,
+                        })}\n\n`
+                      )
+                    );
+                  },
                 });
 
-                // Update agent conversation history
-                await convex.mutation(api.mutations.appendAgentConversation, {
-                  sessionId: sessionId as Id<"chatSessions">,
-                  agentIndex: mention.agentIndex,
-                  userPrompt: mention.taskPrompt,
-                  agentResponse: agentResponse,
-                  triggeredBy: "supervisor",
-                });
-
-                // Store reference for supervisor turn (but don't send to client)
-                executedAgentUpdates.push({
-                  agentIndex: mention.agentIndex,
-                  userFacingTask: mention.taskPrompt,
-                  responsePreview: agentResponse.slice(0, 200),
-                });
+                console.log(
+                  "✅ AGENT EXECUTION COMPLETED, response length:",
+                  agentResponse.length
+                );
               } catch (agentError) {
                 console.error(
-                  `Agent execution failed for ${mention.agentName}:`,
+                  `❌ Agent execution failed for ${mention.agentName}:`,
                   agentError
                 );
-                // Don't send error details to client - let supervisor handle gracefully
               }
             }
+
+            // SUPERVISOR RESPONSE: Simple completion message (no streaming duplication)
+            const completionMessage = `✅ Routed task to ${validMentions.map((m) => m.agentName).join(", ")} - see results in agent columns above.`;
+
+            controller.enqueue(
+              new TextEncoder().encode(
+                `data: ${JSON.stringify({
+                  type: "supervisor_chunk",
+                  content: completionMessage,
+                  turnId,
+                  isCompletion: true,
+                })}\n\n`
+              )
+            );
+
+            supervisorResponse = completionMessage;
+          } else {
+            // No mentions - normal supervisor response
+            console.log(
+              "❌ NO VALID MENTIONS - Supervisor responding directly"
+            );
+
+            // Stream supervisor response normally
+            await streamLLM({
+              model: "gpt-4",
+              prompt: supervisorPrompt,
+              onChunk: async (chunk: string) => {
+                supervisorResponse += chunk;
+
+                // Send chunk to client
+                const data = JSON.stringify({
+                  type: "supervisor_chunk",
+                  content: chunk,
+                  turnId,
+                });
+                controller.enqueue(
+                  new TextEncoder().encode(`data: ${data}\n\n`)
+                );
+
+                // Update database with streaming content
+                await convex.mutation(api.mutations.updateSupervisorTurn, {
+                  turnId,
+                  streamedContent: supervisorResponse,
+                });
+              },
+              onComplete: async () => {
+                // Supervisor response complete
+              },
+              onError: async (error: Error) => {
+                throw error;
+              },
+            });
           }
 
           // Complete supervisor turn

@@ -22,6 +22,14 @@ export function parseSupervisorPrompt(
   userInput: string,
   agentSteps: AgentStep[]
 ): ParsedSupervisorPrompt {
+  // 🔍 DEBUG - Parsing supervisor prompt
+  console.log("🔍 PARSING SUPERVISOR PROMPT");
+  console.log("🔍 Input:", userInput);
+  console.log(
+    "🔍 Available agents:",
+    agentSteps.map((s) => ({ index: s.index, name: s.name }))
+  );
+
   const mentions: MentionTask[] = [];
   let generalPrompt = userInput;
 
@@ -47,13 +55,19 @@ export function parseSupervisorPrompt(
   });
 
   // Enhanced @mention regex that captures the task after the mention
-  const mentionRegex = /@(\w+(?:\s+\w+)*)/gi;
+  const mentionRegex = /@((?:Agent\s*)?\d+|Agent\s+\w+|\w+)(?=\s|$)/gi;
   let match;
   const processedMentions = new Set<number>();
 
+  console.log("🔍 Looking for @mentions with regex:", mentionRegex);
+  console.log("🔍 Agent name map:", Array.from(agentNameMap.entries()));
+
   while ((match = mentionRegex.exec(userInput)) !== null) {
+    console.log("🔍 FOUND MENTION MATCH:", match);
     const mentionText = match[1].toLowerCase().trim();
+    console.log("🔍 MENTION TEXT:", mentionText);
     const agentIndex = agentNameMap.get(mentionText);
+    console.log("🔍 MAPPED TO AGENT INDEX:", agentIndex);
 
     if (agentIndex !== undefined && !processedMentions.has(agentIndex)) {
       processedMentions.add(agentIndex);
@@ -76,20 +90,35 @@ export function parseSupervisorPrompt(
       const agentName =
         agentSteps[agentIndex]?.name || `Agent ${agentIndex + 1}`;
 
+      const finalTaskPrompt =
+        cleanTask || extractImplicitTask(userInput, agentName);
+
+      console.log("🔍 CREATING MENTION TASK:", {
+        agentIndex,
+        agentName,
+        taskPrompt: finalTaskPrompt,
+      });
+
       mentions.push({
         agentIndex,
         agentName,
-        taskPrompt: cleanTask || extractImplicitTask(userInput, agentName),
+        taskPrompt: finalTaskPrompt,
       });
     }
   }
 
   // If no mentions found, try to infer from context
   if (mentions.length === 0) {
+    console.log("🔍 NO MENTIONS FOUND, trying to infer from context");
     const inferredMention = inferAgentFromContext(userInput, agentSteps);
     if (inferredMention) {
+      console.log("🔍 INFERRED MENTION:", inferredMention);
       mentions.push(inferredMention);
+    } else {
+      console.log("🔍 NO INFERENCE POSSIBLE");
     }
+  } else {
+    console.log("🔍 FINAL MENTIONS FOUND:", mentions);
   }
 
   return {
@@ -191,7 +220,36 @@ export function buildSupervisorPrompt(
   agentSteps: AgentStep[],
   supervisorHistory: string = ""
 ): string {
-  let prompt = `You are an AI Supervisor that seamlessly orchestrates multiple agents to complete user tasks. Your role is to act as an intelligent abstraction layer - the user should NOT see the internal coordination details.
+  // Check if this is an @mention request
+  const hasMentions = userInput.includes("@");
+
+  if (hasMentions) {
+    // For @mentions, supervisor should be silent during execution
+    let prompt = `You are a silent background orchestrator. The user is directing a task to a specific agent.
+
+**Your Role for @mentions:**
+- DO NOT respond with coordination messages
+- DO NOT say things like "@Agent 1 will handle this" or "I'll have Agent X do that"
+- You will execute the mentioned agent in the background
+- Only give a brief completion status AFTER the agent finishes
+
+**Available Agents (for your reference only):**
+`;
+
+    agentSteps.forEach((step, index) => {
+      const agentName = step.name || `Agent ${index + 1}`;
+      prompt += `• ${agentName} (${step.model})\n`;
+    });
+
+    prompt += `\n**Current Request:** "${userInput}"
+
+**Your Response:** Stay silent. The agent will execute and stream directly to their node column. You only respond with completion status after they finish.`;
+
+    return prompt;
+  }
+
+  // Original prompt for non-mention requests
+  let prompt = `You are an LLM Chain Supervisor that seamlessly orchestrates multiple agents to complete user tasks. Your role is to act as an intelligent abstraction layer - the user should NOT see the internal coordination details.
 
 **Core Principles:**
 - Operate quietly in the background, like a skilled conductor

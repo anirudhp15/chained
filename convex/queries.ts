@@ -584,7 +584,7 @@ export const getLatestSupervisorTurn = query({
   },
 });
 
-// Get agent conversation history
+// Get agent conversation history for a specific agent
 export const getAgentConversationHistory = query({
   args: {
     sessionId: v.id("chatSessions"),
@@ -618,5 +618,39 @@ export const getAgentConversationHistory = query({
         q.eq("sessionId", args.sessionId).eq("agentIndex", args.agentIndex)
       )
       .first();
+  },
+});
+
+// Get all agent conversations for a session
+export const getAllAgentConversations = query({
+  args: {
+    sessionId: v.id("chatSessions"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .first();
+
+    if (!user) {
+      return [];
+    }
+
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id) {
+      return [];
+    }
+
+    return await ctx.db
+      .query("agentConversations")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .collect();
   },
 });

@@ -32,7 +32,10 @@ export async function executeAgentInternally({
   agentIndex,
   stepId,
   convexClient = convex,
-}: InternalExecutionParams): Promise<string> {
+  suppressResponseUpdate = false, // Flag for supervisor mode
+}: InternalExecutionParams & {
+  suppressResponseUpdate?: boolean;
+}): Promise<string> {
   const startTime = Date.now();
   let response = "";
   let tokenUsage: any = undefined;
@@ -44,6 +47,7 @@ export async function executeAgentInternally({
         stepId,
         isStreaming: true,
         isComplete: false,
+        suppressResponseUpdate, // Use the flag to prevent response updates
       });
 
       // Set initial working status
@@ -71,23 +75,25 @@ export async function executeAgentInternally({
       onComplete: async (usage?: any) => {
         tokenUsage = usage;
 
-        // Mark execution as complete with final response
+        // SUPERVISOR MODE FIX: Don't set response field in agent step
+        // The conversation history handles response display to prevent dual rendering
         if (stepId) {
           const endTime = Date.now();
           const executionDuration = endTime - startTime;
 
           await convexClient.mutation(api.mutations.updateAgentStep, {
             stepId,
-            response,
+            response, // The response will be ignored if suppressResponseUpdate is true
             isComplete: true,
             isStreaming: false,
             tokenUsage,
+            suppressResponseUpdate, // Use the flag to prevent response updates
           });
 
-          // Clear streaming content
+          // Clear streaming content since conversation history handles display
           await convexClient.mutation(api.mutations.updateStreamedContent, {
             stepId,
-            content: "",
+            content: "", // Clear to prevent legacy fallback rendering
           });
         }
       },

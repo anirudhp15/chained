@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { type Agent } from "./agent-input";
 import { ModalityIcons } from "../modality/ModalityIcons";
 import { useSidebar } from "@/lib/sidebar-context";
-import { Pencil } from "lucide-react";
+import { Pencil, ArrowUp, LoaderCircle } from "lucide-react";
 
 interface FocusedAgentInputProps {
   focusedAgentIndex: number;
@@ -12,6 +12,7 @@ interface FocusedAgentInputProps {
   onSendFocusedAgent: (agent: Agent) => void;
   isLoading?: boolean;
   isStreaming?: boolean;
+  isThinking?: boolean;
 }
 
 export function FocusedAgentInput({
@@ -20,6 +21,7 @@ export function FocusedAgentInput({
   onSendFocusedAgent,
   isLoading = false,
   isStreaming = false,
+  isThinking = false,
 }: FocusedAgentInputProps) {
   const [focusedAgentState, setFocusedAgentState] = useState<Agent | null>(
     null
@@ -105,8 +107,19 @@ export function FocusedAgentInput({
     >
       <div className="w-full flex justify-center">
         <div className="w-full max-w-4xl mx-auto px-3 md:px-0">
-          {/* Enhanced Input Area */}
-          <div className="relative">
+          {/* Thinking State Indicator - only shown when thinking but not streaming */}
+          {isThinking && !isStreaming && (
+            <div className="mb-2 w-full flex justify-center">
+              <div className="bg-gray-800/70 backdrop-blur-md border border-gray-700/50 rounded-full px-4 py-1.5 text-lavender-400 text-sm flex items-center gap-2">
+                <div className="w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
+                <span className="animate-pulse">Thinking...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Restructured Input Container */}
+          <div className="w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 rounded-3xl transition-all duration-300 ease-in-out">
+            {/* Textarea */}
             <textarea
               value={focusedAgentState.prompt}
               onChange={(e) =>
@@ -115,16 +128,16 @@ export function FocusedAgentInput({
                   prompt: e.target.value,
                 })
               }
-              placeholder={`Continue conversation with ${focusedAgentState.model}...`}
-              className="w-full h-24 rounded-xl md:h-32 px-3 md:px-4 py-3 md:py-4 pb-12 md:pb-16 bg-gray-800/70 backdrop-blur-md border border-gray-600/50 text-white placeholder-gray-400 hover:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-lavender-400/50 focus:border-lavender-400/50 resize-none transition-all text-base md:text-sm"
+              placeholder={`Continue conversation with ${nodeName}...`}
+              className="w-full rounded-t-3xl border-none max-h-24 h-auto p-4 outline-none ring-0 text-base md:text-sm bg-transparent text-white placeholder-gray-400 focus:outline-none resize-none transition-all"
               style={{ fontSize: "16px" }}
             />
 
             {/* Bottom controls */}
-            <div className="absolute bottom-3 md:bottom-4 left-3 md:left-4 right-3 md:right-4 flex items-center justify-between">
-              <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center justify-between p-3">
+              <div className="flex items-center gap-2">
                 {/* Agent Name Editor */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   {isNameEditing ? (
                     <input
                       type="text"
@@ -145,7 +158,6 @@ export function FocusedAgentInput({
                     />
                   ) : (
                     <>
-                      <div className="w-2 h-2 bg-lavender-400/70 rounded-full flex-shrink-0"></div>
                       <span className="text-xs text-lavender-400/90 font-medium max-w-20 truncate">
                         {nodeName}
                       </span>
@@ -167,10 +179,12 @@ export function FocusedAgentInput({
                 </div>
 
                 {/* Model Display */}
-                <div className="px-2 md:px-3 py-1 md:py-1.5 bg-gray-900/90 border border-gray-600/50 rounded-lg text-gray-300 text-xs backdrop-blur-sm">
+                {/* <div className="px-2 md:px-3 py-1 md:py-1.5 bg-gray-900/90 border border-gray-600/50 rounded-lg text-gray-300 text-xs backdrop-blur-sm">
                   <span className="font-medium">{focusedAgentState.model}</span>
-                </div>
+                </div> */}
+              </div>
 
+              <div className="flex items-center gap-2">
                 {/* Modality Icons */}
                 <ModalityIcons
                   selectedModel={focusedAgentState.model}
@@ -186,30 +200,26 @@ export function FocusedAgentInput({
                   isWebSearchEnabled={focusedAgentState.webSearchEnabled}
                   images={focusedAgentState.images || []}
                 />
-              </div>
 
-              {/* Send Button */}
-              <button
-                onClick={handleSendFocusedAgent}
-                disabled={!canSendFocused || isLoading || isStreaming}
-                className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-lavender-600 hover:bg-lavender-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white disabled:text-gray-400 rounded-lg text-xs md:text-sm font-medium transition-all shadow-lg hover:shadow-lavender-500/25 disabled:shadow-none backdrop-blur-sm"
-              >
-                {isLoading || isStreaming ? "Sending..." : "Send"}
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="md:w-4 md:h-4"
+                {/* Send Button */}
+                <button
+                  onClick={handleSendFocusedAgent}
+                  disabled={
+                    !canSendFocused || isLoading || isStreaming || isThinking
+                  }
+                  className={`flex items-center gap-2 p-2 rounded-full transition-all ${
+                    canSendFocused && !isLoading && !isStreaming && !isThinking
+                      ? "bg-lavender-500 hover:bg-lavender-600 text-white shadow-lg hover:shadow-lavender-500/25 hover:scale-105"
+                      : "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+                  }`}
                 >
-                  <path d="m22 2-7 20-4-9-9-4Z" />
-                  <path d="M22 2 11 13" />
-                </svg>
-              </button>
+                  {isLoading || isThinking ? (
+                    <LoaderCircle size={16} className="animate-spin" />
+                  ) : (
+                    <ArrowUp size={16} />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

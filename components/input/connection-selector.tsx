@@ -166,17 +166,15 @@ export function ConnectionBadge({
   const getTypeColor = () => {
     switch (type) {
       case "direct":
-        return "text-blue-400 bg-blue-500/20 border-blue-500/20";
+        return "text-blue-400";
       case "conditional":
-        return "text-amber-400 bg-amber-500/20 border-amber-500/20";
+        return "text-amber-400";
       case "parallel":
-        return "text-purple-400 bg-purple-500/20 border-purple-500/20";
+        return "text-purple-400";
     }
   };
 
   const textSize = size === "sm" ? "text-xs" : "text-xs ";
-  const paddingSize =
-    size === "sm" ? "px-2 py-0.5 md:px-2.5 md:py-1" : "px-2.5 py-1 ";
 
   // For parallel connections, get the parallel agent names
   const displayName = type === "parallel" ? "Parallel" : sourceAgentName;
@@ -185,7 +183,7 @@ export function ConnectionBadge({
     <div className={`flex items-center ${className}`}>
       <div className="relative group">
         <div
-          className={`flex items-center gap-1 md:gap-1.5 ${paddingSize} rounded-lg border ${getTypeColor()} ${textSize} font-medium`}
+          className={`flex items-center gap-1 md:gap-1.5 ${getTypeColor()} ${textSize} font-medium`}
         >
           {IconComponent && (
             <span
@@ -205,7 +203,7 @@ export function ConnectionBadge({
 
         {/* Hover tooltip for conditional conditions */}
         {type === "conditional" && condition && (
-          <div className="absolute top-full mt-2 px-2 md:px-3 py-1.5 md:py-2 bg-gray-900/95 backdrop-blur-sm border border-gray-600/50 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap">
+          <div className="absolute top-full mt-2 px-2 md:px-3 py-1.5 md:py-2 bg-gray-900/95 backdrop-blur-sm border border-gray-600/50 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[9999] whitespace-nowrap">
             <div className="text-xs text-gray-300 mb-1">Condition:</div>
             <code className="text-xs font-mono text-amber-300">
               {condition}
@@ -217,7 +215,7 @@ export function ConnectionBadge({
 
         {/* Hover tooltip for parallel relationships */}
         {type === "parallel" && (
-          <div className="absolute top-full mt-2 px-2 md:px-3 py-1.5 md:py-2 bg-gray-900/95 backdrop-blur-sm border border-gray-600/50 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap">
+          <div className="absolute top-full mt-2 px-2 md:px-3 py-1.5 md:py-2 bg-gray-900/95 backdrop-blur-sm border border-gray-600/50 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-[9999] whitespace-nowrap">
             <div className="text-xs text-gray-300 mb-1">
               Executing in parallel with:
             </div>

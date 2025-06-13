@@ -43,6 +43,15 @@ interface ParallelResult {
   completedAt: number;
 }
 
+// Agent conversation structure for real-time streaming
+interface AgentConversationTurn {
+  userPrompt: string;
+  agentResponse: string;
+  timestamp: number;
+  isStreaming?: boolean;
+  isComplete?: boolean;
+}
+
 function ChatPageContent() {
   const params = useParams();
   const router = useRouter();
@@ -78,6 +87,11 @@ function ChatPageContent() {
     [turnId: string]: string;
   }>({});
 
+  // NEW: Agent conversation state for real-time streaming
+  const [agentConversations, setAgentConversations] = useState<{
+    [agentIndex: number]: AgentConversationTurn[];
+  }>({});
+
   const createSession = useMutation(api.mutations.createSession);
   const addAgentStep = useMutation(api.mutations.addAgentStep);
   const updateAgentSkipped = useMutation(api.mutations.updateAgentSkipped);
@@ -105,6 +119,40 @@ function ChatPageContent() {
       : "skip"
   );
 
+  // Load existing agent conversations from database
+  const existingAgentConversations = useQuery(
+    api.queries.getAllAgentConversations,
+    chainId && isValidSession
+      ? { sessionId: chainId as Id<"chatSessions"> }
+      : "skip"
+  );
+
+  // Initialize agent conversations from database when loaded
+  useEffect(() => {
+    if (
+      existingAgentConversations &&
+      Array.isArray(existingAgentConversations)
+    ) {
+      const conversationMap: { [agentIndex: number]: AgentConversationTurn[] } =
+        {};
+
+      existingAgentConversations.forEach((agentConv: any) => {
+        if (agentConv.conversationHistory) {
+          conversationMap[agentConv.agentIndex] =
+            agentConv.conversationHistory.map((turn: any) => ({
+              userPrompt: turn.userPrompt,
+              agentResponse: turn.agentResponse,
+              timestamp: turn.timestamp,
+              isStreaming: false,
+              isComplete: true,
+            }));
+        }
+      });
+
+      setAgentConversations(conversationMap);
+    }
+  }, [existingAgentConversations]);
+
   // Validate session on mount and param changes
   useEffect(() => {
     if (session === undefined) {
@@ -131,14 +179,22 @@ function ChatPageContent() {
     if (focusedAgentIndex !== null) {
       setInputMode("focused");
     } else if (agentSteps && agentSteps.length > 0) {
-      // Switch to supervisor mode immediately when there are agent steps
-      if (inputMode !== "supervisor") {
-        setInputMode("supervisor");
-        // Set status based on whether chain is complete
-        const allCompleted = agentSteps.every(
-          (step) => step.isComplete || step.wasSkipped
-        );
-        setSupervisorStatus(allCompleted ? "ready" : "orchestrating");
+      // If there's only one agent, automatically focus on it
+      // This provides a better UX by showing the focused agent input instead of supervisor
+      // for single-agent chains, making it more intuitive for users
+      if (agentSteps.length === 1) {
+        setFocusedAgentIndex(0); // Focus on the single agent
+        setInputMode("focused");
+      } else {
+        // Switch to supervisor mode for multiple agents
+        if (inputMode !== "supervisor") {
+          setInputMode("supervisor");
+          // Set status based on whether chain is complete
+          const allCompleted = agentSteps.every(
+            (step) => step.isComplete || step.wasSkipped
+          );
+          setSupervisorStatus(allCompleted ? "ready" : "orchestrating");
+        }
       }
     } else {
       // No agent steps, stay in initial mode
@@ -204,52 +260,40 @@ function ChatPageContent() {
   };
 
   const handleSendFocusedAgent = async (agent: Agent) => {
-    if (!chainId || focusedAgentIndex === null) return;
+    if (!chainId) return;
 
     try {
-      // Add agent step to database
+      setIsLoading(true);
+
+      // Create agent step in database
       const stepId = await addAgentStep({
         sessionId: chainId as Id<"chatSessions">,
-        index: focusedAgentIndex,
         model: agent.model,
         prompt: agent.prompt,
         name: agent.name,
+        index: focusedAgentIndex || 0,
         connectionType: "direct", // Focus mode is always direct
-        connectionCondition: undefined,
-        sourceAgentIndex: undefined,
       });
 
-      // Stream the AI response with enhanced options
+      // Stream the response
       await streamAgentResponse(stepId, agent.model, agent.prompt, agent);
     } catch (error) {
-      console.error("Failed to send focused agent:", error);
+      console.error("Error running focused agent:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSendChain = async (agents: Agent[]) => {
-    if (!chainId) {
-      // Create a new session and redirect to it
-      try {
-        // Create a descriptive title based on the first agent's prompt
-        const firstPrompt = agents[0]?.prompt || "";
-        const title =
-          firstPrompt.length > 0
-            ? `${firstPrompt.split(" ").slice(0, 3).join(" ")}...`
-            : `Chat with ${agents.length} agents`;
+    if (!chainId) return;
 
-        const sessionId = await createSession({
-          title,
-        });
-
-        // Redirect to the new session and run the chain there
-        router.push(`/chat/${sessionId}`);
-        // Note: The chain will need to be re-triggered in the new session
-        // This could be handled via URL params or localStorage if needed
-      } catch (error) {
-        console.error("Failed to create session:", error);
-      }
-    } else {
+    try {
+      setIsLoading(true);
       await runChain(chainId as Id<"chatSessions">, agents);
+    } catch (error) {
+      console.error("Error running chain:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -312,6 +356,173 @@ function ChatPageContent() {
                         (prev[currentTurnId!] || "") + data.content,
                     }));
                   }
+                  break;
+
+                case "agent_stream_start":
+                  // REMOVED: This event is no longer needed with unified streaming
+                  // The agent_chunk handler now creates the conversation turn
+                  console.log(
+                    "Agent stream starting for agent:",
+                    data.agentName,
+                    "at index",
+                    data.agentIndex,
+                    "(handled by agent_chunk)"
+                  );
+                  break;
+
+                case "agent_chunk":
+                  // UPDATED: Handle unified stream with userPrompt included
+                  console.log(
+                    "Agent chunk received for agent:",
+                    data.agentIndex,
+                    "Content:",
+                    data.content
+                  );
+
+                  setAgentConversations((prev) => {
+                    const updated = { ...prev };
+
+                    // Check if we need to create a new conversation turn
+                    // This happens when receiving first chunk with userPrompt
+                    if (
+                      !updated[data.agentIndex] ||
+                      updated[data.agentIndex].length === 0 ||
+                      (data.userPrompt &&
+                        !updated[data.agentIndex].some(
+                          (turn) =>
+                            turn.userPrompt === data.userPrompt &&
+                            turn.isStreaming
+                        ))
+                    ) {
+                      // Create new conversation turn with the userPrompt from the chunk
+                      if (data.userPrompt) {
+                        if (!updated[data.agentIndex]) {
+                          updated[data.agentIndex] = [];
+                        }
+
+                        // Add new conversation turn
+                        updated[data.agentIndex].push({
+                          userPrompt: data.userPrompt,
+                          agentResponse: data.content || "",
+                          timestamp: Date.now(),
+                          isStreaming: true,
+                          isComplete: false,
+                        });
+
+                        return updated;
+                      }
+                      return prev; // No conversation turn to update and no userPrompt
+                    }
+
+                    // Otherwise update existing conversation
+                    const lastTurnIndex = updated[data.agentIndex].length - 1;
+                    const lastTurn = updated[data.agentIndex][lastTurnIndex];
+
+                    if (lastTurn.isStreaming) {
+                      updated[data.agentIndex][lastTurnIndex] = {
+                        ...lastTurn,
+                        agentResponse: lastTurn.agentResponse + data.content,
+                      };
+                    }
+
+                    return updated;
+                  });
+                  break;
+
+                case "agent_complete":
+                  // UPDATED: Handle unified stream completion with full response
+                  console.log(
+                    "Agent completed streaming:",
+                    data.agentName,
+                    "at index",
+                    data.agentIndex
+                  );
+
+                  setAgentConversations((prev) => {
+                    const updated = { ...prev };
+
+                    // Create new conversation if needed (for cases where we missed chunks)
+                    if (
+                      !updated[data.agentIndex] ||
+                      updated[data.agentIndex].length === 0
+                    ) {
+                      if (data.userPrompt && data.response) {
+                        updated[data.agentIndex] = [
+                          {
+                            userPrompt: data.userPrompt,
+                            agentResponse: data.response,
+                            timestamp: Date.now(),
+                            isStreaming: false,
+                            isComplete: true,
+                          },
+                        ];
+                        return updated;
+                      }
+                      return prev;
+                    }
+
+                    // Find the right conversation turn to update
+                    let turnIndex = updated[data.agentIndex].length - 1;
+
+                    // If we have userPrompt in the data, find the matching turn
+                    if (data.userPrompt) {
+                      const matchingTurnIndex = updated[
+                        data.agentIndex
+                      ].findIndex(
+                        (turn) => turn.userPrompt === data.userPrompt
+                      );
+
+                      if (matchingTurnIndex >= 0) {
+                        turnIndex = matchingTurnIndex;
+                      }
+                    }
+
+                    // Update the turn with complete status
+                    updated[data.agentIndex][turnIndex] = {
+                      ...updated[data.agentIndex][turnIndex],
+                      // Use data.response if available (for cases where chunks were missed)
+                      agentResponse:
+                        data.response ||
+                        updated[data.agentIndex][turnIndex].agentResponse,
+                      isStreaming: false,
+                      isComplete: true,
+                    };
+
+                    return updated;
+                  });
+                  break;
+
+                case "agent_error":
+                  // NEW: Handle agent streaming errors
+                  console.error(
+                    "Agent streaming error:",
+                    data.agentIndex,
+                    "Error:",
+                    data.error
+                  );
+
+                  setAgentConversations((prev) => {
+                    const updated = { ...prev };
+                    if (
+                      !updated[data.agentIndex] ||
+                      updated[data.agentIndex].length === 0
+                    ) {
+                      return prev;
+                    }
+
+                    const lastTurnIndex = updated[data.agentIndex].length - 1;
+                    const lastTurn = updated[data.agentIndex][lastTurnIndex];
+
+                    updated[data.agentIndex][lastTurnIndex] = {
+                      ...lastTurn,
+                      agentResponse:
+                        lastTurn.agentResponse + `\n\nError: ${data.error}`,
+                      isStreaming: false,
+                      isComplete: false, // Mark as incomplete due to error
+                    };
+
+                    return updated;
+                  });
                   break;
 
                 case "mention_execution_start":
@@ -652,11 +863,11 @@ function ChatPageContent() {
       } as ParallelResult & { agentIndex: number; duration: number };
     };
 
-    // Execute agents with staggered delays to prevent rate limit collisions
+    // Execute agents in true parallel with minimal stagger for optimal performance
     const concurrentExecutionPromises = group.agents.map(
       (agent, groupIndex) => {
-        // Stagger requests by 500ms intervals to avoid hitting rate limits
-        const staggerDelay = groupIndex * 500;
+        // Use minimal 50ms stagger just to prevent simultaneous request bursts
+        const staggerDelay = groupIndex * 50;
         return executeAgentWithRetry(agent, groupIndex, staggerDelay);
       }
     );
@@ -1032,6 +1243,17 @@ function ChatPageContent() {
     setPresetAgents(null);
   };
 
+  // Watch for changes in the number of agents and update input mode accordingly
+  useEffect(() => {
+    if (agentSteps) {
+      // If we had one agent but now have more, switch to supervisor mode
+      if (agentSteps.length > 1 && focusedAgentIndex !== null) {
+        setFocusedAgentIndex(null);
+        setInputMode("supervisor");
+      }
+    }
+  }, [agentSteps?.length]);
+
   // Show loading state while validating session
   if (isValidSession === null) {
     return (
@@ -1069,6 +1291,7 @@ function ChatPageContent() {
           onFocusAgent={handleFocusAgent}
           onLoadPreset={handleLoadPreset}
           queuedAgents={queuedAgents}
+          agentConversations={agentConversations}
         />
         {inputMode === "supervisor" ? (
           <SupervisorInterface
@@ -1100,7 +1323,9 @@ function ChatPageContent() {
                     id: agentSteps[focusedAgentIndex]._id,
                     model: agentSteps[focusedAgentIndex].model,
                     prompt: "", // Start with empty prompt for new input
-                    name: agentSteps[focusedAgentIndex].name,
+                    name:
+                      agentSteps[focusedAgentIndex].name ||
+                      `Node ${focusedAgentIndex + 1}`,
                     connection: {
                       type:
                         agentSteps[focusedAgentIndex].connectionType ===

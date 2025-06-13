@@ -6,6 +6,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { MarkdownRenderer } from "../chat/markdown-renderer";
 import { ChainProgress } from "../performance/chain-progress";
+import { SupervisorConversationContent } from "./supervisor-conversation-content";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import {
   Bot,
@@ -19,6 +20,7 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
+  Link2,
 } from "lucide-react";
 
 interface SupervisorModalProps {
@@ -165,6 +167,7 @@ export function SupervisorModal({
                   supervisorTurns={supervisorTurns}
                   supervisorStreamContent={supervisorStreamContent}
                   agentSteps={agentSteps}
+                  useMotion={true}
                 />
               </motion.div>
             </motion.div>
@@ -204,11 +207,7 @@ export function SupervisorModal({
                 transition={{ delay: 0.1, duration: 0.2 }}
               >
                 <div className="flex items-center gap-3">
-                  <motion.div
-                    className="w-2 h-2 bg-emerald-400 rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
+                  <Link2 className="w-4 h-4 text-lavender-400" />
                   <span className="text-xs text-lavender-400 font-medium">
                     Supervisor
                   </span>
@@ -263,6 +262,7 @@ export function SupervisorModal({
                   supervisorTurns={supervisorTurns}
                   supervisorStreamContent={supervisorStreamContent}
                   agentSteps={agentSteps}
+                  useMotion={true}
                 />
               </motion.div>
             </motion.div>
@@ -287,11 +287,7 @@ export function SupervisorModal({
               className="flex justify-between shadow-lg shadow-gray-950/50 items-center gap-3 px-4 py-2 bg-gray-900/85 backdrop-blur-sm border max-w-4xl w-full border-gray-600/50 rounded-xl text-sm transition-all duration-300 hover:bg-gray-800/90 hover:border-emerald-400/30 group"
             >
               <div className="flex items-center gap-3">
-                <motion.div
-                  className="w-2 h-2 bg-emerald-400 rounded-full"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
+                <Link2 className="w-4 h-4 text-lavender-400" />
                 <span className="text-xs text-lavender-400 font-medium">
                   Supervisor
                 </span>
@@ -312,160 +308,5 @@ export function SupervisorModal({
         )}
       </AnimatePresence>
     </LayoutGroup>
-  );
-}
-
-// Extracted conversation content component for reuse
-function SupervisorConversationContent({
-  supervisorTurns,
-  supervisorStreamContent = {},
-  agentSteps,
-}: {
-  supervisorTurns: any[] | undefined;
-  supervisorStreamContent?: { [turnId: string]: string };
-  agentSteps?: any[] | undefined;
-}) {
-  // Show chain progress when there are no supervisor turns but there are agent steps
-  if (
-    (!supervisorTurns || supervisorTurns.length === 0) &&
-    agentSteps &&
-    agentSteps.length > 0
-  ) {
-    return (
-      <motion.div
-        className="px-8 py-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <ChainProgress agentSteps={agentSteps} />
-      </motion.div>
-    );
-  }
-
-  // Show welcome message when there are no supervisor turns and no agent steps
-  if (!supervisorTurns || supervisorTurns.length === 0) {
-    return (
-      <motion.div
-        className="flex items-center justify-center py-16"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="text-center">
-          <motion.h3
-            className="text-xl font-normal text-gray-200 mb-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1, duration: 0.3 }}
-          >
-            Supervisor
-          </motion.h3>
-          <motion.p
-            className="text-gray-400 text-base leading-relaxed mb-8 max-w-md"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.3 }}
-          >
-            Coordinate your agents by mentioning them in your messages.
-          </motion.p>
-          <motion.div
-            className="text-sm text-gray-500 space-y-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.3 }}
-          >
-            <p>"@Agent1 analyze this data"</p>
-            <p>"@Agent2 summarize the findings"</p>
-            <p>"@Agent1 @Agent2 collaborate"</p>
-          </motion.div>
-        </div>
-      </motion.div>
-    );
-  }
-
-  return (
-    <div className="px-8 py-8 space-y-12">
-      <AnimatePresence>
-        {supervisorTurns.map((turn, index) => (
-          <motion.div
-            key={turn._id}
-            className="space-y-8"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.4,
-              delay: index * 0.1,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-          >
-            {/* User Message */}
-            <div className="flex items-start gap-4">
-              <motion.div
-                className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.2 }}
-              >
-                <span className="text-xs font-medium text-white">U</span>
-              </motion.div>
-              <div className="flex-1 pt-1">
-                <div className="text-gray-200 text-base leading-relaxed whitespace-pre-wrap">
-                  {turn.userInput}
-                </div>
-              </div>
-            </div>
-
-            {/* Supervisor Response */}
-            {(turn.supervisorResponse ||
-              turn.isStreaming ||
-              supervisorStreamContent[turn._id]) && (
-              <motion.div
-                className="flex items-start gap-4"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2, duration: 0.3 }}
-              >
-                <motion.div
-                  className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <span className="text-xs font-medium text-white">S</span>
-                </motion.div>
-                <div className="flex-1 pt-1">
-                  <div className="text-gray-200 text-base leading-relaxed">
-                    {turn.isStreaming && supervisorStreamContent[turn._id] ? (
-                      <div>
-                        <MarkdownRenderer
-                          content={supervisorStreamContent[turn._id] || ""}
-                        />
-                        <motion.div
-                          className="inline-block w-0.5 h-5 bg-emerald-400 ml-1"
-                          animate={{ opacity: [0, 1, 0] }}
-                          transition={{ duration: 1, repeat: Infinity }}
-                        />
-                      </div>
-                    ) : turn.isStreaming && !turn.supervisorResponse ? (
-                      <div className="flex items-center gap-3 text-gray-400">
-                        <motion.div
-                          className="w-2 h-2 bg-gray-400 rounded-full"
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 1, repeat: Infinity }}
-                        />
-                        <span>Processing...</span>
-                      </div>
-                    ) : (
-                      <MarkdownRenderer
-                        content={turn.supervisorResponse || ""}
-                      />
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </div>
   );
 }

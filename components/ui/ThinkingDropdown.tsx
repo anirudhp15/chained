@@ -79,9 +79,6 @@ export function ThinkingDropdown({
                 <span className="text-xs">Processing thoughts...</span>
               </div>
             )}
-            {isThinking && isStreaming && thinking && (
-              <span className="inline-block w-1.5 h-3 bg-lavender-400 ml-1 streaming-cursor"></span>
-            )}
           </div>
         </div>
       )}

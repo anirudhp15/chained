@@ -56,6 +56,8 @@ module.exports = {
       },
       fontFamily: {
         sans: ["Asap", "sans-serif"],
+        inter: ["Inter", "sans-serif"],
+        jet: ['"JetBrains Mono"', "monospace"],
       },
     },
   },
