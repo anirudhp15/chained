@@ -287,7 +287,7 @@ export async function POST(request: NextRequest) {
             }
 
             // SUPERVISOR RESPONSE: Simple completion message (no streaming duplication)
-            const completionMessage = `✅ Routed task to ${validMentions.map((m) => m.agentName).join(", ")} - see results in agent columns above.`;
+            const completionMessage = `✅ Routed task to ${validMentions.map((m: any) => m.agentName).join(", ")} - see results in agent columns above.`;
 
             controller.enqueue(
               new TextEncoder().encode(

@@ -1447,7 +1447,7 @@ export function ChatArea({
       </div>
 
       {/* Mobile: Vertical stacked agents */}
-      <div className="md:hidden flex-1 overflow-y-auto px-2 py-2 pb-64 space-y-4">
+      <div className="md:hidden flex-1 overflow-y-auto px-2 py-2 scrollbar-none space-y-4">
         {agentGroups.map((agent, index) => (
           <MobileAgentCard
             key={agent._id}
