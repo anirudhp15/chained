@@ -37,6 +37,7 @@ import {
   Instagram,
   Twitter,
   XIcon,
+  Unlink,
 } from "lucide-react";
 import { AccessGate } from "@/components/auth/access-gate";
 import { hasBetaAccess } from "@/lib/beta-access";
@@ -738,16 +739,109 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Background Effects */}
-      <AnimatedBackground />
+      {/* Desktop: Complex animated background */}
+      <div className="hidden md:block">
+        <AnimatedBackground />
+      </div>
+
+      {/* Mobile: Simplified animated background */}
+      <div className="block md:hidden absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-lavender-500/10 via-transparent to-purple-500/10" />
+        <motion.div
+          className="absolute top-1/4 left-1/4 w-72 h-72 bg-lavender-500/20 rounded-full blur-3xl"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <motion.div
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"
+          animate={{
+            scale: [1.2, 0.8, 1.2],
+            opacity: [0.4, 0.7, 0.4],
+          }}
+          transition={{
+            duration: 5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/2 w-48 h-48 bg-pink-500/15 rounded-full blur-2xl transform -translate-x-1/2 -translate-y-1/2"
+          animate={{
+            rotate: [0, 360],
+            scale: [0.8, 1.1, 0.8],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+
+        {/* Floating particles for mobile */}
+        {Array.from({ length: 15 }, (_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 rounded-full bg-lavender-400/30"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: [-20, -80, -20],
+              x: [
+                Math.random() * 30 - 15,
+                Math.random() * 60 - 30,
+                Math.random() * 30 - 15,
+              ],
+              opacity: [0, 0.8, 0],
+              scale: [0, 1.2, 0],
+            }}
+            transition={{
+              duration: Math.random() * 8 + 6,
+              repeat: Infinity,
+              delay: Math.random() * 3,
+              ease: "easeOut",
+            }}
+          />
+        ))}
+
+        {/* Subtle grid for mobile */}
+        <motion.div
+          className="absolute inset-0 opacity-[0.15]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(147,112,219,0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(147,112,219,0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: "40px 40px",
+          }}
+          animate={{
+            backgroundPosition: ["0px 0px", "40px 40px", "0px 0px"],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+      </div>
 
       {/* Navigation */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full">
-        <motion.div className="transition-all duration-300 ease-out border-y border-gray-800/50 bg-gray-950/80 backdrop-blur-xl">
-          <div className="flex h-16 items-center justify-between px-4 sm:px-16">
+        <motion.div className="transition-all duration-300 ease-out border-y p-2 border-gray-800/50 bg-gray-950/80 backdrop-blur-xl lg:mt-4 lg:max-w-7xl lg:mx-auto lg:rounded-3xl">
+          <div className="flex  items-center justify-between px-4 sm:px-16">
             <Link href="/" className="flex items-center space-x-2 group">
-              <div className="relative">
-                <Link2 className="h-6 w-6 text-lavender-400/80 group-hover:text-lavender-400 transition-all duration-200 group-hover:-rotate-45" />
-                <div className="absolute inset-0 bg-lavender-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative group/logo">
+                <Link2 className="h-6 w-6 text-lavender-400 group-hover/logo:hidden transition-all duration-200 group-hover:-rotate-45 block" />
+                <Unlink className="h-6 w-6 text-lavender-400/80 group-hover/logo:text-lavender-400 transition-all duration-200 group-hover/logo:block hidden" />
               </div>
               <span className="text-xl font-semibold text-lavender-400 group-hover:text-white transition-colors duration-300">
                 Ch<span className="text-lavender-400">ai</span>ned
@@ -755,7 +849,7 @@ export default function LandingPage() {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden md:flex items-center text-sm space-x-8">
               <Link
                 href="#features"
                 className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
@@ -788,10 +882,9 @@ export default function LandingPage() {
               >
                 <button
                   onClick={handleAccessRequest}
-                  className="inline-flex items-center bg-lavender-600/20 border border-lavender-600/50 hover:bg-lavender-600/30 text-lavender-400 px-6 py-2 font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group rounded-xl"
+                  className="inline-flex items-center bg-lavender-600/20 border border-lavender-600/50 hover:bg-lavender-600/30 text-lavender-400 px-4 py-2 text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group rounded-xl"
                 >
                   {hasAccess ? "Continue Building" : "Get Access"}
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
                 </button>
               </motion.div>
 
@@ -1337,9 +1430,9 @@ export default function LandingPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="lg:col-span-2">
               <Link href="/" className="flex items-center space-x-2 group mb-4">
-                <div className="relative">
-                  <Link2 className="h-6 w-6 text-lavender-400/80 group-hover:text-lavender-400 transition-all duration-200 group-hover:-rotate-45" />
-                  <div className="absolute inset-0 bg-lavender-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative group/logo">
+                  <Link2 className="h-6 w-6 text-lavender-400 group-hover/logo:hidden transition-all duration-200 group-hover:-rotate-45 block" />
+                  <Unlink className="h-6 w-6 text-lavender-400/80 group-hover/logo:text-lavender-400 transition-all duration-200 group-hover/logo:block hidden" />
                 </div>
                 <span className="text-xl font-semibold text-lavender-400 group-hover:text-white transition-colors duration-300">
                   Ch<span className="text-lavender-400">ai</span>ned
@@ -1467,7 +1560,7 @@ export default function LandingPage() {
           <AccessGate onAccessGranted={handleAccessGranted} />
           <button
             onClick={() => setShowAccessGate(false)}
-            className="absolute top-8 right-8 p-2 bg-gray-900/50 hover:bg-gray-800/50 border border-gray-700/50 hover:border-gray-600/50 rounded-lg text-gray-300 hover:text-white transition-all duration-200"
+            className="absolute top-4 right-4 p-2 bg-gray-900/50 hover:bg-gray-800/50 border border-gray-700/50 hover:border-gray-600/50 rounded-lg text-gray-300 hover:text-white transition-all duration-200"
           >
             <X className="w-5 h-5" />
           </button>

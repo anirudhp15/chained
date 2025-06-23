@@ -133,7 +133,7 @@ export function AccessGate({ onAccessGranted }: AccessGateProps) {
         );
 
         updateForm({
-          success: `Great! You're #${result.position} on the waitlist. We'll notify you when it's your turn.`,
+          success: `Great! You're on the waitlist. We'll notify you when you're in.`,
         });
       } else {
         trackLandingPageEvent.waitlistError(result.reason || "Unknown error");
