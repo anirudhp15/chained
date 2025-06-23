@@ -40,10 +40,10 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.posthog.com *.clerk.accounts.dev *.clerk.dev",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat",
               "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
-              "img-src 'self' data: blob: *.amazonaws.com *.convex.cloud *.clerk.accounts.dev *.clerk.dev",
-              "connect-src 'self' *.convex.cloud *.posthog.com *.clerk.accounts.dev *.clerk.dev wss: ws:",
+              "img-src 'self' data: blob: *.amazonaws.com *.convex.cloud *.clerk.accounts.dev *.clerk.dev *.chained.chat",
+              "connect-src 'self' *.convex.cloud *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat wss: ws:",
               "font-src 'self' fonts.gstatic.com",
               "media-src 'self' blob:",
               "object-src 'none'",
