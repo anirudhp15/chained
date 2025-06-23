@@ -93,12 +93,16 @@
   * {
     border-color: hsl(var(--border));
     font-family: "Asap", sans-serif;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   /* Ensure gray-950 background everywhere to prevent white flashes */
   :root {
     background-color: #030712; /* gray-950 */
     font-family: "Asap", sans-serif;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   html {
@@ -108,6 +112,8 @@
     font-family: "Asap", sans-serif;
     font-optical-sizing: auto;
     font-variation-settings: "wdth" 100;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   body {
@@ -119,12 +125,16 @@
     font-family: "Asap", sans-serif;
     font-optical-sizing: auto;
     font-variation-settings: "wdth" 100;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   /* Ensure all major containers default to gray-950 */
   #__next,
   [data-overlay-container="true"] {
     background-color: #030712; /* gray-950 */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   /* Next.js specific elements */
