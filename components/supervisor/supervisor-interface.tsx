@@ -588,40 +588,39 @@ export function SupervisorInterface({
         className={`
         w-full flex flex-col items-center justify-end
         transition-all duration-300 ease-in-out ${isInputHidden ? "h-min" : "h-full"}
-        max-w-4xl
+        md:max-w-4xl
         ${isMaximized ? "h-full" : ""}
       `}
       >
-        <div className="mx-2">
-          {/* Supervisor Modal/Indicator with smooth animations */}
-          <motion.div
-            className={`
-          w-full mx-auto bg-gray-600/25 backdrop-blur-lg mb-2 group border border-gray-600/50 rounded-3xl 
-          shadow-2xl shadow-gray-950/50
-          transition-all duration-300 ease-in-out
-          ${isMaximized ? "max-w-full h-full flex flex-col" : "max-w-4xl"}
-          ${
-            isOpen
-              ? isMaximized
-                ? "opacity-100"
-                : "max-h-96 opacity-100 "
-              : "max-h-16 opacity-95 hover:opacity-100 hover:bg-gray-700/60"
-          }
-        `}
-            initial={false}
-            animate={{
-              y: !isOpen && isInputHidden ? 144 : 0, // Always 0 when input is hidden and modal is closed
-            }}
-            transition={{
-              type: "spring",
-              stiffness: 500,
-              damping: 25,
-              mass: 0.5,
-              duration: 0.25,
-            }}
-          >
-            {/* Toggle Button - absolutely positioned above and centered */}
-            {/* <button
+        {/* Supervisor Modal/Indicator with smooth animations */}
+        <motion.div
+          className={`
+        relative w-[90%] bg-gray-600/25 backdrop-blur-lg mb-2 group border border-gray-600/50 rounded-3xl 
+        shadow-2xl shadow-gray-950/50
+        transition-all duration-300 ease-in-out md:max-w-4xl
+        ${isMaximized ? "max-w-full h-full flex flex-col" : ""}
+        ${
+          isOpen
+            ? isMaximized
+              ? "opacity-100"
+              : "max-h-96 opacity-100 "
+            : "max-h-16 opacity-95 hover:opacity-100 hover:bg-gray-700/60"
+        }
+      `}
+          initial={false}
+          animate={{
+            y: !isOpen && isInputHidden ? 144 : 0, // Always 0 when input is hidden and modal is closed
+          }}
+          transition={{
+            type: "spring",
+            stiffness: 500,
+            damping: 25,
+            mass: 0.5,
+            duration: 0.25,
+          }}
+        >
+          {/* Toggle Button - absolutely positioned above and centered */}
+          {/* <button
             type="button"
             onClick={onToggle}
             className="absolute -top-6 left-0 right-0 mx-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -630,9 +629,9 @@ export function SupervisorInterface({
               {isOpen ? "Collapse" : "Open"}
             </kbd>
           </button> */}
-            {/* Header - always visible, transforms based on state */}
-            <div
-              className={`
+          {/* Header - always visible, transforms based on state */}
+          <div
+            className={`
             flex items-center justify-between px-4 group
             transition-all duration-300 ease-in-out cursor-pointer
             ${
@@ -642,51 +641,51 @@ export function SupervisorInterface({
             }
             ${isInputHidden && !isOpen ? "hover:bg-gray-700/40 hover:scale-[1.02]" : ""}
           `}
-              onClick={onToggle}
-            >
-              <div className="flex items-center gap-3">
-                <Unlink className="w-4 h-4 text-lavender-400 group-hover:hidden" />
-                <Link2 className="w-4 h-4 text-lavender-400 hidden group-hover:block -rotate-45" />
-                <span className="text-xs text-lavender-400 font-medium">
-                  Supervisor
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-xs ${getStatusColor()}`}>
-                  {getStatusText()}
-                </span>
-                {isOpen ? (
-                  <>
-                    <button
-                      onClick={handleMaximizeToggle}
-                      className="p-1.5 hover:bg-gray-800/50 rounded transition-colors"
-                      title={isMaximized ? "Minimize" : "Maximize"}
-                    >
-                      {isMaximized ? (
-                        <Minimize2 className="w-3 h-3 text-gray-400 hover:text-white" />
-                      ) : (
-                        <Maximize2 className="w-3 h-3 text-gray-400 hover:text-white" />
-                      )}
-                    </button>
-                    {!isMaximized ? (
-                      <button
-                        onClick={onToggle}
-                        className="p-1.5 hover:bg-gray-800/50 rounded transition-colors"
-                        title="Collapse"
-                      >
-                        <ChevronDown className="w-4 h-4 text-gray-400 hover:text-white" />
-                      </button>
-                    ) : null}
-                  </>
-                ) : (
-                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-emerald-400 transition-colors" />
-                )}
-              </div>
+            onClick={onToggle}
+          >
+            <div className="flex items-center gap-3">
+              <Unlink className="w-4 h-4 text-lavender-400 group-hover:hidden" />
+              <Link2 className="w-4 h-4 text-lavender-400 hidden group-hover:block -rotate-45" />
+              <span className="text-xs text-lavender-400 font-medium">
+                Supervisor
+              </span>
             </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs ${getStatusColor()}`}>
+                {getStatusText()}
+              </span>
+              {isOpen ? (
+                <>
+                  <button
+                    onClick={handleMaximizeToggle}
+                    className="p-1.5 hover:bg-gray-800/50 rounded transition-colors"
+                    title={isMaximized ? "Minimize" : "Maximize"}
+                  >
+                    {isMaximized ? (
+                      <Minimize2 className="w-3 h-3 text-gray-400 hover:text-white" />
+                    ) : (
+                      <Maximize2 className="w-3 h-3 text-gray-400 hover:text-white" />
+                    )}
+                  </button>
+                  {!isMaximized ? (
+                    <button
+                      onClick={onToggle}
+                      className="p-1.5 hover:bg-gray-800/50 rounded transition-colors"
+                      title="Collapse"
+                    >
+                      <ChevronDown className="w-4 h-4 text-gray-400 hover:text-white" />
+                    </button>
+                  ) : null}
+                </>
+              ) : (
+                <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-emerald-400 transition-colors" />
+              )}
+            </div>
+          </div>
 
-            {/* Modal Content - slides in/out smoothly */}
-            <div
-              className={`
+          {/* Modal Content - slides in/out smoothly */}
+          <div
+            className={`
             overflow-hidden transition-all duration-300 ease-in-out
             ${
               isOpen
@@ -696,30 +695,29 @@ export function SupervisorInterface({
                 : "max-h-0 opacity-0"
             }
           `}
-            >
-              <div
-                className={`
+          >
+            <div
+              className={`
               overflow-y-auto scrollbar-thin scrollbar-dark
               transition-transform duration-300 ease-in-out
               ${isOpen ? "translate-y-0" : "-translate-y-4"}
               ${isMaximized ? "h-full" : "max-h-80"}
             `}
-              >
-                <SupervisorConversationContent
-                  supervisorTurns={supervisorTurns}
-                  supervisorStreamContent={supervisorStreamContent}
-                  agentSteps={agentSteps}
-                />
-              </div>
+            >
+              <SupervisorConversationContent
+                supervisorTurns={supervisorTurns}
+                supervisorStreamContent={supervisorStreamContent}
+                agentSteps={agentSteps}
+              />
             </div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
 
         {/* Supervisor Chat Input */}
         <motion.div
           className="
-          relative w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 border-x-0 border-b-0 md:border-b rounded-3xl rounded-b-none md:rounded-b-3xl
-          transition-all duration-300 ease-in-out max-w-4xl"
+          relative w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 border-x-0 md:border-x border-b-0 md:border-b rounded-3xl rounded-b-none md:rounded-b-3xl
+          transition-all duration-300 ease-in-out md:max-w-4xl"
           initial={false}
           animate={{
             y: isInputHidden && !isOpen ? 100 : 0,

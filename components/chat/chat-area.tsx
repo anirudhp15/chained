@@ -282,62 +282,82 @@ function MobileAgentCard({
   // Get performance state
   const { showDetailedPerformance } = usePerformance();
 
+  // Get connection type border color
+  const getConnectionBorderColor = () => {
+    switch (agent.connectionType) {
+      case "direct":
+        return "border-l-blue-400";
+      case "conditional":
+        return "border-l-amber-400";
+      case "parallel":
+        return "border-l-purple-400";
+      default:
+        return "border-l-gray-600";
+    }
+  };
+
   return (
-    <div className="bg-gray-950/50 border border-gray-700/50 rounded-lg shadow-lg overflow-hidden">
-      {/* Enhanced Collapsible Header */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex flex-col items-start justify-between p-4 hover:bg-gray-800/50 transition-colors "
+    <div
+      className={`bg-gray-950/50 border border-gray-700/50 rounded-lg shadow-lg overflow-hidden border-l-4 ${getConnectionBorderColor()}`}
+    >
+      {/* Simplified Header */}
+      <div
+        className={`flex flex-row justify-between items-center p-4 ${
+          isExpanded ? "pb-4" : "pb-0"
+        }`}
       >
-        <div
-          className={`flex flex-row justify-between w-full ${
-            !isExpanded ? "border-b border-gray-700/50 pb-4" : ""
-          }`}
-        >
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            <ModelAvatar model={agent.model} size="sm" />
-            <div className="flex-1 min-w-0 space-y-3">
-              {/* Header: Agent info + live status */}
-              <div className="flex flex-col text-left min-w-0">
-                <span className="text-white font-medium text-sm sm:text-base truncate">
-                  {agent.name || `Node ${agent.index + 1}`}
-                </span>
-                <span className="text-gray-400 text-xs sm:text-sm truncate">
-                  {agent.model}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                onFocusToggle(agent.index);
-              }}
-              className="flex text-xs items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-800/30 rounded-lg px-2 py-1 transition-all cursor-pointer"
-              title="Focus on this agent"
-            >
-              Focus
-              <Focus
-                size={14}
-                className="text-gray-400 hover:text-lavender-400 flex-shrink-0"
-              />
-            </div>
-            <ChevronDown
-              size={18}
-              className={`text-gray-400 transition-transform duration-200 flex-shrink-0 ${
-                isExpanded ? "rotate-180" : ""
-              }`}
-            />
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <ModelAvatar model={agent.model} size="sm" />
+          <div className="flex-1 min-w-0">
+            <span className="text-white font-medium text-sm sm:text-base truncate block">
+              {agent.name || `Node ${agent.index + 1}`}
+            </span>
           </div>
         </div>
-        {/* Content Preview */}
-        {!isExpanded && <ResponsePreviewLine agent={agent} />}
-      </button>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <button
+            onClick={() => onFocusToggle(agent.index)}
+            className="flex text-xs items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-800/30 rounded-lg px-2 py-1 transition-all cursor-pointer"
+            title="Focus on this agent"
+          >
+            Focus
+            <Focus
+              size={14}
+              className="text-gray-400 hover:text-lavender-400 flex-shrink-0"
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* Content Preview */}
+      {!isExpanded && (
+        <div className="px-4 pb-2">
+          <ResponsePreviewLine agent={agent} />
+        </div>
+      )}
+
+      {/* Tap to Expand Button */}
+      {!isExpanded && (
+        <button
+          onClick={() => setIsExpanded(true)}
+          className="w-full text-center py-3 text-xs text-gray-400 hover:text-gray-300 hover:bg-gray-800/30 transition-colors border-t border-gray-700/50"
+        >
+          ↓ Tap to expand
+        </button>
+      )}
 
       {/* Expandable Content */}
       {isExpanded && (
         <div className="border-t border-gray-700/50 px-2 py-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
+          {/* Close Button */}
+          <div className="flex justify-end mb-3">
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="text-xs text-gray-400 hover:text-gray-300 hover:bg-gray-800/30 rounded-lg px-2 py-1 transition-colors"
+            >
+              ↑ Collapse
+            </button>
+          </div>
           {/* User Prompt */}
           <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg w-fit max-w-[80%] ml-auto p-3">
             <TruncatedText
@@ -652,6 +672,310 @@ function MobileAgentCard({
   );
 }
 
+// Mobile Focus View Component
+interface MobileFocusViewProps {
+  agent: any;
+  isOpen: boolean;
+  onClose: () => void;
+  agentConversations?: AgentConversationTurn[];
+  sessionId: Id<"chatSessions"> | null;
+}
+
+function MobileFocusView({
+  agent,
+  isOpen,
+  onClose,
+  agentConversations = [],
+  sessionId,
+}: MobileFocusViewProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when content changes
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [agentConversations, agent.response, agent.streamedContent]);
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-0 bg-black/50 z-50 md:hidden"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          className="absolute inset-x-0 bottom-0 top-16 bg-gray-900 rounded-t-2xl overflow-hidden pb-56"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-700/50 bg-gray-950/95 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <ModelAvatar model={agent.model} size="sm" />
+              <div>
+                <h2 className="text-white font-medium text-lg">
+                  {agent.name || `Node ${agent.index + 1}`}
+                </h2>
+                <p className="text-gray-400 text-sm">{agent.model}</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors"
+            >
+              <ChevronDown size={20} />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto p-4 space-y-4 h-full"
+          >
+            {/* User Prompt */}
+            <div className="flex justify-end">
+              <div
+                className="bg-gray-800/90 rounded-xl py-3 px-4 max-w-[85%]"
+                data-prompt-content="true"
+                data-source-type="user-prompt"
+              >
+                <HighlightWrapper
+                  content={agent.prompt}
+                  contentId={`mobile-focus-prompt-${agent.index}`}
+                  highlightType="copy"
+                >
+                  <div className="text-white text-sm">{agent.prompt}</div>
+                </HighlightWrapper>
+                <div className="mt-2 flex justify-end">
+                  <CopyButton
+                    text={agent.prompt}
+                    size="sm"
+                    sourceContext={{
+                      sourceType: "user-prompt",
+                      agentIndex: agent.index,
+                      agentName: agent.name || `Node ${agent.index + 1}`,
+                      agentModel: agent.model,
+                      sessionId: sessionId || undefined,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Multimodal Attachments */}
+            <AttachmentDisplay
+              images={agent.images}
+              audioBlob={agent.audioBlob}
+              audioDuration={agent.audioDuration}
+              webSearchData={agent.webSearchData}
+            />
+
+            {/* Agent Conversations */}
+            {agentConversations.length > 0 ? (
+              <div className="space-y-4">
+                {agentConversations.map((conversation, turnIndex) => (
+                  <div key={turnIndex} className="space-y-3">
+                    {/* User Message */}
+                    <div className="flex justify-end">
+                      <div className="max-w-[85%] bg-blue-600/20 border border-blue-500/30 rounded-xl px-3 py-2">
+                        <div className="text-white text-sm">
+                          {conversation.userPrompt}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Agent Response */}
+                    <div className="flex justify-start">
+                      <div className="max-w-[85%]">
+                        <HighlightWrapper
+                          content={conversation.agentResponse}
+                          contentId={`mobile-focus-response-${agent.index}-${conversation.timestamp}`}
+                          highlightType="copy"
+                        >
+                          <div className="text-white text-sm">
+                            <MarkdownRenderer
+                              content={conversation.agentResponse}
+                              isStreaming={conversation.isStreaming}
+                              className="break-words overflow-wrap-anywhere"
+                              agentIndex={agent.index}
+                              agentName={
+                                agent.name || `Node ${agent.index + 1}`
+                              }
+                              agentModel={agent.model}
+                              sessionId={sessionId || undefined}
+                            />
+                          </div>
+                        </HighlightWrapper>
+                        {!conversation.isStreaming &&
+                          conversation.agentResponse && (
+                            <div className="mt-2">
+                              <CopyButton
+                                text={conversation.agentResponse}
+                                size="sm"
+                                sourceContext={{
+                                  sourceType: "agent-response",
+                                  agentIndex: agent.index,
+                                  agentName:
+                                    agent.name || `Node ${agent.index + 1}`,
+                                  agentModel: agent.model,
+                                  sessionId: sessionId || undefined,
+                                }}
+                              />
+                            </div>
+                          )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              // Legacy single response
+              (agent.response ||
+                agent.streamedContent ||
+                agent.isStreaming) && (
+                <div className="flex justify-start">
+                  <div className="max-w-[85%]">
+                    <HighlightWrapper
+                      content={agent.response || agent.streamedContent || ""}
+                      contentId={`mobile-focus-legacy-${agent.index}`}
+                      highlightType="copy"
+                    >
+                      <div className="text-white text-sm">
+                        <MarkdownRenderer
+                          content={
+                            agent.response || agent.streamedContent || ""
+                          }
+                          isStreaming={agent.isStreaming}
+                          className="break-words overflow-wrap-anywhere"
+                          agentIndex={agent.index}
+                          agentName={agent.name || `Node ${agent.index + 1}`}
+                          agentModel={agent.model}
+                          sessionId={sessionId || undefined}
+                        />
+                      </div>
+                    </HighlightWrapper>
+                    {!agent.isStreaming &&
+                      (agent.response || agent.streamedContent) && (
+                        <div className="mt-2">
+                          <CopyButton
+                            text={agent.response || agent.streamedContent || ""}
+                            size="sm"
+                            sourceContext={{
+                              sourceType: "agent-response",
+                              agentIndex: agent.index,
+                              agentName:
+                                agent.name || `Node ${agent.index + 1}`,
+                              agentModel: agent.model,
+                              sessionId: sessionId || undefined,
+                            }}
+                          />
+                        </div>
+                      )}
+                  </div>
+                </div>
+              )
+            )}
+
+            {/* Loading State */}
+            {!agent.wasSkipped &&
+              !agent.isStreaming &&
+              !agent.isComplete &&
+              !agent.response &&
+              !agent.streamedContent &&
+              !agent.error &&
+              agentConversations.length === 0 && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="thinking-dots">
+                        <div className="thinking-dot"></div>
+                        <div className="thinking-dot"></div>
+                        <div className="thinking-dot"></div>
+                      </div>
+                      <span className="text-xs text-lavender-400/80">
+                        Thinking...
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            {/* Error State */}
+            {!agent.wasSkipped && agent.error && (
+              <div className="flex justify-start">
+                <div
+                  className={`border rounded-xl p-4 max-w-[85%] ${
+                    agent.error.includes("Rate limit") ||
+                    agent.error.includes("rate limit")
+                      ? "bg-yellow-500/10 border-yellow-500/30"
+                      : "bg-red-500/10 border-red-500/30"
+                  }`}
+                >
+                  <div
+                    className={`text-sm mb-1 ${
+                      agent.error.includes("Rate limit") ||
+                      agent.error.includes("rate limit")
+                        ? "text-yellow-400"
+                        : "text-red-400"
+                    }`}
+                  >
+                    {agent.error.includes("Rate limit") ||
+                    agent.error.includes("rate limit")
+                      ? "Rate Limited"
+                      : "Error"}
+                  </div>
+                  <p
+                    className={`text-sm ${
+                      agent.error.includes("Rate limit") ||
+                      agent.error.includes("rate limit")
+                        ? "text-yellow-300"
+                        : "text-red-300"
+                    }`}
+                  >
+                    {agent.error.includes("Rate limit") ||
+                    agent.error.includes("rate limit")
+                      ? "Request rate limited. The system will automatically retry with intelligent spacing."
+                      : agent.error}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 export function ChatArea({
   sessionId,
   focusedAgentIndex,
@@ -665,6 +989,9 @@ export function ChatArea({
     sessionId ? { sessionId } : "skip"
   );
   const [expandedReasoning, setExpandedReasoning] = useState<string | null>(
+    null
+  );
+  const [mobileFocusedAgent, setMobileFocusedAgent] = useState<number | null>(
     null
   );
 
@@ -944,6 +1271,27 @@ export function ChatArea({
     });
   }, [agentGroups, agentConversations]);
 
+  // Sync mobile focus state with parent focus state
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+
+    // If we're on mobile and parent has a focused agent, sync it
+    if (
+      isMobile &&
+      focusedAgentIndex !== undefined &&
+      focusedAgentIndex !== null
+    ) {
+      setMobileFocusedAgent(focusedAgentIndex);
+    }
+    // If we're on mobile and parent cleared focus, clear mobile focus too
+    else if (
+      isMobile &&
+      (focusedAgentIndex === null || focusedAgentIndex === undefined)
+    ) {
+      setMobileFocusedAgent(null);
+    }
+  }, [focusedAgentIndex]);
+
   // Initialize column widths when agentGroups change
   useEffect(() => {
     if (
@@ -962,32 +1310,49 @@ export function ChatArea({
     calculateColumnWidths,
   ]);
 
-  // Handle focus toggle with smooth animation - now after agentGroups is defined
+  // Handle focus toggle with mobile support
   const handleFocusToggle = useCallback(
     (agentIndex: number) => {
-      setFocusedColumnState((prev) => {
-        const newFocusedIndex =
-          prev.focusedIndex === agentIndex ? null : agentIndex;
-        const newWidths = calculateColumnWidths(
-          agentGroups.length,
-          newFocusedIndex
-        );
+      // Check if we're on mobile (window width < 768px)
+      const isMobile = window.innerWidth < 768;
 
-        return {
-          focusedIndex: newFocusedIndex,
-          columnWidths: newWidths,
-          isAnimating: false, // No longer needed with framer-motion
-        };
-      });
+      if (isMobile) {
+        // Mobile: Use modal focus view
+        const newMobileFocusedAgent =
+          mobileFocusedAgent === agentIndex ? null : agentIndex;
+        setMobileFocusedAgent(newMobileFocusedAgent);
 
-      // Update the parent component's focus state for input routing
-      if (onFocusAgent) {
-        const newFocusIndex =
-          focusedColumnState.focusedIndex === agentIndex ? null : agentIndex;
-        onFocusAgent(newFocusIndex);
+        // Also update the parent component's focus state for input routing
+        if (onFocusAgent) {
+          onFocusAgent(newMobileFocusedAgent);
+        }
+      } else {
+        // Desktop: Use column focus
+        setFocusedColumnState((prev) => {
+          const newFocusedIndex =
+            prev.focusedIndex === agentIndex ? null : agentIndex;
+          const newWidths = calculateColumnWidths(
+            agentGroups.length,
+            newFocusedIndex
+          );
+
+          return {
+            focusedIndex: newFocusedIndex,
+            columnWidths: newWidths,
+            isAnimating: false, // No longer needed with framer-motion
+          };
+        });
+
+        // Update the parent component's focus state for input routing
+        if (onFocusAgent) {
+          const newFocusIndex =
+            focusedColumnState.focusedIndex === agentIndex ? null : agentIndex;
+          onFocusAgent(newFocusIndex);
+        }
       }
     },
     [
+      mobileFocusedAgent,
       focusedColumnState.focusedIndex,
       agentGroups.length,
       calculateColumnWidths,
@@ -998,6 +1363,15 @@ export function ChatArea({
   const toggleReasoning = (stepId: string) => {
     setExpandedReasoning(expandedReasoning === stepId ? null : stepId);
   };
+
+  // Handle mobile focus view close
+  const handleMobileFocusClose = useCallback(() => {
+    setMobileFocusedAgent(null);
+    // Reset to supervisor input when closing mobile focus
+    if (onFocusAgent) {
+      onFocusAgent(null);
+    }
+  }, [onFocusAgent]);
 
   if (!sessionId) {
     return (
@@ -1557,6 +1931,17 @@ export function ChatArea({
           />
         ))}
       </div>
+
+      {/* Mobile Focus View */}
+      {mobileFocusedAgent !== null && (
+        <MobileFocusView
+          agent={agentGroups.find((a) => a.index === mobileFocusedAgent)}
+          isOpen={mobileFocusedAgent !== null}
+          onClose={handleMobileFocusClose}
+          agentConversations={agentConversations[mobileFocusedAgent] || []}
+          sessionId={sessionId}
+        />
+      )}
     </div>
   );
 }

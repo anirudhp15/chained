@@ -101,12 +101,15 @@ export function FocusedAgentInput({
     <div
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{
-        paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+        paddingBottom:
+          typeof window !== "undefined" && window.innerWidth < 1024
+            ? "env(safe-area-inset-bottom)"
+            : "max(1rem, env(safe-area-inset-bottom))",
         ...getContainerStyle(),
       }}
     >
       <div className="w-full flex justify-center">
-        <div className="w-full max-w-4xl mx-auto px-3 md:px-0">
+        <div className="w-full max-w-4xl mx-auto">
           {/* Thinking State Indicator - only shown when thinking but not streaming */}
           {isThinking && !isStreaming && (
             <div className="mb-2 w-full flex justify-center">
@@ -118,7 +121,7 @@ export function FocusedAgentInput({
           )}
 
           {/* Restructured Input Container */}
-          <div className="w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 rounded-3xl transition-all duration-300 ease-in-out">
+          <div className="w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 border-x-0 border-b-0 lg:border-x lg:border-b rounded-t-3xl lg:rounded-3xl transition-all duration-300 ease-in-out">
             {/* Textarea */}
             <textarea
               value={focusedAgentState.prompt}

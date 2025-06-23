@@ -270,7 +270,7 @@ export function SupervisorModal({
         ) : (
           // Status indicator when modal is closed
           <div
-            className={`absolute ${MODAL_BOTTOM_OFFSET} left-0 right-0 flex justify-center px-4 pb-2 z-30`}
+            className={`absolute ${MODAL_BOTTOM_OFFSET} left-0 right-0 flex justify-center px-4 lg:pb-2 z-30`}
           >
             <motion.button
               key="status-bar"
