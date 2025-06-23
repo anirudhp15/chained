@@ -1013,7 +1013,7 @@ export function ChatArea({
   return (
     <div
       ref={containerRef}
-      className="flex-1 flex flex-col overflow-hidden bg-gray-900/50  w-full relative"
+      className="flex-1 flex flex-col overflow-hidden bg-gray-900/50 scrollbar-none w-full relative"
     >
       {/* Chain Performance Summary with smooth animations */}
       {agentGroups.length > 1 && (

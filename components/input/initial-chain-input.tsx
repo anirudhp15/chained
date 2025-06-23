@@ -367,15 +367,15 @@ const CompactMobileConnection = ({
     <>
       {/* Compact Connection Line */}
       <div className="flex flex-col items-center">
-        <div className="w-0.5 h-2 bg-gray-500/30"></div>
+        <div className="w-0.5 h-3 bg-gray-500/30"></div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="w-8 h-8 rounded-full bg-gray-800/70 border border-gray-600/50 flex items-center justify-center hover:bg-gray-700/70 transition-colors"
+          className="w-10 h-10 rounded-full bg-gray-800/80 border border-gray-600/50 flex items-center justify-center hover:bg-gray-700/80 transition-all duration-200 shadow-lg backdrop-blur-sm hover:scale-105 hover:border-lavender-400/50"
         >
           {currentConnection && (
             <currentConnection.Icon
-              size={16}
-              className={`${currentConnection?.color || "text-gray-400"}`}
+              size={18}
+              className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""}`}
             />
           )}
         </button>
@@ -814,12 +814,15 @@ export function InitialChainInput({
     <div
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{
-        paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+        paddingBottom:
+          typeof window !== "undefined" && window.innerWidth < 1024
+            ? "env(safe-area-inset-bottom)"
+            : "max(0.5rem, env(safe-area-inset-bottom))",
         ...getContainerStyle(),
       }}
     >
       <div className="w-full flex justify-center">
-        <div className="w-full flex items-end justify-center lg:mb-2 ">
+        <div className="w-full flex items-end justify-center lg:mb-2">
           <div className="w-full max-w-7xl">
             {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-center gap-1.5 lg:gap-0">
@@ -830,7 +833,7 @@ export function InitialChainInput({
                 >
                   {/* Agent Card using AgentInput component */}
                   <div
-                    className={`${getAgentContainerClasses()} backdrop-blur-sm px-4 ${
+                    className={`${getAgentContainerClasses()} backdrop-blur-sm lg:px-4 ${
                       queuedAgents.some((qa) => qa.id === agent.id)
                         ? "border-lavender-400/50"
                         : ""
@@ -887,31 +890,30 @@ export function InitialChainInput({
                       </div>
                     )}
                   </div>
-                  <div className="absolute top-8 -right-[44px] pr-[20px]">
-                    {/* Connection Selector (between agents) */}
-                    {index < agents.length - 1 && (
-                      <div className="flex flex-col lg:flex-row lg:items-center justify-center lg:px-2">
-                        {/* Mobile: Compact Connection Line */}
-                        <div className="lg:hidden">
-                          <CompactMobileConnection
-                            agent={agents[index + 1]}
-                            onUpdate={(updatedAgent) =>
-                              updateAgent(index + 1, updatedAgent)
-                            }
-                            index={index + 1}
-                          />
-                        </div>
+                  {/* Mobile: Connection between agents - positioned in flow */}
+                  {index < agents.length - 1 && (
+                    <div className="flex lg:hidden justify-center">
+                      <CompactMobileConnection
+                        agent={agents[index + 1]}
+                        onUpdate={(updatedAgent) =>
+                          updateAgent(index + 1, updatedAgent)
+                        }
+                        index={index + 1}
+                      />
+                    </div>
+                  )}
 
-                        {/* Desktop: Interactive Connection Selector */}
-                        <div className="hidden lg:block">
-                          <DesktopConnectionSelector
-                            agent={agents[index + 1]}
-                            onUpdate={(updatedAgent) =>
-                              updateAgent(index + 1, updatedAgent)
-                            }
-                            index={index + 1}
-                          />
-                        </div>
+                  {/* Desktop: Interactive Connection Selector - positioned absolutely */}
+                  <div className="hidden lg:block absolute top-8 -right-[44px] pr-[20px]">
+                    {index < agents.length - 1 && (
+                      <div className="flex items-center justify-center px-2">
+                        <DesktopConnectionSelector
+                          agent={agents[index + 1]}
+                          onUpdate={(updatedAgent) =>
+                            updateAgent(index + 1, updatedAgent)
+                          }
+                          index={index + 1}
+                        />
                       </div>
                     )}
                   </div>

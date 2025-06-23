@@ -586,7 +586,7 @@ export function AgentInput({
             className={`${STYLES.iconSize} ${currentProvider.iconColor} flex-shrink-0`}
           />
         )}
-        <span className="font-medium truncate hidden group-hover:inline transition-all duration-200 max-w-16 md:max-w-24 text-xs">
+        <span className="font-medium truncate inline transition-all duration-200 max-w-16 md:max-w-24 text-xs">
           {selectedModel?.label}
         </span>
         <ChevronDown
@@ -801,7 +801,7 @@ export function AgentInput({
 
   return (
     <div
-      className={`relative flex flex-col mx-2 lg:mx-0 rounded-3xl border border-gray-600/50 bg-gray-600/25 backdrop-blur-lg hover:backdrop-blur-xl hover:border-lavender-400/20 transition-all duration-200 animate-in slide-in-from-top-4 fade-in ${!isLastAgent ? "mb-2 lg:mb-0" : "pm-0"} ease-out lg:animate-none`}
+      className={`relative flex flex-col ${isLastAgent ? "mx-0 mb-0" : "mx-2 mb-2"} lg:mx-0 lg:mb-0 ${isLastAgent ? "rounded-t-3xl lg:rounded-3xl border-b-0 border-x-0 lg:border-b lg:border-x" : "rounded-3xl"} border border-gray-600/50 bg-gray-600/25 backdrop-blur-lg hover:backdrop-blur-xl hover:border-lavender-400/20 transition-all duration-200 animate-in slide-in-from-top-4 fade-in ease-out lg:animate-none`}
     >
       <textarea
         value={agent.prompt}
@@ -811,7 +811,7 @@ export function AgentInput({
           setTimeout(adjustTextareaHeight, 0);
         }}
         placeholder="Ask anything"
-        className="w-full p-4 h-auto rounded-t-3xl min-h-12  max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-base lg:text-sm overflow-y-auto"
+        className={`w-full p-4 h-auto ${isLastAgent ? "rounded-t-3xl" : "rounded-t-3xl"} min-h-12 max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-base lg:text-sm overflow-y-auto`}
         ref={textareaRef}
       />
 

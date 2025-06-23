@@ -577,9 +577,7 @@ export function SupervisorInterface({
               window.innerWidth >= 768 &&
               !isMaximized
             ? "max(0.5rem, env(safe-area-inset-bottom))"
-            : isMaximized
-              ? "8px"
-              : "0px",
+            : "0px",
         paddingTop: isMaximized ? "1rem" : "0",
         ...getContainerStyle(),
       }}
