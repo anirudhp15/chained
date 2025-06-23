@@ -100,9 +100,9 @@ function ChatLandingContent() {
   };
 
   return (
-    <div className="flex h-auto bg-gray-950 relative overflow-hidden">
+    <div className="flex h-auto bg-gray-950 relative overflow-hidden scrollbar-none">
       {/* Subtle Grid Background */}
-      {/* <SubtleGridBackground /> */}
+      <SubtleGridBackground />
 
       {/* Only render sidebar if there are chats */}
       {shouldShowSidebar && (
