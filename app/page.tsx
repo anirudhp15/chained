@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Zap,
@@ -37,6 +38,13 @@ import {
   Twitter,
   XIcon,
 } from "lucide-react";
+import { AccessGate } from "@/components/auth/access-gate";
+import { hasBetaAccess } from "@/lib/beta-access";
+import {
+  useAnalytics,
+  useScrollTracking,
+  useSectionTracking,
+} from "@/lib/analytics";
 
 // Feature data structure matching welcome screen pattern
 interface FeatureDetail {
@@ -645,8 +653,16 @@ export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
+  const [showAccessGate, setShowAccessGate] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
 
+  const router = useRouter();
   const { scrollY } = useScroll();
+
+  // Analytics hooks
+  const { trackLandingPageEvent, trackPerformance, identifyUser } =
+    useAnalytics();
+  const { trackScrollMilestones } = useScrollTracking();
 
   // Transform values for scroll-based animations
   const containerMaxWidth = useTransform(scrollY, [0, 20], ["100%", "70%"]);
@@ -658,7 +674,31 @@ export default function LandingPage() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+
+    // Check if user already has beta access using utility function
+    setHasAccess(hasBetaAccess());
+
+    // Initialize analytics tracking
+    if (typeof window !== "undefined") {
+      // Track page load performance
+      trackPerformance();
+
+      // Track hero section view
+      trackLandingPageEvent.heroViewed();
+
+      // Set up scroll tracking
+      const cleanupScroll = trackScrollMilestones();
+
+      // Track user journey step
+      trackLandingPageEvent.userJourney("landing_page_loaded", {
+        has_beta_access: hasBetaAccess(),
+        user_agent: navigator.userAgent,
+        viewport: `${window.innerWidth}x${window.innerHeight}`,
+      });
+
+      return cleanupScroll;
+    }
+  }, [trackLandingPageEvent, trackPerformance, trackScrollMilestones]);
 
   const handleFeatureInfo = (featureId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -667,6 +707,24 @@ export default function LandingPage() {
 
   const handleCloseFeatureInfo = () => {
     setSelectedFeature(null);
+  };
+
+  const handleAccessRequest = () => {
+    if (hasAccess) {
+      trackLandingPageEvent.heroCtaClicked("Continue Building", "navigation");
+      router.push("/chat");
+    } else {
+      trackLandingPageEvent.heroCtaClicked("Get Access", "navigation");
+      trackLandingPageEvent.accessGateOpened("navigation_button");
+      setShowAccessGate(true);
+    }
+  };
+
+  const handleAccessGranted = () => {
+    setHasAccess(true);
+    setShowAccessGate(false);
+    trackLandingPageEvent.userJourney("beta_access_granted");
+    router.push("/chat");
   };
 
   const featureDetail = selectedFeature
@@ -728,13 +786,13 @@ export default function LandingPage() {
                 }}
                 className="hidden sm:block transition-all duration-300 ease-out"
               >
-                <Link
-                  href="/chat"
+                <button
+                  onClick={handleAccessRequest}
                   className="inline-flex items-center bg-lavender-600/20 border border-lavender-600/50 hover:bg-lavender-600/30 text-lavender-400 px-6 py-2 font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group rounded-xl"
                 >
-                  Start Building
+                  {hasAccess ? "Continue Building" : "Get Access"}
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
-                </Link>
+                </button>
               </motion.div>
 
               {/* Mobile Menu Button */}
@@ -782,13 +840,15 @@ export default function LandingPage() {
                         Workflow
                       </Link>
                       <div className="border-t border-gray-700/50 my-2"></div>
-                      <Link
-                        href="/chat"
-                        className="block px-4 py-2 text-lavender-400 hover:text-white hover:bg-lavender-600/20 transition-colors duration-200"
-                        onClick={() => setIsMenuOpen(false)}
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          handleAccessRequest();
+                        }}
+                        className="block w-full text-left px-4 py-2 text-lavender-400 hover:text-white hover:bg-lavender-600/20 transition-colors duration-200"
                       >
-                        Start Building
-                      </Link>
+                        {hasAccess ? "Continue Building" : "Get Access"}
+                      </button>
                     </div>
                   </motion.div>
                 )}
@@ -826,15 +886,15 @@ export default function LandingPage() {
 
             {/* CTA Buttons */}
             <div className="flex flex-row gap-4 justify-center mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-600">
-              <Link
-                href="/chat"
+              <button
+                onClick={handleAccessRequest}
                 className="group inline-flex items-center justify-center bg-lavender-600/20 hover:bg-lavender-600/30 text-lavender-400 border border-lavender-600/50 hover:border-lavender-600/10 lg:px-8 lg:py-4 px-4 py-2 rounded-xl text-sm lg:text-lg font-medium transition-all duration-300 shadow-2xl hover:shadow-lavender-500/25 relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                 <Zap className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
-                Start Free
+                {hasAccess ? "Start Building" : "Get Beta Access"}
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </Link>
+              </button>
 
               <button className="group inline-flex items-center justify-center bg-gray-900/50 hover:bg-gray-800/50 text-white lg:px-8 lg:py-4 px-4 py-2 rounded-xl font-medium transition-all duration-300 border border-gray-700/50 hover:border-lavender-500/50 text-sm lg:text-lg">
                 <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
@@ -1232,14 +1292,14 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <Link
-                href="/chat"
+              <button
+                onClick={handleAccessRequest}
                 className="inline-flex items-center bg-lavender-600/20 border border-lavender-600/50 hover:bg-lavender-600/30 text-lavender-400 px-8 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group"
               >
                 <Zap className="mr-2 h-5 w-5" />
-                Create Your Chain
+                {hasAccess ? "Create Your Chain" : "Get Access to Build"}
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -1258,15 +1318,15 @@ export default function LandingPage() {
                 Start creating powerful AI workflows in minutes. No setup
                 required.
               </p>
-              <Link
-                href="/chat"
+              <button
+                onClick={handleAccessRequest}
                 className="group inline-flex items-center bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 shadow-2xl hover:shadow-lavender-500/25 relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                 <Sparkles className="mr-2 h-5 w-5" />
-                Get Started Free
+                {hasAccess ? "Get Started" : "Get Beta Access"}
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -1400,6 +1460,19 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Access Gate Modal */}
+      {showAccessGate && (
+        <div className="fixed inset-0 z-[9999]">
+          <AccessGate onAccessGranted={handleAccessGranted} />
+          <button
+            onClick={() => setShowAccessGate(false)}
+            className="absolute top-8 right-8 p-2 bg-gray-900/50 hover:bg-gray-800/50 border border-gray-700/50 hover:border-gray-600/50 rounded-lg text-gray-300 hover:text-white transition-all duration-200"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

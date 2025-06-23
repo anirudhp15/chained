@@ -809,3 +809,138 @@ export const appendAgentConversation = mutation({
     }
   },
 });
+
+// Validate access code for closed beta
+export const validateAccessCode = mutation({
+  args: {
+    code: v.string(),
+    email: v.string(),
+    metadata: v.optional(
+      v.object({
+        ipAddress: v.optional(v.string()),
+        userAgent: v.optional(v.string()),
+        source: v.optional(v.string()),
+        referrer: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, { code, email, metadata = {} }) => {
+    // Find the access code
+    const accessCode = await ctx.db
+      .query("accessCodes")
+      .withIndex("by_code", (q) => q.eq("code", code.toUpperCase().trim()))
+      .unique();
+
+    if (!accessCode) {
+      return { valid: false, reason: "Invalid access code" };
+    }
+
+    if (!accessCode.isActive) {
+      return { valid: false, reason: "Access code is no longer active" };
+    }
+
+    if (accessCode.expiresAt && Date.now() > accessCode.expiresAt) {
+      return { valid: false, reason: "Access code has expired" };
+    }
+
+    if (
+      accessCode.usageLimit &&
+      accessCode.timesUsed >= accessCode.usageLimit
+    ) {
+      return { valid: false, reason: "Access code usage limit reached" };
+    }
+
+    // Check if this email already used a code
+    const existingUsage = await ctx.db
+      .query("accessCodeUsage")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .unique();
+
+    if (existingUsage) {
+      return { valid: false, reason: "Email already used for beta access" };
+    }
+
+    // Record the usage
+    await ctx.db.insert("accessCodeUsage", {
+      accessCodeId: accessCode._id,
+      code: accessCode.code,
+      email,
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+      source: metadata.source,
+      usedAt: Date.now(),
+    });
+
+    // Update usage count
+    await ctx.db.patch(accessCode._id, {
+      timesUsed: accessCode.timesUsed + 1,
+      updatedAt: Date.now(),
+    });
+
+    return { valid: true, message: "Access code validated successfully" };
+  },
+});
+
+// Join waitlist for closed beta
+export const joinWaitlist = mutation({
+  args: {
+    email: v.string(),
+    name: v.optional(v.string()),
+    message: v.optional(v.string()),
+    metadata: v.optional(
+      v.object({
+        source: v.optional(v.string()),
+        utmSource: v.optional(v.string()),
+        utmMedium: v.optional(v.string()),
+        utmCampaign: v.optional(v.string()),
+        ipAddress: v.optional(v.string()),
+        userAgent: v.optional(v.string()),
+        referrer: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, { email, name, message, metadata = {} }) => {
+    // Check if email already exists
+    const existing = await ctx.db
+      .query("waitlist")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .unique();
+
+    if (existing) {
+      return {
+        success: false,
+        reason: "Email already on waitlist",
+        position: null,
+      };
+    }
+
+    // Add to waitlist
+    await ctx.db.insert("waitlist", {
+      email,
+      name,
+      message,
+      status: "pending",
+      source: metadata.source,
+      utmSource: metadata.utmSource,
+      utmMedium: metadata.utmMedium,
+      utmCampaign: metadata.utmCampaign,
+      ipAddress: metadata.ipAddress,
+      userAgent: metadata.userAgent,
+      referrer: metadata.referrer,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    // Get position in waitlist
+    const totalCount = await ctx.db
+      .query("waitlist")
+      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .collect();
+
+    return {
+      success: true,
+      message: "Successfully joined waitlist",
+      position: totalCount.length,
+    };
+  },
+});

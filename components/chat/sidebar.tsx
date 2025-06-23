@@ -319,7 +319,7 @@ export function Sidebar({
 
       {/* Desktop Sidebar */}
       <div
-        className={`hidden z-50 lg:flex bg-gray-900/90 border-r border-gray-700 flex-col h-full transition-all duration-300 ease-out ${
+        className={`hidden z-50 lg:flex bg-gray-900/90 border-r border-gray-700 flex-col max-h-screen transition-all duration-300 ease-out ${
           isCollapsed ? "w-16" : "w-64"
         }`}
       >

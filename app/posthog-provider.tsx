@@ -86,16 +86,40 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       api_host: "/ingest",
       ui_host: "https://us.posthog.com",
       capture_pageview: false, // We capture pageviews manually
-      capture_pageleave: true, // Enable pageleave capture
-      capture_exceptions: true, // This enables capturing exceptions using Error Tracking, set to false if you don't want this
+      capture_pageleave: true, // Track when users leave pages
+      capture_exceptions: true, // Enable exception tracking
+      autocapture: true, // Enable autocapture for comprehensive behavior tracking
+      disable_session_recording: false, // ENABLE session recording
       debug: process.env.NODE_ENV === "development",
       bootstrap: {
         distinctID: "anonymous_user",
         isIdentifiedID: false,
       },
-      // Add additional options to make PostHog more resilient
-      autocapture: false, // Disable autocapture which can cause more network requests
-      disable_session_recording: true, // Disable session recording to reduce network requests
+      session_recording: {
+        maskAllInputs: false, // Don't mask inputs (for debugging)
+        maskInputOptions: {
+          password: true, // Still mask passwords
+          email: false, // Don't mask emails (we want to see them)
+        },
+      },
+      loaded: (posthog) => {
+        // Identify users with beta access
+        if (typeof window !== "undefined" && window.localStorage) {
+          const betaAccess = localStorage.getItem("betaAccess");
+          if (betaAccess) {
+            try {
+              const accessData = JSON.parse(betaAccess);
+              posthog.identify(accessData.email, {
+                beta_user: true,
+                access_granted_at: accessData.grantedAt,
+                access_code_used: accessData.accessCode || null,
+              });
+            } catch (e) {
+              console.debug("Error parsing beta access data:", e);
+            }
+          }
+        }
+      },
     });
 
     // Return cleanup function to restore original fetch and error handlers

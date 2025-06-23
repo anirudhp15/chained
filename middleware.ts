@@ -6,7 +6,11 @@ import { generateRateLimitKey } from "./lib/api-validation";
 
 const isProtectedRoute = createRouteMatcher(["/chat(.*)"]);
 const isApiRoute = createRouteMatcher(["/api(.*)"]);
-const isLLMRoute = createRouteMatcher(["/api/run-chain", "/api/stream-agent", "/api/stream-parallel"]);
+const isLLMRoute = createRouteMatcher([
+  "/api/run-chain",
+  "/api/stream-agent",
+  "/api/stream-parallel",
+]);
 const isUploadRoute = createRouteMatcher(["/api/upload-file"]);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
@@ -58,7 +62,12 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     // TODO: Implement session-based rate limiting for parallel agents
     if (isLLMRoute(req)) {
       // Skip middleware rate limiting for LLM routes - handle in route handler instead
-      rateLimit = { success: true, limit: 100, remaining: 100, reset: Date.now() + 60000 };
+      rateLimit = {
+        success: true,
+        limit: 100,
+        remaining: 100,
+        reset: Date.now() + 60000,
+      };
     } else if (isUploadRoute(req)) {
       rateLimit = await rateLimiters.upload.checkRateLimit(rateLimitKey);
     } else {
@@ -127,6 +136,20 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
   // Protect routes that require authentication
   if (isProtectedRoute(req)) {
     await auth.protect();
+
+    // Additional check for beta access
+    const { userId } = await auth();
+
+    if (userId) {
+      // Check if user has beta access stored in a cookie or if they have valid access
+      const betaAccess = req.cookies.get("chained_beta_access");
+
+      if (!betaAccess) {
+        // Redirect to landing page if no beta access
+        const url = new URL("/", req.url);
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   return response;

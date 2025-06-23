@@ -330,4 +330,68 @@ export default defineSchema({
     .index("by_session", ["sessionId"])
     .index("by_agent_step", ["agentStepId"])
     .index("by_user_session", ["userId", "sessionId"]),
+
+  // Access codes for closed beta
+  accessCodes: defineTable({
+    code: v.string(), // The access code (e.g., "BETA2024")
+    isActive: v.boolean(),
+    usageLimit: v.optional(v.number()), // Max number of uses (null = unlimited)
+    timesUsed: v.number(),
+    expiresAt: v.optional(v.number()), // Expiration timestamp (null = never expires)
+    createdBy: v.optional(v.string()), // Who created this code
+    description: v.optional(v.string()), // Internal description
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_code", ["code"])
+    .index("by_active", ["isActive"])
+    .index("by_expiration", ["expiresAt"]),
+
+  // Track access code usage
+  accessCodeUsage: defineTable({
+    accessCodeId: v.id("accessCodes"),
+    code: v.string(), // Denormalized for easier querying
+    email: v.string(),
+    clerkUserId: v.optional(v.string()), // Clerk user ID if they signed up
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    source: v.optional(v.string()), // Where they came from (referrer, utm, etc.)
+    usedAt: v.number(),
+  })
+    .index("by_access_code", ["accessCodeId"])
+    .index("by_code", ["code"])
+    .index("by_email", ["email"])
+    .index("by_clerk_user", ["clerkUserId"]),
+
+  // Waitlist for users without access codes
+  waitlist: defineTable({
+    email: v.string(),
+    name: v.optional(v.string()),
+    message: v.optional(v.string()), // Optional message from user
+    status: v.union(
+      v.literal("pending"),
+      v.literal("invited"),
+      v.literal("signed_up"),
+      v.literal("rejected")
+    ),
+    source: v.optional(v.string()), // Landing page, referral, etc.
+    utmSource: v.optional(v.string()),
+    utmMedium: v.optional(v.string()),
+    utmCampaign: v.optional(v.string()),
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    referrer: v.optional(v.string()),
+    priority: v.optional(v.number()), // For manual prioritization
+    invitedAt: v.optional(v.number()),
+    signedUpAt: v.optional(v.number()),
+    clerkUserId: v.optional(v.string()), // Set when they eventually sign up
+    notes: v.optional(v.string()), // Internal notes
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_status", ["status"])
+    .index("by_created", ["createdAt"])
+    .index("by_priority", ["priority"])
+    .index("by_clerk_user", ["clerkUserId"]),
 });
