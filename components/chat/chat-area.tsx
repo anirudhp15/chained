@@ -34,6 +34,9 @@ import { ThinkingDropdown } from "../ui/ThinkingDropdown";
 import { useUser } from "@clerk/nextjs";
 import { usePerformance } from "@/lib/performance-context";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCopyTracking } from "../../lib/copy-tracking-context";
+import { setupGlobalCopyDetection } from "../../utils/copy-detection";
+import { HighlightWrapper } from "../ui/HighlightWrapper";
 
 interface AgentConversationTurn {
   userPrompt: string;
@@ -280,7 +283,7 @@ function MobileAgentCard({
   const { showDetailedPerformance } = usePerformance();
 
   return (
-    <div className="bg-gray-950/50 border border-gray-700/50 rounded-xl overflow-hidden">
+    <div className="bg-gray-950/50 border border-gray-700/50 rounded-lg shadow-lg overflow-hidden">
       {/* Enhanced Collapsible Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -402,7 +405,7 @@ function MobileAgentCard({
                 return null;
               })()}
             </div>
-            <CopyButton text={agent.prompt} size="sm" />
+            <CopyButton text={agent.prompt} size="sm" tooltipPosition="top" />
           </div>
 
           {/* Multimodal Attachments */}
@@ -483,6 +486,7 @@ function MobileAgentCard({
                     <CopyButton
                       text={agent.response || agent.streamedContent || ""}
                       size="sm"
+                      tooltipPosition="top"
                     />
                   </div>
                 )}
@@ -670,6 +674,9 @@ export function ChatArea({
   // Get performance state
   const { showDetailedPerformance } = usePerformance();
 
+  // Copy tracking
+  const { trackCopy } = useCopyTracking();
+
   // Column resize state
   const [columnStates, setColumnStates] = useState<ColumnState[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -771,6 +778,12 @@ export function ChatArea({
       }
     );
   }, [agentConversations]);
+
+  // Setup global copy detection
+  useEffect(() => {
+    const cleanup = setupGlobalCopyDetection(trackCopy);
+    return cleanup;
+  }, [trackCopy]);
 
   // Custom UserDisplay component
   const UserDisplay = () => {
@@ -1036,30 +1049,36 @@ export function ChatArea({
       )}
 
       {/* Desktop: Multi-agent grid view with dynamic widths */}
-      <div className="hidden md:flex flex-1 overflow-hidden w-full">
+      <div
+        className="hidden md:grid flex-1 overflow-hidden w-full"
+        style={{
+          gridTemplateColumns: agentGroups
+            .map((_, index) => {
+              const columnWidth =
+                focusedColumnState.columnWidths[index] ||
+                100 / agentGroups.length;
+              return `${columnWidth}fr`;
+            })
+            .join(" "),
+        }}
+      >
         {agentGroups.map((agent, index) => {
           const isFocused = focusedColumnState.focusedIndex === index;
           const isDimmed =
             focusedColumnState.focusedIndex !== null && !isFocused;
-          const columnWidth =
-            focusedColumnState.columnWidths[index] || 100 / agentGroups.length;
 
           return (
-            <motion.div
+            <div
               key={agent._id}
               className={`agent-container flex flex-col overflow-hidden relative ${
                 index > 0 ? "border-l-2 border-gray-800" : ""
               } ${isFocused ? "bg-lavender-600/10" : ""}`}
-              initial={false}
-              animate={{
-                width: `${columnWidth}%`,
+              style={{
+                minWidth: 0, // Allow shrinking below content width
               }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-                mass: 0.8,
-              }}
+              data-agent-index={agent.index}
+              data-agent-name={agent.name || `Node ${agent.index + 1}`}
+              data-agent-model={agent.model}
             >
               {/* Dimming overlay for non-focused columns */}
               {isDimmed && (
@@ -1112,21 +1131,22 @@ export function ChatArea({
                 </div>
 
                 {/* Agent Content Container with Scroll Button */}
-                <div className="flex-1 relative overflow-hidden max-w-4xl mx-auto">
+                <div className="flex-1 relative overflow-hidden w-full">
                   {/* Agent Content - Individually Scrollable */}
                   <div
                     ref={(el) => {
                       agentContentRefs.current[agent.index] = el;
                     }}
-                    className="h-full overflow-y-auto overflow-x-hidden px-3 py-4 space-y-8 agent-content scrollbar-none"
+                    className="h-full overflow-y-auto overflow-x-hidden px-3 pb-48 pt-4 w-full space-y-8 agent-content scrollbar-none"
                     onScroll={() => handleScroll(agent.index)}
-                    style={{
-                      paddingBottom: "8rem", // Extra space at bottom for better UX
-                    }}
                   >
                     {/* User Prompt */}
                     <div className="w-full justify-end flex px-0.5">
-                      <div className="relative w-auto max-w-[80%] bg-gray-800/90  rounded-xl py-2 px-3 gap-2 flex flex-col">
+                      <div
+                        className="relative w-auto max-w-[80%] bg-gray-800/90  rounded-xl py-2 px-3 gap-2 flex flex-col"
+                        data-prompt-content="true"
+                        data-source-type="user-prompt"
+                      >
                         <div className="absolute right-2 -bottom-8 flex flex-row gap-2 items-center">
                           {/* Show ConnectionBadge for all agents with connections (including parallel agents) */}
                           {(() => {
@@ -1180,18 +1200,35 @@ export function ChatArea({
 
                             return null;
                           })()}
-                          <CopyButton text={agent.prompt} size="sm" />
+                          <CopyButton
+                            text={agent.prompt}
+                            size="sm"
+                            sourceContext={{
+                              sourceType: "user-prompt",
+                              agentIndex: agent.index,
+                              agentName:
+                                agent.name || `Node ${agent.index + 1}`,
+                              agentModel: agent.model,
+                              sessionId: sessionId || undefined,
+                            }}
+                          />
                         </div>
 
-                        <TruncatedText
-                          text={agent.prompt}
-                          maxLines={3}
-                          className="text-white text-sm"
-                          showButtonText="Show all"
-                          hideButtonText="Show less"
-                          buttonClassName="text-xs"
-                          gradientFrom="from-gray-800/90"
-                        />
+                        <HighlightWrapper
+                          content={agent.prompt}
+                          contentId={`user-prompt-${agent.index}`}
+                          highlightType="copy"
+                        >
+                          <TruncatedText
+                            text={agent.prompt}
+                            maxLines={3}
+                            className="text-white text-sm"
+                            showButtonText="Show all"
+                            hideButtonText="Show less"
+                            buttonClassName="text-xs"
+                            gradientFrom="from-gray-800/90"
+                          />
+                        </HighlightWrapper>
                       </div>
                     </div>
 
@@ -1252,13 +1289,32 @@ export function ChatArea({
 
                                   {/* Agent Response */}
                                   <div className="flex justify-start">
-                                    <div className="max-w-full p-2 w-full">
+                                    <div
+                                      className="max-w-full p-2 w-full"
+                                      data-response-content="true"
+                                      data-source-type="agent-response"
+                                    >
                                       <div className="text-white text-sm break-words">
-                                        <MarkdownRenderer
+                                        <HighlightWrapper
                                           content={conversation.agentResponse}
-                                          isStreaming={conversation.isStreaming}
-                                          className="break-words overflow-wrap-anywhere"
-                                        />
+                                          contentId={`agent-response-${agent.index}-${conversation.timestamp}`}
+                                          highlightType="copy"
+                                        >
+                                          <MarkdownRenderer
+                                            content={conversation.agentResponse}
+                                            isStreaming={
+                                              conversation.isStreaming
+                                            }
+                                            className="break-words overflow-wrap-anywhere"
+                                            agentIndex={agent.index}
+                                            agentName={
+                                              agent.name ||
+                                              `Node ${agent.index + 1}`
+                                            }
+                                            agentModel={agent.model}
+                                            sessionId={sessionId || undefined}
+                                          />
+                                        </HighlightWrapper>
                                       </div>
                                       {!conversation.isStreaming &&
                                         conversation.agentResponse && (
@@ -1266,6 +1322,16 @@ export function ChatArea({
                                             <CopyButton
                                               text={conversation.agentResponse}
                                               size="sm"
+                                              sourceContext={{
+                                                sourceType: "agent-response",
+                                                agentIndex: agent.index,
+                                                agentName:
+                                                  agent.name ||
+                                                  `Node ${agent.index + 1}`,
+                                                agentModel: agent.model,
+                                                sessionId:
+                                                  sessionId || undefined,
+                                              }}
                                             />
                                           </div>
                                         )}
@@ -1279,17 +1345,38 @@ export function ChatArea({
                               agent.streamedContent ||
                               agent.isStreaming) && (
                               <div className="flex justify-start">
-                                <div className="max-w-full p-2 w-full">
+                                <div
+                                  className="max-w-full p-2 w-full"
+                                  data-response-content="true"
+                                  data-source-type="agent-response"
+                                >
                                   <div className="text-white text-sm break-words">
-                                    <MarkdownRenderer
+                                    <HighlightWrapper
                                       content={
                                         agent.response ||
                                         agent.streamedContent ||
                                         ""
                                       }
-                                      isStreaming={agent.isStreaming}
-                                      className="break-words overflow-wrap-anywhere"
-                                    />
+                                      contentId={`legacy-agent-response-${agent.index}`}
+                                      highlightType="copy"
+                                    >
+                                      <MarkdownRenderer
+                                        content={
+                                          agent.response ||
+                                          agent.streamedContent ||
+                                          ""
+                                        }
+                                        isStreaming={agent.isStreaming}
+                                        className="break-words overflow-wrap-anywhere"
+                                        agentIndex={agent.index}
+                                        agentName={
+                                          agent.name ||
+                                          `Node ${agent.index + 1}`
+                                        }
+                                        agentModel={agent.model}
+                                        sessionId={sessionId || undefined}
+                                      />
+                                    </HighlightWrapper>
                                   </div>
                                   {!agent.isStreaming &&
                                     (agent.response ||
@@ -1302,6 +1389,15 @@ export function ChatArea({
                                             ""
                                           }
                                           size="sm"
+                                          sourceContext={{
+                                            sourceType: "agent-response",
+                                            agentIndex: agent.index,
+                                            agentName:
+                                              agent.name ||
+                                              `Node ${agent.index + 1}`,
+                                            agentModel: agent.model,
+                                            sessionId: sessionId || undefined,
+                                          }}
                                         />
                                       </div>
                                     )}
@@ -1441,13 +1537,13 @@ export function ChatArea({
                   </AnimatePresence>
                 </div>
               </div>
-            </motion.div>
+            </div>
           );
         })}
       </div>
 
       {/* Mobile: Vertical stacked agents */}
-      <div className="md:hidden flex-1 overflow-y-auto px-2 py-2 scrollbar-none space-y-4">
+      <div className="md:hidden flex-1 overflow-y-auto px-2 py-2 scrollbar-none space-y-2">
         {agentGroups.map((agent, index) => (
           <MobileAgentCard
             key={agent._id}

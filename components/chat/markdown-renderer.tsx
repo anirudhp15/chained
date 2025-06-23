@@ -8,25 +8,50 @@ import rehypeKatex from "rehype-katex";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Copy, Check, Download } from "lucide-react";
+import { CopyButton } from "../ui/CopyButton";
+import { useCopyTracking } from "../../lib/copy-tracking-context";
+import { createCopyMetadata } from "../../utils/copy-detection";
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
   isStreaming?: boolean;
+  // Copy tracking context
+  agentIndex?: number;
+  agentName?: string;
+  agentModel?: string;
+  sessionId?: string;
 }
 
 export function MarkdownRenderer({
   content,
   className = "",
   isStreaming = false,
+  agentIndex,
+  agentName,
+  agentModel,
+  sessionId,
 }: MarkdownRendererProps) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const { trackCopy } = useCopyTracking();
 
   const copyToClipboard = async (code: string, id: string) => {
     try {
       await navigator.clipboard.writeText(code);
       setCopiedCode(id);
       setTimeout(() => setCopiedCode(null), 2000);
+
+      // Track the copy with context
+      if (agentIndex !== undefined) {
+        const metadata = createCopyMetadata(code, {
+          sourceType: "code-block",
+          agentIndex,
+          agentName,
+          agentModel,
+          sessionId,
+        });
+        trackCopy(metadata);
+      }
     } catch (err) {
       console.error("Failed to copy code:", err);
     }

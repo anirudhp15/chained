@@ -578,7 +578,7 @@ export function AgentInput({
           setButtonPosition("model", e.currentTarget.getBoundingClientRect());
           setIsModelDropdownOpen(!isModelDropdownOpen);
         }}
-        className={`flex items-center ${STYLES.gap} ${STYLES.padding} rounded-md group ${STYLES.button}`}
+        className={`flex items-center ${STYLES.gap} ${STYLES.padding} rounded-2xl group ${STYLES.button}`}
       >
         {currentProvider && (
           <currentProvider.icon
@@ -586,7 +586,7 @@ export function AgentInput({
             className={`${STYLES.iconSize} ${currentProvider.iconColor} flex-shrink-0`}
           />
         )}
-        <span className="font-medium truncate max-w-16 md:max-w-24 text-xs">
+        <span className="font-medium truncate hidden group-hover:inline transition-all duration-200 max-w-16 md:max-w-24 text-xs">
           {selectedModel?.label}
         </span>
         <ChevronDown

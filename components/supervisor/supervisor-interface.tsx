@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -37,6 +37,10 @@ import { usePerformance } from "@/lib/performance-context";
 import { UploadedImage } from "../modality/ImageUpload";
 import { ModalityIcons } from "../modality/ModalityIcons";
 import { CopyButton } from "../ui/CopyButton";
+import { ReferenceStack } from "../ui/ReferenceStack";
+import { ReferencesModal } from "../ui/references-modal";
+import { useCopyTracking } from "../../lib/copy-tracking-context";
+import type { CopyReference } from "../../lib/copy-tracking-context";
 
 // Grok Icon Component
 const GrokIcon = ({
@@ -265,6 +269,16 @@ export function SupervisorInterface({
   // Get performance state for performance toggle
   const { showDetailedPerformance, togglePerformance } = usePerformance();
 
+  // Copy reference state management
+  const [showReferencesModal, setShowReferencesModal] = useState(false);
+  const {
+    references,
+    removeReference,
+    clearAllReferences,
+    getTrackedCopy,
+    addReference,
+  } = useCopyTracking();
+
   // Modal data
   const supervisorTurns = useQuery(api.queries.getSupervisorTurns, {
     sessionId,
@@ -387,8 +401,26 @@ export function SupervisorInterface({
         onSupervisorTyping(false);
       }
 
-      onSupervisorSend(prompt.trim());
+      // Format message with references for supervisor context
+      let messageContent = prompt.trim();
+
+      if (references.length > 0) {
+        const referencesContext = references
+          .map((ref, index) => {
+            const sourceLabel =
+              ref.agentName || `Node ${(ref.agentIndex ?? 0) + 1}`;
+            return `[Reference ${index + 1}] From ${sourceLabel} (${ref.sourceType}): ${ref.content}`;
+          })
+          .join("\n\n");
+
+        messageContent = `${messageContent}\n\n--- References ---\n${referencesContext}`;
+      }
+
+      onSupervisorSend(messageContent);
+
+      // Clear prompt and references after sending
       setPrompt("");
+      clearAllReferences();
     }
   };
 
@@ -398,6 +430,37 @@ export function SupervisorInterface({
       handleSend();
     }
   };
+
+  // Paste handler for reference interception
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const pastedText = e.clipboardData.getData("text");
+
+      if (!pastedText.trim()) return;
+
+      // Check if pasted content matches tracked copies
+      const trackedCopy = getTrackedCopy(pastedText);
+
+      if (trackedCopy) {
+        e.preventDefault();
+
+        // Convert matching content to reference instead of raw text
+        addReference(trackedCopy);
+
+        // Maintain cursor position after reference creation
+        const textarea = textareaRef.current;
+        if (textarea) {
+          const cursorPosition = textarea.selectionStart;
+          setTimeout(() => {
+            textarea.setSelectionRange(cursorPosition, cursorPosition);
+            textarea.focus();
+          }, 0);
+        }
+      }
+      // If no match found, allow normal paste behavior
+    },
+    [getTrackedCopy, addReference]
+  );
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -502,7 +565,7 @@ export function SupervisorInterface({
     <div
       ref={containerRef}
       className={`
-        fixed left-0 right-0 z-50 px-2 md:px-0
+        fixed left-0 right-0 z-50 
         transition-all duration-300 ease-in-out
         flex flex-col items-center justify-end
         ${isMaximized ? "top-0 bottom-0" : "bottom-0"}
@@ -516,7 +579,7 @@ export function SupervisorInterface({
             ? "max(0.5rem, env(safe-area-inset-bottom))"
             : isMaximized
               ? "8px"
-              : "4px",
+              : "0px",
         paddingTop: isMaximized ? "1rem" : "0",
         ...getContainerStyle(),
       }}
@@ -531,9 +594,10 @@ export function SupervisorInterface({
         ${isMaximized ? "h-full" : ""}
       `}
       >
-        {/* Supervisor Modal/Indicator with smooth animations */}
-        <motion.div
-          className={`
+        <div className="mx-2">
+          {/* Supervisor Modal/Indicator with smooth animations */}
+          <motion.div
+            className={`
           w-full mx-auto bg-gray-600/25 backdrop-blur-lg mb-2 group border border-gray-600/50 rounded-3xl 
           shadow-2xl shadow-gray-950/50
           transition-all duration-300 ease-in-out
@@ -546,20 +610,20 @@ export function SupervisorInterface({
               : "max-h-16 opacity-95 hover:opacity-100 hover:bg-gray-700/60"
           }
         `}
-          initial={false}
-          animate={{
-            y: !isOpen && isInputHidden ? 144 : 0, // Always 0 when input is hidden and modal is closed
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 500,
-            damping: 25,
-            mass: 0.5,
-            duration: 0.25,
-          }}
-        >
-          {/* Toggle Button - absolutely positioned above and centered */}
-          {/* <button
+            initial={false}
+            animate={{
+              y: !isOpen && isInputHidden ? 144 : 0, // Always 0 when input is hidden and modal is closed
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 500,
+              damping: 25,
+              mass: 0.5,
+              duration: 0.25,
+            }}
+          >
+            {/* Toggle Button - absolutely positioned above and centered */}
+            {/* <button
             type="button"
             onClick={onToggle}
             className="absolute -top-6 left-0 right-0 mx-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -568,9 +632,9 @@ export function SupervisorInterface({
               {isOpen ? "Collapse" : "Open"}
             </kbd>
           </button> */}
-          {/* Header - always visible, transforms based on state */}
-          <div
-            className={`
+            {/* Header - always visible, transforms based on state */}
+            <div
+              className={`
             flex items-center justify-between px-4 group
             transition-all duration-300 ease-in-out cursor-pointer
             ${
@@ -580,51 +644,51 @@ export function SupervisorInterface({
             }
             ${isInputHidden && !isOpen ? "hover:bg-gray-700/40 hover:scale-[1.02]" : ""}
           `}
-            onClick={onToggle}
-          >
-            <div className="flex items-center gap-3">
-              <Unlink className="w-4 h-4 text-lavender-400 group-hover:hidden" />
-              <Link2 className="w-4 h-4 text-lavender-400 hidden group-hover:block -rotate-45" />
-              <span className="text-xs text-lavender-400 font-medium">
-                Supervisor
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs ${getStatusColor()}`}>
-                {getStatusText()}
-              </span>
-              {isOpen ? (
-                <>
-                  <button
-                    onClick={handleMaximizeToggle}
-                    className="p-1.5 hover:bg-gray-800/50 rounded transition-colors"
-                    title={isMaximized ? "Minimize" : "Maximize"}
-                  >
-                    {isMaximized ? (
-                      <Minimize2 className="w-3 h-3 text-gray-400 hover:text-white" />
-                    ) : (
-                      <Maximize2 className="w-3 h-3 text-gray-400 hover:text-white" />
-                    )}
-                  </button>
-                  {!isMaximized ? (
+              onClick={onToggle}
+            >
+              <div className="flex items-center gap-3">
+                <Unlink className="w-4 h-4 text-lavender-400 group-hover:hidden" />
+                <Link2 className="w-4 h-4 text-lavender-400 hidden group-hover:block -rotate-45" />
+                <span className="text-xs text-lavender-400 font-medium">
+                  Supervisor
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs ${getStatusColor()}`}>
+                  {getStatusText()}
+                </span>
+                {isOpen ? (
+                  <>
                     <button
-                      onClick={onToggle}
+                      onClick={handleMaximizeToggle}
                       className="p-1.5 hover:bg-gray-800/50 rounded transition-colors"
-                      title="Collapse"
+                      title={isMaximized ? "Minimize" : "Maximize"}
                     >
-                      <ChevronDown className="w-4 h-4 text-gray-400 hover:text-white" />
+                      {isMaximized ? (
+                        <Minimize2 className="w-3 h-3 text-gray-400 hover:text-white" />
+                      ) : (
+                        <Maximize2 className="w-3 h-3 text-gray-400 hover:text-white" />
+                      )}
                     </button>
-                  ) : null}
-                </>
-              ) : (
-                <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-emerald-400 transition-colors" />
-              )}
+                    {!isMaximized ? (
+                      <button
+                        onClick={onToggle}
+                        className="p-1.5 hover:bg-gray-800/50 rounded transition-colors"
+                        title="Collapse"
+                      >
+                        <ChevronDown className="w-4 h-4 text-gray-400 hover:text-white" />
+                      </button>
+                    ) : null}
+                  </>
+                ) : (
+                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-emerald-400 transition-colors" />
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Modal Content - slides in/out smoothly */}
-          <div
-            className={`
+            {/* Modal Content - slides in/out smoothly */}
+            <div
+              className={`
             overflow-hidden transition-all duration-300 ease-in-out
             ${
               isOpen
@@ -634,32 +698,33 @@ export function SupervisorInterface({
                 : "max-h-0 opacity-0"
             }
           `}
-          >
-            <div
-              className={`
+            >
+              <div
+                className={`
               overflow-y-auto scrollbar-thin scrollbar-dark
               transition-transform duration-300 ease-in-out
               ${isOpen ? "translate-y-0" : "-translate-y-4"}
               ${isMaximized ? "h-full" : "max-h-80"}
             `}
-            >
-              <SupervisorConversationContent
-                supervisorTurns={supervisorTurns}
-                supervisorStreamContent={supervisorStreamContent}
-                agentSteps={agentSteps}
-              />
+              >
+                <SupervisorConversationContent
+                  supervisorTurns={supervisorTurns}
+                  supervisorStreamContent={supervisorStreamContent}
+                  agentSteps={agentSteps}
+                />
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
 
         {/* Supervisor Chat Input */}
         <motion.div
           className="
-          relative w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 rounded-3xl
+          relative w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 border-x-0 border-b-0 md:border-b rounded-3xl rounded-b-none md:rounded-b-3xl
           transition-all duration-300 ease-in-out max-w-4xl"
           initial={false}
           animate={{
-            y: isInputHidden && !isOpen ? 110 : 0,
+            y: isInputHidden && !isOpen ? 100 : 0,
             opacity: isInputHidden && !isOpen ? 0 : 1,
             scale: isInputHidden && !isOpen ? 0.95 : 1,
           }}
@@ -680,6 +745,7 @@ export function SupervisorInterface({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onKeyPress={handleKeyPress}
+            onPaste={handlePaste}
             onFocus={() => {
               showInput();
               resetHideTimer();
@@ -690,7 +756,7 @@ export function SupervisorInterface({
               }
             }}
             placeholder="What do you want to do next?"
-            className="w-full rounded-t-3xl border-none max-h-24 h-auto p-4 outline-none ring-0 text-base md:text-sm bg-transparent text-white placeholder-gray-400 focus:outline-none resize-none transition-all"
+            className="w-full rounded-t-3xl border-none max-h-24 h-auto p-4 outline-none ring-0 text-base md:text-sm bg-transparent text-white placeholder-gray-400 focus:outline-none resize-none transition-all supervisor-textarea"
             style={{ fontSize: "16px" }}
           />
 
@@ -738,6 +804,23 @@ export function SupervisorInterface({
               >
                 <BarChart3 size={18} />
               </button>
+
+              {/* Reference display area */}
+              {references.length > 0 && (
+                <ReferenceStack
+                  references={references}
+                  maxVisible={3}
+                  onRemove={(id) => {
+                    removeReference(id);
+                  }}
+                  onShowAll={() => setShowReferencesModal(true)}
+                  onReferenceClick={(reference) => {
+                    // Optional: Handle reference click (e.g., show preview)
+                    console.log("Reference clicked:", reference);
+                  }}
+                  className="ml-2"
+                />
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -778,6 +861,23 @@ export function SupervisorInterface({
           </div>
         </motion.div>
       </div>
+
+      {/* References Modal */}
+      <ReferencesModal
+        isOpen={showReferencesModal}
+        onClose={() => setShowReferencesModal(false)}
+        references={references}
+        onRemove={(id) => {
+          removeReference(id);
+        }}
+        onClearAll={() => {
+          clearAllReferences();
+        }}
+        onReorder={(newOrder) => {
+          // Note: Global context doesn't support reordering yet
+          console.log("Reorder not implemented in global context:", newOrder);
+        }}
+      />
     </div>
   );
 }

@@ -39,7 +39,11 @@ export function MessageBubble({
           </div>
           {copyable && (
             <div className="absolute right-2 -bottom-8 opacity-0 group-hover/message-bubble:opacity-100 transition-opacity duration-200">
-              <CopyButton text={content} size="sm" />
+              <CopyButton
+                text={content}
+                size="sm"
+                tooltipPosition="top-right"
+              />
             </div>
           )}
           {children}
@@ -69,7 +73,7 @@ export function MessageBubble({
         </div>
         {copyable && !isUser && content && !isStreaming && (
           <div className="mt-2 flex justify-start opacity-0 group-hover/message-bubble:opacity-100 transition-opacity duration-200">
-            <CopyButton text={content} size="sm" />
+            <CopyButton text={content} size="sm" tooltipPosition="top-left" />
           </div>
         )}
         {children}

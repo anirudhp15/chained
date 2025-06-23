@@ -18,7 +18,12 @@ import {
 } from "../../../lib/api-validation";
 import { rateLimiters, checkUserTierLimits } from "../../../lib/rate-limiter";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+// Create individual authenticated Convex clients to avoid contention
+const createAuthenticatedConvexClient = async (token: string) => {
+  const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+  client.setAuth(token);
+  return client;
+};
 
 // Improved database queue with better batching
 const databaseQueue = new Map<
@@ -29,12 +34,18 @@ const databaseQueue = new Map<
     stepId: string;
     retryCount: number;
     timestamp: number;
+    convexClient: any; // Store the authenticated client with each item
   }
 >();
 
 let isProcessingQueue = false;
 
-function queueDatabaseWrite(type: string, data: any, stepId: string) {
+function queueDatabaseWrite(
+  type: string,
+  data: any,
+  stepId: string,
+  convexClient: any
+) {
   const key = `${stepId}-${type}`;
   databaseQueue.set(key, {
     type,
@@ -42,6 +53,7 @@ function queueDatabaseWrite(type: string, data: any, stepId: string) {
     stepId,
     retryCount: 0,
     timestamp: Date.now(),
+    convexClient, // Store the client with the queue item
   });
 
   // Debounce queue processing
@@ -88,48 +100,44 @@ async function processDatabaseQueue() {
   isProcessingQueue = true;
 
   try {
-    // Process items in batches by stepId to reduce conflicts
-    const stepGroups = new Map<string, Array<{ key: string; item: any }>>();
-
-    for (const [key, item] of databaseQueue.entries()) {
-      if (!stepGroups.has(item.stepId)) {
-        stepGroups.set(item.stepId, []);
-      }
-      stepGroups.get(item.stepId)!.push({ key, item });
-    }
-
-    // Process each step's updates sequentially
-    for (const [stepId, items] of stepGroups.entries()) {
-      // Sort by timestamp to process in order
-      items.sort((a, b) => a.item.timestamp - b.item.timestamp);
-
-      for (const { key, item } of items) {
+    // Process ALL items concurrently instead of sequentially
+    const allPromises = Array.from(databaseQueue.entries()).map(
+      async ([key, item]) => {
         try {
           await retryWithBackoff(async () => {
             switch (item.type) {
               case "thinking":
-                await convex.mutation(api.mutations.updateAgentStep, {
-                  stepId: item.stepId as Id<"agentSteps">,
-                  thinking: item.data.thinking,
-                  isThinking: item.data.isThinking,
-                  isComplete: false,
-                  isStreaming: true,
-                });
+                await item.convexClient.mutation(
+                  api.mutations.updateAgentStep,
+                  {
+                    stepId: item.stepId as Id<"agentSteps">,
+                    thinking: item.data.thinking,
+                    isThinking: item.data.isThinking,
+                    isComplete: false,
+                    isStreaming: true,
+                  }
+                );
                 break;
               case "content":
-                await convex.mutation(api.mutations.updateStreamedContent, {
-                  stepId: item.stepId as Id<"agentSteps">,
-                  content: item.data.content,
-                });
+                await item.convexClient.mutation(
+                  api.mutations.updateStreamedContent,
+                  {
+                    stepId: item.stepId as Id<"agentSteps">,
+                    content: item.data.content,
+                  }
+                );
                 break;
               case "complete":
-                await convex.mutation(api.mutations.completeAgentExecution, {
-                  stepId: item.stepId as Id<"agentSteps">,
-                  response: item.data.response,
-                  thinking: item.data.thinking,
-                  tokenUsage: item.data.tokenUsage,
-                  estimatedCost: item.data.estimatedCost,
-                });
+                await item.convexClient.mutation(
+                  api.mutations.completeAgentExecution,
+                  {
+                    stepId: item.stepId as Id<"agentSteps">,
+                    response: item.data.response,
+                    thinking: item.data.thinking,
+                    tokenUsage: item.data.tokenUsage,
+                    estimatedCost: item.data.estimatedCost,
+                  }
+                );
                 break;
             }
           });
@@ -152,7 +160,9 @@ async function processDatabaseQueue() {
           }
         }
       }
-    }
+    );
+
+    await Promise.all(allPromises);
   } finally {
     isProcessingQueue = false;
 
@@ -353,7 +363,7 @@ export async function POST(request: NextRequest) {
     }
     console.log("✅ Auth data validated");
 
-    // Set up authenticated Convex client
+    // Create individual authenticated Convex client for this request
     const token = await authData.getToken({ template: "convex" });
     if (!token) {
       console.error("❌ Failed to get Convex token");
@@ -362,8 +372,8 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-    convex.setAuth(token);
-    console.log("✅ Convex client authenticated");
+    const convex = await createAuthenticatedConvexClient(token);
+    console.log("✅ Individual Convex client authenticated");
 
     // Get the agent step to check if it belongs to the authenticated user
     const agentStep = await convex.query(api.queries.getAgentStep, {
@@ -460,7 +470,8 @@ export async function POST(request: NextRequest) {
                       thinking: fullThinking,
                       isThinking: true,
                     },
-                    stepId
+                    stepId,
+                    convex
                   );
 
                   // Send thinking update to client IMMEDIATELY
@@ -493,7 +504,8 @@ export async function POST(request: NextRequest) {
                     {
                       content: fullContent,
                     },
-                    stepId
+                    stepId,
+                    convex
                   );
                 } else if (chunk.type === "complete") {
                   // Final completion
@@ -519,7 +531,8 @@ export async function POST(request: NextRequest) {
                       tokenUsage: tokenUsage,
                       estimatedCost,
                     },
-                    stepId
+                    stepId,
+                    convex
                   );
 
                   // Send completion event IMMEDIATELY
@@ -726,7 +739,8 @@ export async function POST(request: NextRequest) {
                   thinking: chunk.thinking,
                   isThinking: chunk.isThinking,
                 },
-                stepId
+                stepId,
+                convex
               );
 
               // Send to client IMMEDIATELY
@@ -762,7 +776,8 @@ export async function POST(request: NextRequest) {
                 {
                   content: fullContent,
                 },
-                stepId
+                stepId,
+                convex
               );
             } else if (chunk.isComplete) {
               tokenUsage = chunk.tokenUsage;
@@ -798,7 +813,8 @@ export async function POST(request: NextRequest) {
               tokenUsage: tokenUsage,
               estimatedCost,
             },
-            stepId
+            stepId,
+            convex
           );
 
           const endTime = performance.now();

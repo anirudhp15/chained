@@ -194,11 +194,11 @@ export function ConnectionBadge({
           )}
 
           {/* <span className="text-gray-300">chained from</span> */}
-          <span className="font-semibold hidden md:inline">{displayName}</span>
+          {/* <span className="font-semibold hidden md:inline">{displayName}</span>
           <span className="font-semibold md:hidden text-xs">
             {displayName.split(" ")[0]}{" "}
             {displayName.split(" ").length > 1 && displayName.split(" ")[1]}
-          </span>
+          </span> */}
         </div>
 
         {/* Hover tooltip for conditional conditions */}

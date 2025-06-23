@@ -4,6 +4,7 @@ import { ConvexProvider } from "./convex-provider";
 import { SidebarProvider } from "@/lib/sidebar-context";
 import { PostHogProvider } from "./posthog-provider";
 import { MathProvider } from "@/components/math-provider";
+import { CopyTrackingProvider } from "@/lib/copy-tracking-context";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -120,7 +121,9 @@ export default function RootLayout({
           <MathProvider>
             <ConvexProvider>
               <SidebarProvider>
-                <div className="min-h-screen bg-gray-950">{children}</div>
+                <CopyTrackingProvider>
+                  <div className="min-h-screen bg-gray-950">{children}</div>
+                </CopyTrackingProvider>
               </SidebarProvider>
             </ConvexProvider>
           </MathProvider>

@@ -522,13 +522,13 @@ const DesktopConnectionSelector = ({
           setButtonPosition(e.currentTarget.getBoundingClientRect());
           setIsDropdownOpen(!isDropdownOpen);
         }}
-        className="relative z-10 w-10 h-10 bg-gray-800/90 hover:bg-gray-700/90 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg flex items-center justify-center transform rotate-45 backdrop-blur-sm transition-all group"
+        className="relative z-10 w-8 h-8  flex items-center justify-center transform rotate-45 backdrop-blur-sm transition-all group bg-gray-800/90 hover:bg-gray-700/90 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg"
         title={`Connection: ${currentConnection?.label}`}
       >
         <div className="transform -rotate-45">
           {CurrentConnectionIcon && (
             <CurrentConnectionIcon
-              size={16}
+              size={20}
               className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""} group-hover:scale-110 transition-transform`}
             />
           )}
@@ -826,11 +826,11 @@ export function InitialChainInput({
               {agents.map((agent, index) => (
                 <div
                   key={agent.id}
-                  className="flex flex-col lg:flex-row lg:items-stretch lg:max-w-4xl"
+                  className="flex relative flex-col lg:flex-row lg:items-stretch lg:max-w-4xl"
                 >
                   {/* Agent Card using AgentInput component */}
                   <div
-                    className={`${getAgentContainerClasses()} backdrop-blur-sm ${
+                    className={`${getAgentContainerClasses()} backdrop-blur-sm px-4 ${
                       queuedAgents.some((qa) => qa.id === agent.id)
                         ? "border-lavender-400/50"
                         : ""
@@ -887,33 +887,34 @@ export function InitialChainInput({
                       </div>
                     )}
                   </div>
+                  <div className="absolute top-8 -right-[44px] pr-[20px]">
+                    {/* Connection Selector (between agents) */}
+                    {index < agents.length - 1 && (
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-center lg:px-2">
+                        {/* Mobile: Compact Connection Line */}
+                        <div className="lg:hidden">
+                          <CompactMobileConnection
+                            agent={agents[index + 1]}
+                            onUpdate={(updatedAgent) =>
+                              updateAgent(index + 1, updatedAgent)
+                            }
+                            index={index + 1}
+                          />
+                        </div>
 
-                  {/* Connection Selector (between agents) */}
-                  {index < agents.length - 1 && (
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-center lg:px-2">
-                      {/* Mobile: Compact Connection Line */}
-                      <div className="lg:hidden">
-                        <CompactMobileConnection
-                          agent={agents[index + 1]}
-                          onUpdate={(updatedAgent) =>
-                            updateAgent(index + 1, updatedAgent)
-                          }
-                          index={index + 1}
-                        />
+                        {/* Desktop: Interactive Connection Selector */}
+                        <div className="hidden lg:block">
+                          <DesktopConnectionSelector
+                            agent={agents[index + 1]}
+                            onUpdate={(updatedAgent) =>
+                              updateAgent(index + 1, updatedAgent)
+                            }
+                            index={index + 1}
+                          />
+                        </div>
                       </div>
-
-                      {/* Desktop: Interactive Connection Selector */}
-                      <div className="hidden lg:block">
-                        <DesktopConnectionSelector
-                          agent={agents[index + 1]}
-                          onUpdate={(updatedAgent) =>
-                            updateAgent(index + 1, updatedAgent)
-                          }
-                          index={index + 1}
-                        />
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

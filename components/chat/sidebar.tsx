@@ -399,7 +399,9 @@ export function Sidebar({
         </div>
 
         {/* Desktop Chains Button */}
-        <div className="px-4 pb-2 flex justify-center">
+        <div
+          className={`px-4 ${isCollapsed ? "py-2" : " pb-2"} flex justify-center`}
+        >
           <button
             onClick={() => router.push("/chains")}
             className={`flex items-center text-sm justify-between font-medium gap-2 p-2.5 bg-gray-800 hover:bg-gray-700 group text-gray-300 hover:text-white rounded-lg transition-all duration-200 ${
@@ -474,7 +476,7 @@ export function Sidebar({
         )}
 
         {/* Desktop Chat List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto scrollbar-none">
           <div className="px-2">
             {/* Collapsed Search Icon - only show when collapsed and there are chats */}
             {isCollapsed && recentChats && recentChats.length > 0 && (

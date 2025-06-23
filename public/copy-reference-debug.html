@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Copy Reference Debug</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+      }
+      h1,
+      h2,
+      h3 {
+        color: #f0f0f0;
+      }
+      .card {
+        background-color: #2a2a2a;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid #3a3a3a;
+      }
+      .instructions {
+        background-color: #2a2a2a;
+        border-left: 4px solid #8b5cf6;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+      }
+      .code {
+        font-family: monospace;
+        background-color: #333;
+        padding: 8px 12px;
+        border-radius: 4px;
+        overflow-x: auto;
+        white-space: pre;
+      }
+      button {
+        background-color: #8b5cf6;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 8px;
+        margin-bottom: 8px;
+      }
+      button:hover {
+        background-color: #7c3aed;
+      }
+      .log-container {
+        background-color: #222;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 8px;
+        height: 200px;
+        overflow-y: auto;
+        margin-top: 12px;
+        font-family: monospace;
+      }
+      .log-entry {
+        margin-bottom: 4px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 4px;
+      }
+      .success {
+        color: #10b981;
+      }
+      .error {
+        color: #ef4444;
+      }
+      .warning {
+        color: #f59e0b;
+      }
+      .info {
+        color: #3b82f6;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Copy Reference Debug Tool</h1>
+
+    <div class="instructions">
+      <h3>Instructions</h3>
+      <p>
+        This tool will help you diagnose and fix issues with the copy-reference
+        feature. Follow these steps:
+      </p>
+      <ol>
+        <li>Open your chat application in another tab</li>
+        <li>Use the buttons below to apply fixes</li>
+        <li>Check the logs for diagnostic information</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>Diagnosis</h2>
+      <button onclick="runDiagnosis()">Run Diagnosis</button>
+      <button onclick="clearLogs()">Clear Logs</button>
+      <div id="diagnosisLog" class="log-container"></div>
+    </div>
+
+    <div class="card">
+      <h2>Fix Options</h2>
+      <button onclick="applyDirectFix()">Apply Direct Fix</button>
+      <button onclick="enableDebugMode()">Enable Debug Mode</button>
+      <button onclick="fixCopyDetection()">Fix Copy Detection</button>
+      <button onclick="fixPasteInterception()">Fix Paste Interception</button>
+    </div>
+
+    <div class="card">
+      <h2>Test Content</h2>
+      <p>Copy text from here to test the feature:</p>
+      <div
+        class="code"
+        data-agent-index="0"
+        data-agent-name="Test Agent"
+        data-agent-model="GPT-4"
+      >
+        This is a test paragraph that you can copy to test the copy-reference
+        feature. It simulates content from an agent response that should be
+        detected when copied.
+      </div>
+      <p>Paste into this textarea to test paste interception:</p>
+      <textarea
+        class="supervisor-textarea"
+        style="
+          width: 100%;
+          height: 80px;
+          background: #333;
+          color: white;
+          padding: 8px;
+          border: 1px solid #444;
+          border-radius: 4px;
+        "
+      ></textarea>
+    </div>
+
+    <script>
+      // Log functions
+      function log(message, type = "info") {
+        const logContainer = document.getElementById("diagnosisLog");
+        const entry = document.createElement("div");
+        entry.className = `log-entry ${type}`;
+        entry.textContent = message;
+        logContainer.appendChild(entry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+      }
+
+      function clearLogs() {
+        document.getElementById("diagnosisLog").innerHTML = "";
+      }
+
+      // Diagnosis function
+      function runDiagnosis() {
+        log("Running diagnosis...", "info");
+
+        // Check if we're in the right context
+        if (window.location.href.includes("copy-reference-debug.html")) {
+          log(
+            "⚠️ You are viewing the debug tool directly. Open your chat app in another tab instead.",
+            "warning"
+          );
+        }
+
+        // Check for agent containers
+        const agentContainers = document.querySelectorAll("[data-agent-index]");
+        log(
+          `Found ${agentContainers.length} agent containers`,
+          agentContainers.length > 0 ? "success" : "warning"
+        );
+
+        // Check for supervisor textarea
+        const supervisorTextarea = document.querySelector(
+          ".supervisor-textarea"
+        );
+        log(
+          `Supervisor textarea: ${supervisorTextarea ? "Found" : "Not found"}`,
+          supervisorTextarea ? "success" : "error"
+        );
+
+        // Check for copy event listeners
+        const copyListeners = getEventListeners(document, "copy");
+        log(
+          `Copy event listeners: ${copyListeners}`,
+          copyListeners > 0 ? "success" : "error"
+        );
+
+        // Check for paste event listeners on textarea
+        const pasteListeners = supervisorTextarea
+          ? getEventListeners(supervisorTextarea, "paste")
+          : 0;
+        log(
+          `Paste event listeners on textarea: ${pasteListeners}`,
+          pasteListeners > 0 ? "success" : "error"
+        );
+
+        // Check for CSS classes
+        const hasCopyHighlightCSS = checkForCSS(".copy-highlight");
+        log(
+          `Copy highlight CSS: ${hasCopyHighlightCSS ? "Found" : "Not found"}`,
+          hasCopyHighlightCSS ? "success" : "warning"
+        );
+
+        log("Diagnosis complete", "info");
+      }
+
+      // Helper function to estimate event listeners (not 100% accurate)
+      function getEventListeners(element, eventType) {
+        try {
+          // This is a hacky way to check, but it's the best we can do in plain JS
+          const handler = element["on" + eventType];
+          if (handler) return 1;
+
+          // Try to check jQuery events if jQuery is available
+          if (window.jQuery && jQuery._data) {
+            const events = jQuery._data(element, "events");
+            if (events && events[eventType]) {
+              return events[eventType].length;
+            }
+          }
+
+          return 0;
+        } catch (e) {
+          return 0;
+        }
+      }
+
+      // Check if CSS class exists in stylesheets
+      function checkForCSS(selector) {
+        try {
+          for (let i = 0; i < document.styleSheets.length; i++) {
+            try {
+              const sheet = document.styleSheets[i];
+              const rules = sheet.cssRules || sheet.rules;
+              for (let j = 0; j < rules.length; j++) {
+                if (
+                  rules[j].selectorText &&
+                  rules[j].selectorText.includes(selector)
+                ) {
+                  return true;
+                }
+              }
+            } catch (e) {
+              // Ignore security errors from cross-origin stylesheets
+            }
+          }
+          return false;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      // Fix functions
+      function applyDirectFix() {
+        log("Applying direct fix...", "info");
+
+        try {
+          // Load the fix script
+          const script = document.createElement("script");
+          script.src = "/fix-copy-reference.js";
+          document.body.appendChild(script);
+
+          script.onload = () => {
+            log("Direct fix script loaded successfully", "success");
+          };
+
+          script.onerror = () => {
+            log("Failed to load direct fix script", "error");
+          };
+        } catch (e) {
+          log(`Error applying fix: ${e.message}`, "error");
+        }
+      }
+
+      function enableDebugMode() {
+        log("Enabling debug mode...", "info");
+
+        try {
+          // Load the debug script
+          const script = document.createElement("script");
+          script.src = "/debug-copy-paste.js";
+          document.body.appendChild(script);
+
+          script.onload = () => {
+            log("Debug mode enabled successfully", "success");
+          };
+
+          script.onerror = () => {
+            log("Failed to load debug script", "error");
+          };
+        } catch (e) {
+          log(`Error enabling debug mode: ${e.message}`, "error");
+        }
+      }
+
+      function fixCopyDetection() {
+        log("Fixing copy detection...", "info");
+
+        try {
+          // Set up copy detection
+          document.addEventListener("copy", (e) => {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed) return;
+
+            const content = selection.toString().trim();
+            if (!content) return;
+
+            log(`Copy detected: ${content.slice(0, 30)}...`, "success");
+
+            // Find the element
+            const range = selection.getRangeAt(0);
+            const element = range.startContainer.parentElement;
+
+            if (element) {
+              element.classList.add("copy-highlight");
+              element.classList.add("copy-highlight-active");
+
+              setTimeout(() => {
+                element.classList.remove("copy-highlight-active");
+                element.classList.add("copy-highlight-fading");
+              }, 3000);
+
+              setTimeout(() => {
+                element.classList.remove("copy-highlight");
+                element.classList.remove("copy-highlight-fading");
+              }, 4000);
+            }
+          });
+
+          log("Copy detection fixed", "success");
+        } catch (e) {
+          log(`Error fixing copy detection: ${e.message}`, "error");
+        }
+      }
+
+      function fixPasteInterception() {
+        log("Fixing paste interception...", "info");
+
+        try {
+          // Set up paste interception
+          const textarea = document.querySelector(".supervisor-textarea");
+          if (!textarea) {
+            log("Could not find supervisor textarea", "error");
+            return;
+          }
+
+          textarea.addEventListener("paste", (e) => {
+            const pastedText = e.clipboardData.getData("text");
+            log(`Paste detected: ${pastedText.slice(0, 30)}...`, "success");
+
+            // For demo purposes, always intercept
+            e.preventDefault();
+
+            // Create a reference chip
+            const container = document.createElement("div");
+            container.className = "reference-stack";
+            container.style.display = "inline-flex";
+            container.style.alignItems = "center";
+            container.style.gap = "8px";
+            container.style.padding = "4px 12px";
+            container.style.backgroundColor = "rgba(139, 92, 246, 0.1)";
+            container.style.border = "1px solid rgba(139, 92, 246, 0.3)";
+            container.style.borderRadius = "9999px";
+            container.style.marginTop = "8px";
+            container.textContent = `Reference: ${pastedText.slice(0, 20)}...`;
+
+            textarea.parentElement.appendChild(container);
+          });
+
+          log("Paste interception fixed", "success");
+        } catch (e) {
+          log(`Error fixing paste interception: ${e.message}`, "error");
+        }
+      }
+
+      // Initialize
+      log("Debug tool loaded", "info");
+      log("Use the buttons above to diagnose and fix issues", "info");
+    </script>
+  </body>
+</html>

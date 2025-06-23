@@ -232,7 +232,15 @@
     font-family:
       "JetBrains Mono", "Cascadia Code", "Cascadia Mono", "Fira Code", Consolas,
       "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", "Source Code Pro",
-      Menlo, "Liberation Mono", monospace;
+      Menlo, "Liberation Mono", monospace !important;
+  }
+
+  /* Ensure all code elements use JetBrains Mono, overriding global font */
+  .markdown-content pre,
+  .markdown-content pre *,
+  .markdown-content code,
+  .markdown-content code * {
+    font-family: "JetBrains Mono", monospace !important;
   }
 
   .markdown-content blockquote {
@@ -966,6 +974,161 @@
     }
     50% {
       opacity: 0.4;
+    }
+  }
+
+  /* Copy Highlight Animations */
+  .copy-highlight {
+    position: relative;
+    transition: all 0.3s ease-in-out;
+  }
+
+  .copy-highlight-active {
+    background: linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.15) 0%,
+      rgba(147, 51, 234, 0.15) 50%,
+      rgba(236, 72, 153, 0.15) 100%
+    );
+    box-shadow:
+      0 0 20px rgba(59, 130, 246, 0.2),
+      0 0 40px rgba(147, 51, 234, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    animation: copyHighlightPulse 0.6s ease-out;
+  }
+
+  .copy-highlight-fading {
+    background: linear-gradient(
+      135deg,
+      rgba(59, 130, 246, 0.08) 0%,
+      rgba(147, 51, 234, 0.08) 50%,
+      rgba(236, 72, 153, 0.08) 100%
+    );
+    box-shadow:
+      0 0 10px rgba(59, 130, 246, 0.1),
+      0 0 20px rgba(147, 51, 234, 0.05);
+    animation: copyHighlightFadeOut 1s ease-out forwards;
+  }
+
+  .copy-highlight-container {
+    position: relative;
+    overflow: visible;
+  }
+
+  @keyframes copyHighlightPulse {
+    0% {
+      transform: scale(1);
+      box-shadow:
+        0 0 0 rgba(59, 130, 246, 0.4),
+        0 0 0 rgba(147, 51, 234, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    50% {
+      transform: scale(1.02);
+      box-shadow:
+        0 0 25px rgba(59, 130, 246, 0.3),
+        0 0 50px rgba(147, 51, 234, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow:
+        0 0 20px rgba(59, 130, 246, 0.2),
+        0 0 40px rgba(147, 51, 234, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  @keyframes copyHighlightFadeOut {
+    0% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.98);
+      background: transparent;
+      box-shadow: none;
+    }
+  }
+
+  /* Subtle highlight for different content types */
+  .copy-highlight[data-source-type="user-prompt"] .copy-highlight-active {
+    background: linear-gradient(
+      135deg,
+      rgba(34, 197, 94, 0.15) 0%,
+      rgba(16, 185, 129, 0.15) 100%
+    );
+    box-shadow:
+      0 0 20px rgba(34, 197, 94, 0.2),
+      0 0 40px rgba(16, 185, 129, 0.1);
+  }
+
+  .copy-highlight[data-source-type="code-block"] .copy-highlight-active {
+    background: linear-gradient(
+      135deg,
+      rgba(168, 85, 247, 0.15) 0%,
+      rgba(139, 92, 246, 0.15) 100%
+    );
+    box-shadow:
+      0 0 20px rgba(168, 85, 247, 0.2),
+      0 0 40px rgba(139, 92, 246, 0.1);
+  }
+
+  .copy-highlight[data-source-type="supervisor-response"]
+    .copy-highlight-active {
+    background: linear-gradient(
+      135deg,
+      rgba(249, 115, 22, 0.15) 0%,
+      rgba(251, 146, 60, 0.15) 100%
+    );
+    box-shadow:
+      0 0 20px rgba(249, 115, 22, 0.2),
+      0 0 40px rgba(251, 146, 60, 0.1);
+  }
+
+  /* Highlight wrapper utilities */
+  .highlight-wrapper {
+    position: relative;
+    display: contents;
+  }
+
+  .highlight-wrapper[data-highlightable="true"]:hover {
+    cursor: text;
+  }
+
+  .highlight-wrapper[data-highlightable="false"] {
+    pointer-events: none;
+  }
+
+  /* Responsive highlight adjustments */
+  @media (max-width: 768px) {
+    .copy-highlight-active {
+      box-shadow:
+        0 0 15px rgba(59, 130, 246, 0.15),
+        0 0 30px rgba(147, 51, 234, 0.08);
+    }
+
+    @keyframes copyHighlightPulse {
+      0% {
+        transform: scale(1);
+        box-shadow:
+          0 0 0 rgba(59, 130, 246, 0.3),
+          0 0 0 rgba(147, 51, 234, 0.15);
+      }
+      50% {
+        transform: scale(1.01);
+        box-shadow:
+          0 0 20px rgba(59, 130, 246, 0.25),
+          0 0 40px rgba(147, 51, 234, 0.12);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow:
+          0 0 15px rgba(59, 130, 246, 0.15),
+          0 0 30px rgba(147, 51, 234, 0.08);
+      }
     }
   }
 }

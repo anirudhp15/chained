@@ -122,7 +122,7 @@ export function SupervisorConversationContent({
   const conversationContent = (
     <div className={`p-4 max-w-4xl mx-auto ${className}`}>
       {supervisorTurns.map((turn, index) => (
-        <div key={turn._id} className="space-y-4 text-xs lg:text-sm">
+        <div key={turn._id} className="space-y-8 text-xs lg:text-sm">
           {/* User Message */}
           <MessageBubble content={turn.userInput} isUser={true} />
 
@@ -173,6 +173,11 @@ export function SupervisorConversationContent({
                           agentSteps || []
                         )}
                         size="sm"
+                        tooltipPosition="top"
+                        sourceContext={{
+                          sourceType: "supervisor-response",
+                          sessionId: turn.sessionId,
+                        }}
                       />
                     </div>
                   )}

@@ -186,14 +186,28 @@ function ChatPageContent() {
         setFocusedAgentIndex(0); // Focus on the single agent
         setInputMode("focused");
       } else {
-        // Switch to supervisor mode for multiple agents
-        if (inputMode !== "supervisor") {
-          setInputMode("supervisor");
-          // Set status based on whether chain is complete
-          const allCompleted = agentSteps.every(
-            (step) => step.isComplete || step.wasSkipped
-          );
-          setSupervisorStatus(allCompleted ? "ready" : "orchestrating");
+        // Switch to supervisor mode for multiple agents - always use supervisor for multiple agents
+        // Ensure no agent is focused when we have multiple agents
+        if (focusedAgentIndex !== null) {
+          setFocusedAgentIndex(null);
+        }
+        setInputMode("supervisor");
+        // Set status based on whether chain is complete and not currently running
+        const allCompleted = agentSteps.every(
+          (step) => step.isComplete || step.wasSkipped
+        );
+        const anyStreaming = agentSteps.some((step) => step.isStreaming);
+        const anyStarted = agentSteps.some(
+          (step) => step.response || step.streamedContent || step.isStreaming
+        );
+
+        // Only set to ready if all complete, none streaming, and at least one has started
+        if (allCompleted && !anyStreaming && anyStarted) {
+          setSupervisorStatus("ready");
+        } else if (anyStreaming || anyStarted) {
+          setSupervisorStatus("orchestrating");
+        } else {
+          setSupervisorStatus("ready"); // Default state for new chains
         }
       }
     } else {
@@ -794,8 +808,13 @@ function ChatPageContent() {
             executionGroup: executionGroupId,
           });
 
-          // Start streaming
-          await streamAgentResponse(stepId, agent.model, prompt, agent);
+          // TEMPORARY: Use regular endpoint for all agents until parallel endpoint is fixed
+          console.log(
+            `🚀 AGENT-EXECUTION: Starting agent ${agentIndex} with connection type: ${agent.connection?.type}`
+          );
+          streamAgentResponse(stepId, agent.model, prompt, agent).catch(
+            console.error
+          );
 
           const duration = Date.now() - agentStartTime;
           console.log(
@@ -863,11 +882,11 @@ function ChatPageContent() {
       } as ParallelResult & { agentIndex: number; duration: number };
     };
 
-    // Execute agents in true parallel with minimal stagger for optimal performance
+    // Execute agents in true parallel - NO stagger delays for maximum concurrency
     const concurrentExecutionPromises = group.agents.map(
       (agent, groupIndex) => {
-        // Use minimal 50ms stagger just to prevent simultaneous request bursts
-        const staggerDelay = groupIndex * 50;
+        // Remove ALL delays for true parallel execution
+        const staggerDelay = 0; // No delays - full parallel execution
         return executeAgentWithRetry(agent, groupIndex, staggerDelay);
       }
     );
@@ -1097,6 +1116,118 @@ function ChatPageContent() {
     }
   };
 
+  // Direct streaming function that bypasses API for true parallel execution
+  const streamAgentDirectly = async (
+    stepId: Id<"agentSteps">,
+    model: string,
+    prompt: string,
+    agent?: Agent
+  ) => {
+    console.log(
+      `🚀 DIRECT-PARALLEL: Starting direct stream for agent ${stepId}`
+    );
+
+    try {
+      // Import LLM functions directly - this requires moving to server-side or using an edge function
+      // For now, let's use a special parallel endpoint
+      const response = await fetch("/api/stream-parallel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stepId,
+          model,
+          prompt,
+          grokOptions: agent?.grokOptions,
+          claudeOptions: agent?.claudeOptions,
+          images: agent?.images?.map((img) => ({
+            url: img.preview,
+            description: img.name,
+          })),
+          audioTranscription: agent?.audioTranscription,
+          webSearchResults: agent?.webSearchData?.results,
+          isParallel: true, // Flag to indicate this is a parallel request
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ DIRECT-PARALLEL: Response failed:`, {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          errorText,
+        });
+        throw new Error(
+          `Direct parallel streaming failed: ${response.status} ${response.statusText} - ${errorText}`
+        );
+      }
+
+      // Handle the streaming response same as normal agent
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body reader");
+
+      let fullContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = new TextDecoder().decode(value);
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.type === "token" && data.content) {
+                fullContent += data.content;
+                // Update UI directly through convex
+                await convex.mutation(api.mutations.updateStreamedContent, {
+                  stepId,
+                  content: fullContent,
+                });
+              } else if (data.type === "complete") {
+                await convex.mutation(api.mutations.completeAgentExecution, {
+                  stepId,
+                  response: fullContent,
+                  tokenUsage: data.tokenUsage,
+                  estimatedCost: data.estimatedCost,
+                });
+                break;
+              }
+            } catch (e) {
+              // Ignore JSON parsing errors for non-JSON lines
+            }
+          }
+        }
+      }
+
+      console.log(`✅ DIRECT-PARALLEL: Agent ${stepId} completed successfully`);
+    } catch (error) {
+      console.error(`❌ DIRECT-PARALLEL: Agent ${stepId} failed:`, error);
+      console.log("🔄 DIRECT-PARALLEL: Falling back to regular stream-agent");
+
+      // Fallback to the regular streaming endpoint
+      try {
+        await streamAgentResponse(stepId, model, prompt, agent);
+        console.log("✅ DIRECT-PARALLEL: Fallback succeeded");
+        return;
+      } catch (fallbackError) {
+        console.error(
+          "❌ DIRECT-PARALLEL: Fallback also failed:",
+          fallbackError
+        );
+      }
+
+      await convex.mutation(api.mutations.updateAgentStep, {
+        stepId,
+        error: error instanceof Error ? error.message : "Unknown error",
+        isComplete: true,
+        isStreaming: false,
+      });
+    }
+  };
+
   const streamAgentResponse = async (
     stepId: Id<"agentSteps">,
     model: string,
@@ -1272,7 +1403,7 @@ function ChatPageContent() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-950 scrollbar-none">
+    <div className="flex h-screen bg-gray-900/50 scrollbar-none">
       <Sidebar
         currentSessionId={chainId}
         isMobileOpen={isMobileSidebarOpen}
@@ -1368,7 +1499,7 @@ export default function ChainPage() {
   return (
     <>
       <Unauthenticated>
-        <div className="flex min-h-screen items-center justify-center bg-gray-950">
+        <div className="flex min-h-screen items-center justify-center bg-gray-900/50">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white mb-4">
               Welcome to Chain Chat

@@ -122,7 +122,7 @@ function ChatLandingContent() {
       <div className="flex-1 flex flex-col relative w-full">
         {/* Welcome Screen - only show if no preset agents are loaded */}
         {!presetAgents && (
-          <div className="flex-1 flex items-center justify-center w-full bg-gray-950/50">
+          <div className="flex-1 flex items-center justify-center w-full bg-gray-950/70">
             <WelcomeScreen onLoadPreset={handleLoadPreset} />
           </div>
         )}
@@ -146,7 +146,7 @@ export default function ChatPage() {
   return (
     <>
       <Unauthenticated>
-        <div className="flex min-h-screen items-center justify-center bg-gray-950">
+        <div className="flex min-h-screen items-center justify-center bg-gray-900/50">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white mb-4">
               Welcome to Chain Chat

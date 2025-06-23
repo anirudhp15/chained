@@ -6,7 +6,7 @@ import { generateRateLimitKey } from "./lib/api-validation";
 
 const isProtectedRoute = createRouteMatcher(["/chat(.*)"]);
 const isApiRoute = createRouteMatcher(["/api(.*)"]);
-const isLLMRoute = createRouteMatcher(["/api/run-chain", "/api/stream-agent"]);
+const isLLMRoute = createRouteMatcher(["/api/run-chain", "/api/stream-agent", "/api/stream-parallel"]);
 const isUploadRoute = createRouteMatcher(["/api/upload-file"]);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
@@ -54,8 +54,11 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     let rateLimit;
 
     // Apply different rate limits based on route type
+    // Skip rate limiting for LLM routes to enable parallel execution
+    // TODO: Implement session-based rate limiting for parallel agents
     if (isLLMRoute(req)) {
-      rateLimit = await rateLimiters.llm.checkRateLimit(rateLimitKey);
+      // Skip middleware rate limiting for LLM routes - handle in route handler instead
+      rateLimit = { success: true, limit: 100, remaining: 100, reset: Date.now() + 60000 };
     } else if (isUploadRoute(req)) {
       rateLimit = await rateLimiters.upload.checkRateLimit(rateLimitKey);
     } else {

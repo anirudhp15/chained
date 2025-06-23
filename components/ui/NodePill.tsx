@@ -328,10 +328,10 @@ export function NodePill({
         >
           <div className="flex items-center justify-between">
             {/* Left: Node Name */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {isEditing ? (
                 <>
-                  <div className="w-2 h-2 bg-lavender-400/50 rounded-full"></div>
+                  {/* <div className="w-2 h-2 bg-lavender-400/50 rounded-full"></div> */}
                   <input
                     type="text"
                     value={tempName}
@@ -351,7 +351,7 @@ export function NodePill({
                 </>
               ) : (
                 <>
-                  <div className="w-2 h-2 bg-lavender-400 rounded-full"></div>
+                  {/* <div className="w-2 h-2 bg-lavender-400 rounded-full"></div> */}
                   <span className="text-xs whitespace-nowrap text-lavender-400 font-medium">
                     {nodeName}
                   </span>
@@ -388,7 +388,7 @@ export function NodePill({
                   className="text-gray-400 hover:text-lavender-400"
                 />
                 <span className="text-xs whitespace-nowrap text-gray-400 hover:text-lavender-400 hidden xl:inline">
-                  Ideas
+                  Prompts
                 </span>
               </button>
             </div>
@@ -437,10 +437,10 @@ export function NodePill({
                     e.stopPropagation();
                     onRemove();
                   }}
-                  className="flex items-center gap-1 px-2 py-1 bg-gray-700/50 hover:bg-red-600/80 text-gray-400 hover:text-white rounded-md text-xs font-medium transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 bg-gray-700/50 hover:bg-red-600/80 text-gray-400 hover:text-white rounded-2xl text-xs font-medium transition-colors"
                 >
                   <Trash2 size={12} />
-                  <span className="hidden sm:inline">Remove</span>
+                  {/* <span className="hidden sm:inline">Remove</span> */}
                 </button>
               )}
 
@@ -451,7 +451,7 @@ export function NodePill({
                     e.stopPropagation();
                     onAddAgent();
                   }}
-                  className="flex items-center gap-1 px-2 py-1 bg-lavender-500 hover:bg-lavender-600 text-white rounded-md text-xs font-medium transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 bg-lavender-500 hover:bg-lavender-600 text-white rounded-2xl text-xs font-medium transition-colors"
                 >
                   <Plus size={12} />
                   <span className="hidden sm:inline">LLM</span>
