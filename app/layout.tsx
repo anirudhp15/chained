@@ -5,6 +5,7 @@ import { SidebarProvider } from "@/lib/sidebar-context";
 import { PostHogProvider } from "./posthog-provider";
 import { MathProvider } from "@/components/math-provider";
 import { CopyTrackingProvider } from "@/lib/copy-tracking-context";
+import { ClerkProvider } from "@clerk/nextjs";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -115,20 +116,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="bg-gray-950">
-      <body className="antialiased bg-gray-950 min-h-screen overflow-x-hidden font-sans">
-        <PostHogProvider>
-          <MathProvider>
-            <ConvexProvider>
-              <SidebarProvider>
-                <CopyTrackingProvider>
-                  <div className="min-h-screen bg-gray-950">{children}</div>
-                </CopyTrackingProvider>
-              </SidebarProvider>
-            </ConvexProvider>
-          </MathProvider>
-        </PostHogProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className="bg-gray-950">
+        <body className="antialiased bg-gray-950 min-h-screen overflow-x-hidden font-sans">
+          <PostHogProvider>
+            <MathProvider>
+              <ConvexProvider>
+                <SidebarProvider>
+                  <CopyTrackingProvider>
+                    <div className="min-h-screen bg-gray-950">{children}</div>
+                  </CopyTrackingProvider>
+                </SidebarProvider>
+              </ConvexProvider>
+            </MathProvider>
+          </PostHogProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
