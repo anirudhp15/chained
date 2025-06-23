@@ -181,6 +181,8 @@ export default function SignInPage() {
           path="/sign-in"
           signUpUrl="/sign-up"
           redirectUrl="/chat"
+          afterSignInUrl="/chat"
+          afterSignUpUrl="/chat"
         />
       </div>
     </div>
