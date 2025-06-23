@@ -10,8 +10,13 @@ import {
   Search,
   X,
   Sparkles,
+  GitCommitHorizontal,
+  GitFork,
+  GitCompareArrows,
 } from "lucide-react";
+import { IoGitBranchOutline } from "react-icons/io5";
 import { Agent } from "../input/agent-input";
+import { CONDITION_PRESETS } from "@/lib/constants";
 
 interface NodePillProps {
   agent: Agent;
@@ -30,7 +35,69 @@ interface NodePillProps {
   onTouchStart?: () => void;
   // Indicates if this agent can be collapsed (false for last agent)
   isCollapsible?: boolean;
+  // Connection configuration for mobile
+  showMobileConnection?: boolean;
+  sourceAgentName?: string;
 }
+
+// Connection types configuration for mobile
+type EnabledConnectionType =
+  | "direct"
+  | "conditional"
+  | "parallel"
+  | "collaborative";
+
+const CONNECTION_TYPES = [
+  {
+    type: "direct" as const,
+    label: "Direct",
+    Icon: GitCommitHorizontal,
+    description: "Pass previous agent's output directly",
+    color: "text-blue-400",
+    bgColor: "bg-blue-500/10",
+    borderColor: "border-blue-500/30",
+  },
+  {
+    type: "conditional" as const,
+    label: "Conditional",
+    Icon: IoGitBranchOutline,
+    description: "Run only if a condition is met",
+    color: "text-amber-400",
+    bgColor: "bg-amber-500/10",
+    borderColor: "border-amber-500/30",
+    iconRotate: "rotate-90",
+  },
+  {
+    type: "parallel" as const,
+    label: "Parallel",
+    Icon: GitFork,
+    description: "Run simultaneously",
+    color: "text-purple-400",
+    bgColor: "bg-purple-500/10",
+    borderColor: "border-purple-500/30",
+    iconRotate: "rotate-90",
+  },
+  {
+    type: "collaborative" as const,
+    label: "Collaborative",
+    Icon: GitCompareArrows,
+    description: "Agents work together iteratively",
+    color: "text-green-400",
+    bgColor: "bg-green-500/10",
+    borderColor: "border-green-500/30",
+    disabled: true,
+  },
+] satisfies Array<{
+  type: EnabledConnectionType;
+  label: string;
+  Icon: React.ComponentType<any>;
+  description: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  iconRotate?: string;
+  disabled?: boolean;
+}>;
 
 // Enhanced model-specific example prompts with categories
 const MODEL_PROMPTS = {
@@ -229,10 +296,13 @@ export function NodePill({
   onLongPressEnd,
   onTouchStart,
   isCollapsible,
+  showMobileConnection = false,
+  sourceAgentName,
 }: NodePillProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(agent.name || `Node ${index + 1}`);
   const [showPromptsModal, setShowPromptsModal] = useState(false);
+  const [showConnectionModal, setShowConnectionModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const pillRef = useRef<HTMLDivElement>(null);
@@ -256,6 +326,41 @@ export function NodePill({
     setShowPromptsModal(false);
     setSearchTerm("");
     setSelectedCategory(null);
+  };
+
+  // Connection handling functions
+  const currentConnectionType = agent.connection?.type || "direct";
+  const currentConnection = CONNECTION_TYPES.find(
+    (c) => c.type === currentConnectionType
+  );
+
+  const handleConnectionTypeChange = (type: EnabledConnectionType) => {
+    const baseConnection = {
+      type,
+      sourceAgentId: agent.connection?.sourceAgentId,
+    };
+    const newConnection =
+      type === "conditional"
+        ? { ...baseConnection, condition: agent.connection?.condition || "" }
+        : baseConnection;
+
+    onUpdate({ ...agent, connection: newConnection });
+    setShowConnectionModal(false);
+  };
+
+  const handleConditionChange = (condition: string) => {
+    onUpdate({
+      ...agent,
+      connection: { ...agent.connection, type: "conditional", condition },
+    });
+  };
+
+  // Get display text for connection button
+  const getConnectionDisplayText = () => {
+    if (currentConnectionType === "parallel") {
+      return "Parallel";
+    }
+    return sourceAgentName || `Node ${index}`;
   };
 
   const filteredPrompts = React.useMemo(() => {
@@ -305,7 +410,7 @@ export function NodePill({
       >
         {/* Base Pill */}
         <div
-          className={`bg-gray-900/75 backdrop-blur-sm mx-auto border border-gray-600/50 rounded-3xl px-4 py-2 transition-all duration-200 hover:bg-gray-800/90 hover:border-lavender-400/20 w-full max-w-4xl group shadow-lg shadow-gray-950/50 animate-in fade-in slide-in-from-bottom-4 lg:slide-in-from-bottom-8 ease-out ${isExpanded ? "bg-gray-800/90 border-lavender-400/30" : ""} ${
+          className={`bg-gray-900/75 backdrop-blur-sm mx-auto border border-gray-600/50 rounded-xl lg:rounded-3xl px-4 py-2 transition-all duration-200 hover:bg-gray-800/90 hover:border-lavender-400/20 w-full max-w-4xl group shadow-lg shadow-gray-950/50 animate-in fade-in slide-in-from-bottom-4 lg:slide-in-from-bottom-8 ease-out ${isExpanded ? "bg-gray-800/90 border-lavender-400/30" : ""} ${
             // Add visual indication for non-collapsible (last) agents on mobile
             isMobile && !isCollapsible
               ? "border-green-400/20 bg-green-900/10"
@@ -328,7 +433,7 @@ export function NodePill({
         >
           <div className="flex items-center justify-between">
             {/* Left: Node Name */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               {isEditing ? (
                 <>
                   {/* <div className="w-2 h-2 bg-lavender-400/50 rounded-full"></div> */}
@@ -358,46 +463,42 @@ export function NodePill({
                 </>
               )}
 
-              {/* Desktop: Pencil icon on hover, Mobile: Always visible */}
-              {!isEditing && (
+              {/* Mobile Connection Button - only show on mobile and if showMobileConnection is true */}
+              {isMobile && showMobileConnection && !isEditing && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsEditing(true);
+                    setShowConnectionModal(true);
                   }}
-                  className="lg:opacity-0 lg:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 hover:bg-gray-700/50 rounded"
+                  className={`p-1 flex items-center gap-2 hover:bg-gray-700/50 rounded hover:${currentConnection?.bgColor} hover:${currentConnection?.borderColor}`}
+                  title={`Connection: ${currentConnectionType === "parallel" ? "Parallel" : currentConnection?.label + "ly from " + sourceAgentName}`}
                 >
-                  <Pencil
-                    size={12}
-                    className="text-gray-400 hover:text-lavender-400"
-                  />
+                  {currentConnection && (
+                    <currentConnection.Icon
+                      size={12}
+                      className={`${currentConnection.color} ${currentConnection.iconRotate || ""}`}
+                    />
+                  )}
+                  <span
+                    className={`text-xs font-medium ${currentConnection?.color}`}
+                  >
+                    {getConnectionDisplayText()}
+                  </span>
+                  {currentConnectionType === "conditional" && (
+                    // show truncated connection condition
+                    <span className="text-xs text-gray-400">
+                      {agent.connection?.condition?.substring(0, 20)}
+                    </span>
+                  )}
                 </button>
               )}
-
-              {/* Prompts Button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowPromptsModal(true);
-                }}
-                className="lg:opacity-0 lg:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 whitespace-nowrap hover:bg-gray-700/50 rounded flex items-center gap-1"
-                title="Example prompts"
-              >
-                <Sparkles
-                  size={12}
-                  className="text-gray-400 hover:text-lavender-400"
-                />
-                <span className="text-xs whitespace-nowrap text-gray-400 hover:text-lavender-400 hidden xl:inline">
-                  Prompts
-                </span>
-              </button>
             </div>
 
             {/* Right: Status + Controls */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
               {/* Mobile: Prompt Preview + Status Icon */}
               <div className="lg:hidden flex items-center gap-2">
-                {agent.prompt?.trim() ? (
+                {agent.prompt?.trim() || isExpanded ? (
                   <span className="text-xs text-gray-300 truncate w-24 sm:w-48">
                     {agent.prompt.length > 32
                       ? `${agent.prompt.substring(0, 32)}...`
@@ -425,10 +526,40 @@ export function NodePill({
                 </div>
               </div>
 
-              {/* Desktop: Original Status */}
-              <span className="text-xs text-gray-500 group-hover:text-lavender-400 whitespace-nowrap hidden lg:block">
-                Ready
-              </span>
+              {/* Prompts Button - moved to right side for mobile */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowPromptsModal(true);
+                }}
+                className="lg:opacity-0 lg:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 whitespace-nowrap hover:bg-gray-700/50 rounded flex items-center gap-1"
+                title="Example prompts"
+              >
+                <Sparkles
+                  size={12}
+                  className="text-gray-400 hover:text-lavender-400"
+                />
+                <span className="text-xs whitespace-nowrap text-gray-400 hover:text-lavender-400 hidden xl:inline">
+                  Prompts
+                </span>
+              </button>
+
+              {/* Desktop: Pencil icon on hover, Mobile: Always visible */}
+              {!isEditing && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditing(true);
+                    // onToggleExpansion?.();
+                  }}
+                  className="lg:opacity-0 lg:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 hover:bg-gray-700/50 rounded"
+                >
+                  <Pencil
+                    size={12}
+                    className="text-gray-400 hover:text-lavender-400"
+                  />
+                </button>
+              )}
 
               {/* Close Agent Button - only show if canRemove */}
               {canRemove && onRemove && (
@@ -437,7 +568,7 @@ export function NodePill({
                     e.stopPropagation();
                     onRemove();
                   }}
-                  className="flex items-center gap-1 px-2 py-1 bg-gray-700/50 hover:bg-red-600/80 text-gray-400 hover:text-white rounded-2xl text-xs font-medium transition-colors"
+                  className="p-1 hover:bg-red-600/80 text-gray-400 hover:text-white rounded text-xs font-medium transition-colors"
                 >
                   <Trash2 size={12} />
                   {/* <span className="hidden sm:inline">Remove</span> */}
@@ -451,7 +582,7 @@ export function NodePill({
                     e.stopPropagation();
                     onAddAgent();
                   }}
-                  className="flex items-center gap-1 px-2 py-1 bg-lavender-500 hover:bg-lavender-600 text-white rounded-2xl text-xs font-medium transition-colors"
+                  className="flex items-center gap-1 lg:px-2 p-1 lg:py-1 bg-lavender-500 hover:bg-lavender-600 text-white rounded lg:rounded-2xl text-xs font-medium transition-colors"
                 >
                   <Plus size={12} />
                   <span className="hidden sm:inline">LLM</span>
@@ -461,6 +592,137 @@ export function NodePill({
           </div>
         </div>
       </div>
+
+      {/* Mobile Connection Configuration Modal */}
+      {showConnectionModal &&
+        isMobile &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[999998] bg-black/40 backdrop-blur-sm"
+              onClick={() => setShowConnectionModal(false)}
+            />
+            <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
+              <div className="bg-gray-900/95 backdrop-blur-xl border border-gray-600/50 rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-300">
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-gray-700/50 bg-gray-800/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-lavender-500/10 rounded-xl flex items-center justify-center">
+                        {currentConnection && (
+                          <currentConnection.Icon
+                            className={`w-4 h-4 ${currentConnection.color} ${currentConnection.iconRotate || ""}`}
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">
+                          Connection Type
+                        </h2>
+                        <p className="text-sm text-gray-400">{nodeName}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowConnectionModal(false)}
+                      className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5 text-gray-400 hover:text-white" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-6 space-y-3">
+                  {CONNECTION_TYPES.map((connectionType) => {
+                    const isSelected =
+                      currentConnectionType === connectionType.type;
+                    const isDisabled = connectionType.disabled;
+
+                    return (
+                      <button
+                        key={connectionType.type}
+                        onClick={() =>
+                          !isDisabled &&
+                          handleConnectionTypeChange(connectionType.type)
+                        }
+                        disabled={isDisabled}
+                        className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition-colors ${
+                          isSelected && !isDisabled
+                            ? `${connectionType.bgColor} ${connectionType.borderColor} border-2`
+                            : isDisabled
+                              ? "bg-gray-800/30 cursor-not-allowed opacity-60"
+                              : "bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700/30"
+                        }`}
+                      >
+                        <connectionType.Icon
+                          size={20}
+                          className={`${isDisabled ? "text-gray-500" : connectionType.color} ${connectionType.iconRotate || ""}`}
+                        />
+                        <div className="flex-1">
+                          <div
+                            className={`text-sm font-medium flex items-center gap-2 ${isSelected && !isDisabled ? connectionType.color : isDisabled ? "text-gray-500" : "text-white"}`}
+                          >
+                            {connectionType.label}
+                            {isDisabled && (
+                              <span className="text-xs px-2 py-0.5 bg-gray-700/50 border border-gray-600/30 rounded-full text-gray-400">
+                                Coming Soon
+                              </span>
+                            )}
+                          </div>
+                          <div
+                            className={`text-xs mt-1 ${isDisabled ? "text-gray-500" : "text-gray-400"}`}
+                          >
+                            {connectionType.description}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+
+                  {/* Conditional Input */}
+                  {currentConnectionType === "conditional" && (
+                    <div className="mt-4 p-4 bg-gray-800/30 rounded-xl border border-gray-700/30">
+                      <label className="block text-sm font-medium text-white mb-2">
+                        Condition
+                      </label>
+                      <input
+                        type="text"
+                        value={agent.connection?.condition || ""}
+                        onChange={(e) => handleConditionChange(e.target.value)}
+                        placeholder="Enter condition..."
+                        className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400/50 text-sm"
+                      />
+                      <div className="mt-3">
+                        <span className="text-xs font-medium text-gray-300 mb-2 block">
+                          Quick presets:
+                        </span>
+                        <div className="space-y-1 max-h-24 overflow-y-auto">
+                          {CONDITION_PRESETS.slice(0, 3).map((preset, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() =>
+                                handleConditionChange(preset.condition)
+                              }
+                              className="w-full px-3 py-2 text-left text-white hover:bg-gray-600/70 rounded-lg text-xs transition-colors"
+                            >
+                              <div className="font-medium text-lavender-400">
+                                {preset.label}
+                              </div>
+                              <div className="text-gray-400 font-mono text-[10px] truncate">
+                                {preset.placeholder}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>,
+          document.body
+        )}
 
       {/* Professional Prompts Modal */}
       {showPromptsModal &&

@@ -319,138 +319,6 @@ const ConnectionIcon = ({ connectionType }: { connectionType?: string }) => {
   }
 };
 
-// Compact Mobile Connection Component
-const CompactMobileConnection = ({
-  agent,
-  onUpdate,
-  index,
-}: {
-  agent: Agent;
-  onUpdate: (agent: Agent) => void;
-  index: number;
-}) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const currentConnectionType = agent.connection?.type || "direct";
-  const currentConnection = CONNECTION_TYPES.find(
-    (c) => c.type === currentConnectionType
-  );
-
-  const getConnectionColor = () => {
-    switch (currentConnectionType) {
-      case "conditional":
-        return "border-yellow-400/50";
-      case "parallel":
-        return "border-blue-400/50";
-      case "collaborative":
-        return "border-purple-400/50";
-      default:
-        return "border-green-400/50";
-    }
-  };
-
-  const handleConnectionTypeChange = (type: EnabledConnectionType) => {
-    const baseConnection = {
-      type,
-      sourceAgentId: agent.connection?.sourceAgentId,
-    };
-    const newConnection =
-      type === "conditional"
-        ? { ...baseConnection, condition: agent.connection?.condition || "" }
-        : baseConnection;
-
-    onUpdate({ ...agent, connection: newConnection });
-    setIsModalOpen(false);
-  };
-
-  return (
-    <>
-      {/* Compact Connection Line */}
-      <div className="flex flex-col items-center">
-        <div className="w-0.5 h-3 bg-gray-500/30"></div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="w-10 h-10 rounded-full bg-gray-800/80 border border-gray-600/50 flex items-center justify-center hover:bg-gray-700/80 transition-all duration-200 shadow-lg backdrop-blur-sm hover:scale-105 hover:border-lavender-400/50"
-        >
-          {currentConnection && (
-            <currentConnection.Icon
-              size={18}
-              className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""}`}
-            />
-          )}
-        </button>
-        <div className="w-0.5 h-3 bg-gray-500/30"></div>
-      </div>
-
-      {/* Connection Type Modal */}
-      {isModalOpen &&
-        createPortal(
-          <>
-            <div
-              className="fixed inset-0 z-[999998] bg-black/40 backdrop-blur-sm"
-              onClick={() => setIsModalOpen(false)}
-            />
-            <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
-              <div className="bg-gray-900/95 backdrop-blur-xl border border-gray-600/50 rounded-xl p-4 w-80 max-w-[90vw]">
-                <h3 className="text-sm font-medium text-white mb-3">
-                  Connection Type
-                </h3>
-                <div className="space-y-2">
-                  {CONNECTION_TYPES.map((connectionType) => {
-                    const isSelected =
-                      currentConnectionType === connectionType.type;
-                    const isDisabled = connectionType.disabled;
-
-                    return (
-                      <button
-                        key={connectionType.type}
-                        onClick={() =>
-                          !isDisabled &&
-                          handleConnectionTypeChange(connectionType.type)
-                        }
-                        disabled={isDisabled}
-                        className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${
-                          isSelected && !isDisabled
-                            ? "bg-lavender-500/20 border border-lavender-500/30"
-                            : isDisabled
-                              ? "bg-gray-800/30 cursor-not-allowed opacity-60"
-                              : "bg-gray-800/50 hover:bg-gray-700/50"
-                        }`}
-                      >
-                        <connectionType.Icon
-                          size={16}
-                          className={`${isDisabled ? "text-gray-500" : connectionType.color || "text-gray-400"}`}
-                        />
-                        <div className="flex-1">
-                          <div
-                            className={`text-sm flex items-center gap-2 ${isSelected && !isDisabled ? "text-lavender-400" : isDisabled ? "text-gray-500" : "text-white"}`}
-                          >
-                            {connectionType.label}
-                            {isDisabled && (
-                              <span className="text-xs px-2 py-0.5 bg-gray-700/50 border border-gray-600/30 rounded-full text-gray-400">
-                                Coming Soon
-                              </span>
-                            )}
-                          </div>
-                          <div
-                            className={`text-xs ${isDisabled ? "text-gray-500" : "text-gray-400"}`}
-                          >
-                            {connectionType.description}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </>,
-          document.body
-        )}
-    </>
-  );
-};
-
 // Desktop Connection Selector Component
 const DesktopConnectionSelector = ({
   agent,
@@ -825,7 +693,7 @@ export function InitialChainInput({
         <div className="w-full flex items-end justify-center lg:mb-2">
           <div className="w-full max-w-7xl">
             {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-center gap-1.5 lg:gap-0">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-center ">
               {agents.map((agent, index) => (
                 <div
                   key={agent.id}
@@ -864,6 +732,14 @@ export function InitialChainInput({
                       onTouchStart={hideTooltip}
                       // Indicate if this agent can be collapsed (not the last one)
                       isCollapsible={index !== agents.length - 1}
+                      // Show mobile connection for non-first agents
+                      showMobileConnection={index > 0}
+                      // Pass source agent name for connection display
+                      sourceAgentName={
+                        index > 0
+                          ? agents[index - 1]?.name || `Node ${index}`
+                          : undefined
+                      }
                     />
                     <AgentInput
                       agent={agent}
@@ -890,18 +766,6 @@ export function InitialChainInput({
                       </div>
                     )}
                   </div>
-                  {/* Mobile: Connection between agents - positioned in flow */}
-                  {index < agents.length - 1 && (
-                    <div className="flex lg:hidden justify-center">
-                      <CompactMobileConnection
-                        agent={agents[index + 1]}
-                        onUpdate={(updatedAgent) =>
-                          updateAgent(index + 1, updatedAgent)
-                        }
-                        index={index + 1}
-                      />
-                    </div>
-                  )}
 
                   {/* Desktop: Interactive Connection Selector - positioned absolutely */}
                   <div className="hidden lg:block absolute top-8 -right-[44px] pr-[20px]">
