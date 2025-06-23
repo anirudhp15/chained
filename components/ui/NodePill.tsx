@@ -487,7 +487,7 @@ export function NodePill({
                   {currentConnectionType === "conditional" && (
                     // show truncated connection condition
                     <span className="text-xs text-gray-400">
-                      {agent.connection?.condition?.substring(0, 20)}
+                      {agent.connection?.condition?.substring(0, 10)}
                     </span>
                   )}
                 </button>
@@ -498,7 +498,7 @@ export function NodePill({
             <div className="flex items-center gap-1">
               {/* Mobile: Prompt Preview + Status Icon */}
               <div className="lg:hidden flex items-center gap-2">
-                {agent.prompt?.trim() || isExpanded ? (
+                {agent.prompt?.trim() && isExpanded ? (
                   <span className="text-xs text-gray-300 truncate w-24 sm:w-48">
                     {agent.prompt.length > 32
                       ? `${agent.prompt.substring(0, 32)}...`
@@ -507,23 +507,6 @@ export function NodePill({
                 ) : (
                   <span className="text-xs text-gray-500">No prompt</span>
                 )}
-                <div className="w-3 h-3 rounded-full bg-green-500 flex items-center justify-center">
-                  <svg
-                    width="8"
-                    height="6"
-                    viewBox="0 0 8 6"
-                    fill="none"
-                    className="text-white"
-                  >
-                    <path
-                      d="M7 1L3 5L1 3"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
               </div>
 
               {/* Prompts Button - moved to right side for mobile */}
