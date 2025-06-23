@@ -5,7 +5,11 @@ import { createPortal } from "react-dom";
 import { ChevronUp } from "lucide-react";
 import { AgentInput, type Agent } from "./agent-input";
 import { v4 as uuidv4 } from "uuid";
-import { DEFAULT_AGENT_CONFIG, CONDITION_PRESETS } from "@/lib/constants";
+import {
+  DEFAULT_AGENT_CONFIG,
+  CONDITION_PRESETS,
+  MAX_AGENTS_PER_CHAIN,
+} from "@/lib/constants";
 import { useSidebar } from "@/lib/sidebar-context";
 import { NodePill } from "../ui/NodePill";
 import {
@@ -561,7 +565,7 @@ export function InitialChainInput({
   }, [presetAgents, onClearPresetAgents]);
 
   const addAgent = () => {
-    if (agents.length < 3) {
+    if (agents.length < MAX_AGENTS_PER_CHAIN) {
       const newAgent = {
         id: uuidv4(),
         ...DEFAULT_AGENT_CONFIG,
@@ -705,42 +709,50 @@ export function InitialChainInput({
                       queuedAgents.some((qa) => qa.id === agent.id)
                         ? "border-lavender-400/50"
                         : ""
-                    } ${
-                      animatingAgentId === agent.id
-                        ? "animate-in slide-in-from-bottom-4 lg:slide-in-from-right-8 fade-in duration-300 ease-out"
-                        : ""
-                    }`}
+                    } `}
                   >
-                    <NodePill
-                      agent={agent}
-                      onUpdate={(updatedAgent) =>
-                        updateAgent(index, updatedAgent)
-                      }
-                      index={index}
-                      canAddAgent={agents.length < 3}
-                      onAddAgent={agents.length < 3 ? addAgent : undefined}
-                      isLastAgent={index === agents.length - 1}
-                      onRemove={() => removeAgent(index)}
-                      canRemove={canRemove}
-                      // Mobile-specific props
-                      isExpanded={expandedAgents.has(agent.id)}
-                      onToggleExpansion={() => toggleAgentExpansion(agent.id)}
-                      onLongPressStart={(e: React.TouchEvent) =>
-                        handleLongPressStart(agent.id, e)
-                      }
-                      onLongPressEnd={handleLongPressEnd}
-                      onTouchStart={hideTooltip}
-                      // Indicate if this agent can be collapsed (not the last one)
-                      isCollapsible={index !== agents.length - 1}
-                      // Show mobile connection for non-first agents
-                      showMobileConnection={index > 0}
-                      // Pass source agent name for connection display
-                      sourceAgentName={
-                        index > 0
-                          ? agents[index - 1]?.name || `Node ${index}`
-                          : undefined
-                      }
-                    />
+                    <div
+                      className={`${
+                        animatingAgentId === agent.id
+                          ? "animate-in slide-in-from-bottom-4 lg:slide-in-from-right-8 fade-in duration-300 ease-out"
+                          : ""
+                      }`}
+                    >
+                      <NodePill
+                        agent={agent}
+                        onUpdate={(updatedAgent) =>
+                          updateAgent(index, updatedAgent)
+                        }
+                        index={index}
+                        canAddAgent={agents.length < MAX_AGENTS_PER_CHAIN}
+                        onAddAgent={
+                          agents.length < MAX_AGENTS_PER_CHAIN
+                            ? addAgent
+                            : undefined
+                        }
+                        isLastAgent={index === agents.length - 1}
+                        onRemove={() => removeAgent(index)}
+                        canRemove={canRemove}
+                        // Mobile-specific props
+                        isExpanded={expandedAgents.has(agent.id)}
+                        onToggleExpansion={() => toggleAgentExpansion(agent.id)}
+                        onLongPressStart={(e: React.TouchEvent) =>
+                          handleLongPressStart(agent.id, e)
+                        }
+                        onLongPressEnd={handleLongPressEnd}
+                        onTouchStart={hideTooltip}
+                        // Indicate if this agent can be collapsed (not the last one)
+                        isCollapsible={index !== agents.length - 1}
+                        // Show mobile connection for non-first agents
+                        showMobileConnection={index > 0}
+                        // Pass source agent name for connection display
+                        sourceAgentName={
+                          index > 0
+                            ? agents[index - 1]?.name || `Node ${index}`
+                            : undefined
+                        }
+                      />
+                    </div>
                     <AgentInput
                       agent={agent}
                       onUpdate={(updatedAgent) =>

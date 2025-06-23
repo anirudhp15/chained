@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { MAX_AGENTS_PER_CHAIN } from "./constants";
 
 export interface ValidationResult {
   success: boolean;
@@ -94,8 +95,11 @@ export class ApiValidator {
       return { success: false, error: "At least one agent is required" };
     }
 
-    if (agents.length > 5) {
-      return { success: false, error: "Maximum 5 agents allowed" };
+    if (agents.length > MAX_AGENTS_PER_CHAIN) {
+      return {
+        success: false,
+        error: `Maximum ${MAX_AGENTS_PER_CHAIN} agents allowed`,
+      };
     }
 
     for (let index = 0; index < agents.length; index++) {

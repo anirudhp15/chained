@@ -1,6 +1,9 @@
 import { GitCommitHorizontal, GitFork, GitCompareArrows } from "lucide-react";
 import { IoGitBranchOutline } from "react-icons/io5";
 
+// Chain configuration
+export const MAX_AGENTS_PER_CHAIN = 3;
+
 // Connection types configuration
 export type EnabledConnectionType = "direct" | "conditional" | "parallel";
 export type AllConnectionType = EnabledConnectionType | "collaborative";

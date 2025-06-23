@@ -801,7 +801,7 @@ export function AgentInput({
 
   return (
     <div
-      className={`relative flex flex-col ${isLastAgent ? "mx-0 mb-0" : "mx-2 mb-2"} lg:mx-0 lg:mb-0 ${isLastAgent ? "rounded-t-3xl lg:rounded-3xl border-b-0 border-x-0 lg:border-b lg:border-x" : "rounded-3xl"} border border-gray-600/50 bg-gray-600/25 backdrop-blur-lg hover:backdrop-blur-xl hover:border-lavender-400/20 transition-all duration-200 animate-in slide-in-from-top-4 fade-in ease-out lg:animate-none`}
+      className={`relative flex flex-col ${isLastAgent ? "mx-0 mb-0" : "mx-2 mb-2"} lg:mx-0 lg:mb-0 ${isLastAgent ? "rounded-t-3xl lg:rounded-3xl border-b-0 border-x-0 lg:border-b lg:border-x" : "rounded-3xl"} border border-gray-600/50 bg-gray-600/25 backdrop-blur-lg hover:backdrop-blur-xl hover:border-lavender-400/20 animate-none`}
     >
       <textarea
         value={agent.prompt}
