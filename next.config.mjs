@@ -41,9 +41,10 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat img.clerk.com *.gstatic.com *.recaptcha.net *.google.com worker.clerkprod-cloudflare.net 'wasm-unsafe-eval'",
+              "worker-src 'self' blob:",
               "style-src 'self' 'unsafe-inline' fonts.googleapis.com *.gstatic.com",
               "img-src 'self' data: blob: *.amazonaws.com *.convex.cloud *.clerk.accounts.dev *.clerk.dev *.chained.chat img.clerk.com *.clerk.services *.gstatic.com *.google.com",
-              "connect-src 'self' *.convex.cloud *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat accounts.google.com github.com api.github.com www.linkedin.com *.google.com *.recaptcha.net worker.clerkprod-cloudflare.net",
+              "connect-src 'self' *.convex.cloud *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat accounts.google.com github.com api.github.com www.linkedin.com *.google.com *.recaptcha.net worker.clerkprod-cloudflare.net wss:",
               "font-src 'self' fonts.gstatic.com",
               "media-src 'self' blob:",
               "frame-src 'self' *.google.com *.recaptcha.net *.gstatic.com",
