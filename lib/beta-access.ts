@@ -7,11 +7,25 @@ export interface BetaAccessData {
 }
 
 export const setBetaAccess = (data: BetaAccessData) => {
-  // Store in localStorage for client-side persistence
-  localStorage.setItem("chained_beta_access", JSON.stringify(data));
+  try {
+    // Store in localStorage for client-side persistence
+    localStorage.setItem("chained_beta_access", JSON.stringify(data));
 
-  // Set cookie for server-side middleware checking
-  document.cookie = `chained_beta_access=${JSON.stringify(data)}; path=/; max-age=${30 * 24 * 60 * 60}; secure; samesite=strict`;
+    // Set simple cookie for server-side middleware checking (just a flag)
+    const cookieValue = `email=${encodeURIComponent(data.email)}&granted=${data.grantedAt}&source=${data.source}`;
+    const maxAge = 30 * 24 * 60 * 60; // 30 days
+    const cookieOptions =
+      process.env.NODE_ENV === "production"
+        ? `path=/; max-age=${maxAge}; secure; samesite=strict; domain=.chained.chat`
+        : `path=/; max-age=${maxAge}; samesite=strict`;
+
+    document.cookie = `chained_beta_access=${cookieValue}; ${cookieOptions}`;
+
+    console.log("Beta access stored successfully:", data);
+  } catch (error) {
+    console.error("Failed to set beta access:", error);
+    throw new Error("Failed to store beta access. Please try again.");
+  }
 };
 
 export const getBetaAccess = (): BetaAccessData | null => {

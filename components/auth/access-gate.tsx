@@ -72,11 +72,18 @@ export function AccessGate({ onAccessGranted }: AccessGateProps) {
     trackLandingPageEvent.accessCodeAttempted(false); // Track attempt
 
     try {
+      console.log(
+        "Validating access code:",
+        form.accessCode.trim().toUpperCase()
+      );
+
       const result = await validateAccessCode({
-        code: form.accessCode.trim(),
+        code: form.accessCode.trim().toUpperCase(), // Ensure uppercase
         email: form.email.trim(),
         metadata: getClientMetadata(),
       });
+
+      console.log("Validation result:", result);
 
       if (result.valid) {
         // Store access using utility function
@@ -99,12 +106,25 @@ export function AccessGate({ onAccessGranted }: AccessGateProps) {
         }, 1500);
       } else {
         trackLandingPageEvent.accessCodeAttempted(false, result.reason);
-        updateForm({ error: result.reason });
+        updateForm({ error: result.reason || "Invalid access code" });
       }
     } catch (error) {
       console.error("Access code validation error:", error);
       trackLandingPageEvent.accessCodeAttempted(false, "validation_error");
-      updateForm({ error: "Something went wrong. Please try again." });
+
+      // Better error message based on error type
+      let errorMessage = "Something went wrong. Please try again.";
+      if (error instanceof Error) {
+        if (error.message.includes("UNAUTHENTICATED")) {
+          errorMessage =
+            "Database connection issue. Please refresh and try again.";
+        } else if (error.message.includes("NetworkError")) {
+          errorMessage =
+            "Network error. Please check your connection and try again.";
+        }
+      }
+
+      updateForm({ error: errorMessage });
     } finally {
       updateForm({ isValidating: false });
     }
