@@ -46,7 +46,7 @@ import {
 } from "@/lib/analytics";
 import CardSwap, { Card } from "@/components/Components/CardSwap/CardSwap";
 import RotatingText from "@/components/TextAnimations/RotatingText/RotatingText";
-import Beams from "@/components/Backgrounds/Beams/Beams";
+import SimpleBeams from "@/components/Backgrounds/SimpleBeams/SimpleBeams";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
 
 // Feature data structure matching welcome screen pattern
@@ -469,7 +469,7 @@ export default function LandingPage() {
           ease: "easeInOut",
         }}
       >
-        <Beams
+        <SimpleBeams
           beamWidth={2}
           beamHeight={20}
           beamNumber={20}
