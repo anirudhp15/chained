@@ -46,7 +46,7 @@ import {
 } from "@/lib/analytics";
 import CardSwap, { Card } from "@/components/Components/CardSwap/CardSwap";
 import RotatingText from "@/components/TextAnimations/RotatingText/RotatingText";
-import SimpleBeams from "@/components/Backgrounds/SimpleBeams/SimpleBeams";
+import Beams from "@/components/Backgrounds/Beams/Beams";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
 
 // Feature data structure matching welcome screen pattern
@@ -469,7 +469,7 @@ export default function LandingPage() {
           ease: "easeInOut",
         }}
       >
-        <SimpleBeams
+        <Beams
           beamWidth={2}
           beamHeight={20}
           beamNumber={20}
@@ -638,9 +638,9 @@ export default function LandingPage() {
                     className="bg-lavender-500 px-2 rounded-lg"
                     mainClassName="inline-block"
                     staggerFrom={"last"}
-                    initial={{ y: "100%" }}
-                    animate={{ y: 0 }}
-                    exit={{ y: "-120%" }}
+                    initial={{ y: "100%" } as any}
+                    animate={{ y: 0 } as any}
+                    exit={{ y: "-120%" } as any}
                     staggerDuration={0.025}
                     splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
                     transition={{ type: "spring", damping: 30, stiffness: 400 }}
@@ -658,9 +658,9 @@ export default function LandingPage() {
                     className="bg-lavender-500 px-2 rounded-lg"
                     mainClassName="inline-block"
                     staggerFrom={"last"}
-                    initial={{ y: "100%" }}
-                    animate={{ y: 0 }}
-                    exit={{ y: "-120%" }}
+                    initial={{ y: "100%" } as any}
+                    animate={{ y: 0 } as any}
+                    exit={{ y: "-120%" } as any}
                     staggerDuration={0.025}
                     splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
                     transition={{ type: "spring", damping: 30, stiffness: 400 }}

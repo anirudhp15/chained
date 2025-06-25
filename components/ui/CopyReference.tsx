@@ -158,7 +158,6 @@ export function CopyReference({
 
   return (
     <motion.div
-      variants={isStacked ? stackVariants : undefined}
       initial={isStacked ? "initial" : undefined}
       animate={isStacked && isHovered ? "hover" : "initial"}
       exit="exit"
