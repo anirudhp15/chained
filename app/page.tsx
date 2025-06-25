@@ -473,7 +473,7 @@ export default function LandingPage() {
           beamWidth={2}
           beamHeight={20}
           beamNumber={20}
-          lightColor="#8b5cf6"
+          lightColor="#c4b5fd"
           speed={5}
           noiseIntensity={2}
           scale={0.15}
