@@ -16,30 +16,33 @@ import { MobileSidebarToggle } from "../../components/MobileSidebarToggle";
 import { WelcomeScreen } from "../../components/chat/welcome-screen";
 import { InputAreaContainer } from "@/components/input/input-area-container";
 import { PerformanceProvider } from "../../lib/performance-context";
+import Beams from "@/components/Backgrounds/Beams/Beams";
 import type { Agent } from "../../components/input/agent-input";
 
-// Subtle Grid Animation Component
-const SubtleGridBackground = () => {
+// Beams Background Component
+const BeamsBackground = () => {
   return (
     <motion.div
-      className="absolute inset-0 opacity-[0.25] pointer-events-none"
-      style={{
-        backgroundImage: `
-          linear-gradient(rgba(147,112,219,0.4) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(147,112,219,0.4) 1px, transparent 1px)
-        `,
-        backgroundSize: "60px 60px",
-        filter: "blur(0.5px)",
-      }}
-      animate={{
-        backgroundPosition: ["0px 0px", "60px 60px", "0px 0px"],
-      }}
+      className="fixed inset-0 z-0"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{
-        duration: 20,
-        repeat: Infinity,
-        ease: "linear",
+        duration: 3,
+        delay: 0.5,
+        ease: "easeInOut",
       }}
-    />
+    >
+      <Beams
+        beamWidth={2}
+        beamHeight={20}
+        beamNumber={15}
+        lightColor="#c4b5fd"
+        speed={3}
+        noiseIntensity={1.5}
+        scale={0.12}
+        rotation={15}
+      />
+    </motion.div>
   );
 };
 
@@ -101,8 +104,8 @@ function ChatLandingContent() {
 
   return (
     <div className="flex h-auto bg-gray-950 relative overflow-hidden scrollbar-none">
-      {/* Subtle Grid Background */}
-      <SubtleGridBackground />
+      {/* Beams Background */}
+      <BeamsBackground />
 
       {/* Only render sidebar if there are chats */}
       {shouldShowSidebar && (

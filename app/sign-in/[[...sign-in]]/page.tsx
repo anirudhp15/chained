@@ -8,8 +8,7 @@ export default function SignInPage() {
           routing="path"
           path="/sign-in"
           signUpUrl="/sign-up"
-          forceRedirectUrl="/chat"
-          fallbackRedirectUrl="/chat"
+          fallbackRedirectUrl="/"
         />
       </div>
     </div>

@@ -1403,7 +1403,7 @@ function ChatPageContent() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-900/50 scrollbar-none">
+    <div className="flex h-screen bg-black scrollbar-none">
       <Sidebar
         currentSessionId={chainId}
         isMobileOpen={isMobileSidebarOpen}

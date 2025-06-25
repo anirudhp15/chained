@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import {
@@ -37,6 +37,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCopyTracking } from "../../lib/copy-tracking-context";
 import { setupGlobalCopyDetection } from "../../utils/copy-detection";
 import { HighlightWrapper } from "../ui/HighlightWrapper";
+import { EditableText } from "../ui/EditableText";
 
 interface AgentConversationTurn {
   userPrompt: string;
@@ -76,6 +77,7 @@ interface MobileAgentCardProps {
   toggleReasoning: (stepId: string) => void;
   agentGroups: any[];
   UserDisplay: React.ComponentType;
+  onUpdateAgentName: (agentId: string, newName: string) => Promise<void>;
 }
 
 // Live Status Indicator Component
@@ -276,6 +278,7 @@ function MobileAgentCard({
   toggleReasoning,
   agentGroups,
   UserDisplay,
+  onUpdateAgentName,
 }: MobileAgentCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -309,9 +312,21 @@ function MobileAgentCard({
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <ModelAvatar model={agent.model} size="sm" />
           <div className="flex-1 min-w-0">
-            <span className="text-white font-medium text-sm sm:text-base truncate block">
-              {agent.name || `Node ${agent.index + 1}`}
-            </span>
+            <EditableText
+              value={agent.name || `Node ${agent.index + 1}`}
+              onSave={(newName) => onUpdateAgentName(agent._id, newName)}
+              placeholder={`Node ${agent.index + 1}`}
+              className="text-white font-medium text-sm sm:text-base"
+              maxLength={50}
+              disabled={!agent._id || agent._id.startsWith("placeholder-")}
+              showEditIcon={true}
+              editTrigger="click"
+              validateOnChange={(value) => {
+                if (value.trim().length === 0) return "Name cannot be empty";
+                if (value.trim().length > 50) return "Name too long";
+                return null;
+              }}
+            />
           </div>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
@@ -988,6 +1003,7 @@ export function ChatArea({
     api.queries.getAgentSteps,
     sessionId ? { sessionId } : "skip"
   );
+  const updateAgentStepName = useMutation(api.mutations.updateAgentStepName);
   const [expandedReasoning, setExpandedReasoning] = useState<string | null>(
     null
   );
@@ -1364,6 +1380,22 @@ export function ChatArea({
     setExpandedReasoning(expandedReasoning === stepId ? null : stepId);
   };
 
+  // Handle agent name updates
+  const handleUpdateAgentName = useCallback(
+    async (agentId: string, newName: string) => {
+      try {
+        await updateAgentStepName({
+          stepId: agentId as Id<"agentSteps">,
+          name: newName,
+        });
+      } catch (error) {
+        console.error("Failed to update agent name:", error);
+        throw error; // Re-throw to let EditableText handle the error
+      }
+    },
+    [updateAgentStepName]
+  );
+
   // Handle mobile focus view close
   const handleMobileFocusClose = useCallback(() => {
     setMobileFocusedAgent(null);
@@ -1468,17 +1500,34 @@ export function ChatArea({
               {/* Agent Column */}
               <div className="h-full flex flex-col relative z-20">
                 {/* Agent Header */}
-                <div className="agent-header flex flex-row justify-between flex-shrink-0 px-3 py-3 bg-gray-950/95 backdrop-blur-sm border-b border-gray-800">
-                  <div className="flex items-center gap-2">
-                    <ModelAvatar model={agent.model} size="xs" />
-                    <div className="flex flex-col">
-                      <span className="text-white flex flex-row group gap-2 font-medium text-xs px-2 py-1 hover:bg-gray-800/50 rounded transition-colors group">
-                        {agent.name || `Node ${agent.index + 1}`}
-                      </span>
-                      <span className="text-gray-400 text-xs ml-2">
-                        {agent.model}
-                      </span>
+                <div className="agent-header flex flex-row justify-between flex-shrink-0 pr-2 border-b-2 border-gray-800">
+                  <div className="flex items-center gap-1">
+                    <div className="border border-gray-800 border-l-0 border-y-0 p-1 mr-1">
+                      <ModelAvatar model={agent.model} size="sm" />
                     </div>
+                    <EditableText
+                      value={agent.name || `Node ${agent.index + 1}`}
+                      onSave={(newName) =>
+                        handleUpdateAgentName(agent._id, newName)
+                      }
+                      placeholder={`Node ${agent.index + 1}`}
+                      className="min-w-0"
+                      maxLength={50}
+                      disabled={
+                        !agent._id || agent._id.startsWith("placeholder-")
+                      }
+                      showEditIcon={true}
+                      editTrigger="click"
+                      validateOnChange={(value) => {
+                        if (value.trim().length === 0)
+                          return "Name cannot be empty";
+                        if (value.trim().length > 50) return "Name too long";
+                        return null;
+                      }}
+                    />
+                    <kbd className="text-gray-400 text-xs ml-1 bg-gray-800/50 rounded-md px-2 py-0.5 font-medium">
+                      {agent.model}
+                    </kbd>
                   </div>
                   <button
                     onClick={() => handleFocusToggle(agent.index)}
@@ -1928,6 +1977,7 @@ export function ChatArea({
             toggleReasoning={toggleReasoning}
             agentGroups={agentGroups}
             UserDisplay={UserDisplay}
+            onUpdateAgentName={handleUpdateAgentName}
           />
         ))}
       </div>

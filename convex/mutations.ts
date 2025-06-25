@@ -643,6 +643,39 @@ export const updateAgentError = mutation({
   },
 });
 
+// Update agent step name
+export const updateAgentStepName = mutation({
+  args: {
+    stepId: v.id("agentSteps"),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the agent step
+    const step = await ctx.db.get(args.stepId);
+    if (!step || step.userId !== user._id) {
+      throw new Error("Agent step not found or access denied");
+    }
+
+    // Validate name
+    const trimmedName = args.name.trim();
+    if (trimmedName.length === 0) {
+      throw new Error("Agent name cannot be empty");
+    }
+    if (trimmedName.length > 50) {
+      throw new Error("Agent name cannot exceed 50 characters");
+    }
+
+    await ctx.db.patch(args.stepId, {
+      name: trimmedName,
+    });
+
+    return trimmedName;
+  },
+});
+
 // Add supervisor turn
 export const addSupervisorTurn = mutation({
   args: {

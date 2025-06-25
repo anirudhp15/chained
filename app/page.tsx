@@ -46,6 +46,7 @@ import {
 } from "@/lib/analytics";
 import CardSwap, { Card } from "@/components/Components/CardSwap/CardSwap";
 import RotatingText from "@/components/TextAnimations/RotatingText/RotatingText";
+import ShinyText from "@/components/TextAnimations/ShinyText/ShinyText";
 import Beams from "@/components/Backgrounds/Beams/Beams";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
 
@@ -535,6 +536,16 @@ export default function LandingPage() {
                 </button>
               </motion.div>
 
+              {/* Beta Access Bypass for users who already have validated codes */}
+              {!hasAccess && (
+                <Link
+                  href="/beta-access"
+                  className="hidden md:inline-flex items-center text-gray-400 hover:text-lavender-400 px-2 py-1 text-sm font-medium transition-all duration-300 group"
+                >
+                  Already Validated?
+                </Link>
+              )}
+
               {/* Mobile Menu Button */}
               <div className="md:hidden relative">
                 <button
@@ -605,12 +616,21 @@ export default function LandingPage() {
             >
               {hasAccess ? "Continue Building" : "Get Access"}
             </button>
+            {!hasAccess && (
+              <Link
+                href="/beta-access"
+                className="text-black text-2xl font-medium hover:text-gray-800 transition-colors duration-200"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Already Validated? Bypass Here
+              </Link>
+            )}
           </div>
         </motion.div>
       )}
 
       {/* Hero Section */}
-      <main className="relative z-10 px-4 sm:px-6 py-24 sm:py-32 mt-16 sm:mt-0">
+      <main className="relative z-10 px-4 sm:px-6 py-24 sm:py-32">
         <div className="max-w-8xl mx-auto">
           <div className="text-center max-w-7xl mx-auto">
             <div className="flex flex-col items-center justify-center min-h-[75vh]">
@@ -670,9 +690,12 @@ export default function LandingPage() {
               </h1>
 
               {/* Hero Subtitle */}
-              <p className="text-lg sm:text-xl text-gray-400 mb-12 max-w-4xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
-                Every LLM, one intuitive workspace.
-              </p>
+              <div className="text-lg sm:text-xl mb-12 max-w-4xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
+                <ShinyText
+                  speed={3}
+                  text="Every LLM, one intuitive workspace."
+                />
+              </div>
 
               {/* CTA Buttons */}
               <div className="flex flex-row gap-4 justify-center mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-600">
@@ -691,10 +714,23 @@ export default function LandingPage() {
                   Watch Demo
                 </button>
               </div>
+
+              {/* Helper text for users who already have access but system doesn't detect it */}
+              {!hasAccess && (
+                <div className="text-center text-sm text-gray-400 mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
+                  Already validated your access code?{" "}
+                  <Link
+                    href="/beta-access"
+                    className="text-lavender-400 hover:text-lavender-300 transition-colors duration-200 underline"
+                  >
+                    Bypass here
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Chain Interface Preview */}
-            <div className="relative max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
+            <div className="relative max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
               <div className="bg-gray-800/50 p-1 rounded-2xl overflow-hidden">
                 <video
                   src="/videos/chained_demo_v2.mp4"
@@ -723,9 +759,12 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
               Powerful Features
             </h2>
-            <p className="text-lg sm:text-xl text-gray-400 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-              Everything you need to easily build sophisticated AI workflows.
-            </p>
+            <div className="text-lg sm:text-xl max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+              <ShinyText
+                text="Everything you need to easily build sophisticated AI workflows."
+                speed={3}
+              />
+            </div>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
@@ -933,40 +972,35 @@ export default function LandingPage() {
       <section id="demo" className="relative z-10 px-4 sm:px-6 py-20 sm:py-32">
         <div className="max-w-7xl mx-auto">
           <div className="border border-gray-700/50 rounded-3xl bg-gray-900/30 backdrop-blur-2xl p-12 lg:p-16 relative overflow-hidden">
-            <div className="grid lg:grid-cols-2 gap-0 lg:gap-16 items-center min-h-[400px]">
+            <div className="grid lg:grid-cols-2 gap-0 lg:gap-16 items-center ">
               {/* Header - Left side on desktop, top on mobile */}
               <div className="text-left animate-in fade-in slide-in-from-left-8 duration-700">
                 <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
                   See It In Action
                 </h2>
-                <p className="text-lg sm:text-xl text-gray-400 lg:max-w-none max-w-3xl mx-auto lg:mx-0">
-                  Just look at it go!
-                </p>
+                <div className="text-lg sm:text-xl lg:max-w-none max-w-3xl mx-auto lg:mx-0">
+                  <ShinyText text="Just look at it go!" speed={3} />
+                </div>
               </div>
 
               {/* Card Swap Demo - Right side on desktop, bottom on mobile */}
-              <div className="relative h-[200px] md:h-[500px] flex items-center justify-center lg:justify-end animate-in fade-in slide-in-from-right-8 duration-700 delay-300">
+              <div className="relative h-[200px] md:h-[400px] flex items-center justify-start lg:justify-end animate-in fade-in slide-in-from-right-8 duration-700 delay-300">
                 <div className="w-full">
                   <CardSwap
                     width={500}
                     height={300}
                     cardDistance={45}
-                    verticalDistance={55}
+                    verticalDistance={45}
                     delay={5000}
                     pauseOnHover={true}
                     skewAmount={6}
                     easing="elastic"
                   >
-                    <Card className="bg-gray-950/90 backdrop-blur-lg border-gray-800/50 shadow-2xl overflow-hidden">
+                    <Card className="bg-gray-950/90">
                       <div className="px-4 py-2 h-full flex flex-col">
-                        <div className="flex items-center gap-2 mb-3">
-                          <h3 className="text-lg font-normal text-white">
-                            Smooth
-                          </h3>
-                          <p className="text-gray-400 text-sm">
-                            This is a demo of the smooth feature.
-                          </p>
-                        </div>
+                        <p className="text-gray-400 text-xs mb-3">
+                          Simple, familiar interface to build complex workflows
+                        </p>
                         <div className="flex-1 rounded-lg overflow-hidden bg-gray-200">
                           <video
                             src="/videos/chained_demo_v2.mp4"
@@ -983,16 +1017,11 @@ export default function LandingPage() {
                       </div>
                     </Card>
 
-                    <Card className="bg-gray-950/90 backdrop-blur-lg border-gray-600/50 shadow-2xl overflow-hidden">
+                    <Card className="bg-gray-950/90">
                       <div className="px-4 py-2 h-full flex flex-col">
-                        <div className="flex items-center gap-2 mb-3">
-                          <h3 className="text-lg font-normal text-white">
-                            Customizable
-                          </h3>
-                          <p className="text-gray-400 text-sm">
-                            This is a demo of the smooth feature.
-                          </p>
-                        </div>
+                        <p className="text-gray-400 text-xs mb-3">
+                          See your chains execute in real-time with live updates
+                        </p>
                         <div className="flex-1 rounded-lg overflow-hidden bg-gray-200">
                           <video
                             src="/videos/chained_demo_v2.mp4"
@@ -1009,16 +1038,11 @@ export default function LandingPage() {
                       </div>
                     </Card>
 
-                    <Card className="bg-gray-950/90 backdrop-blur-lg border-gray-600/50 shadow-2xl overflow-hidden">
+                    <Card className="bg-gray-950/90">
                       <div className="px-4 py-2 h-full flex flex-col">
-                        <div className="flex items-center gap-2 mb-3">
-                          <h3 className="text-lg font-normal text-white">
-                            Reliable
-                          </h3>
-                          <p className="text-gray-400 text-sm">
-                            This is a demo of the smooth feature.
-                          </p>
-                        </div>
+                        <p className="text-gray-400 text-xs mb-3">
+                          Automatic optimization for better performance
+                        </p>
                         <div className="flex-1 rounded-lg overflow-hidden bg-gray-200">
                           <video
                             src="/videos/chained_demo_v2.mp4"
@@ -1052,10 +1076,12 @@ export default function LandingPage() {
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
                 Ready to Build Your First Chain?
               </h2>
-              <p className="text-xl text-gray-400 mb-8">
-                Start creating powerful AI workflows in minutes. No setup
-                required.
-              </p>
+              <div className="text-xl mb-8">
+                <ShinyText
+                  text="Start creating powerful AI workflows in minutes. No setup required."
+                  speed={3}
+                />
+              </div>
               <button
                 onClick={handleAccessRequest}
                 className="group inline-flex items-center bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl text-lg font-medium transition-all duration-300 shadow-2xl hover:shadow-lavender-500/25 relative overflow-hidden"

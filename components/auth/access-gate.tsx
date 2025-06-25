@@ -400,7 +400,7 @@ export function AccessGate({ onAccessGranted }: AccessGateProps) {
             </AnimatePresence>
 
             {/* Toggle */}
-            <div className="mt-8 pt-6 border-t border-gray-800/50 text-center">
+            <div className="mt-8 pt-6 border-t border-gray-800/50 text-center space-y-4">
               <button
                 onClick={() => {
                   const newMode = !form.showWaitlist ? "waitlist" : "code";
@@ -429,6 +429,18 @@ export function AccessGate({ onAccessGranted }: AccessGateProps) {
                   </>
                 )}
               </button>
+
+              {/* Direct Beta Access Bypass for users who already validated their access */}
+              <div className="text-xs text-gray-500">
+                Already validated your access code?{" "}
+                <a
+                  href="/beta-access"
+                  className="text-lavender-400 hover:text-lavender-300 font-medium transition-colors duration-200"
+                  onClick={() => trackLandingPageEvent.accessGateBypass()}
+                >
+                  Bypass here
+                </a>
+              </div>
             </div>
           </div>
         </div>

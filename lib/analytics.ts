@@ -41,6 +41,7 @@ export const useAnalytics = () => {
     accessGateClosed: () => trackEvent("access_gate_closed"),
     accessGateModeChanged: (mode: "code" | "waitlist") =>
       trackEvent("access_gate_mode_changed", { mode }),
+    accessGateBypass: () => trackEvent("access_gate_bypass"),
 
     // Access code interactions
     accessCodeAttempted: (success: boolean, error?: string) =>

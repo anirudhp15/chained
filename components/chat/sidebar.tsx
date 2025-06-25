@@ -319,7 +319,7 @@ export function Sidebar({
 
       {/* Desktop Sidebar */}
       <div
-        className={`hidden z-50 lg:flex bg-gray-900/90 border-r border-gray-700 flex-col max-h-screen transition-all duration-300 ease-out ${
+        className={`hidden z-50 lg:flex bg-gray-900/50 backdrop-blur-2xl border-r border-gray-700 flex-col max-h-screen transition-all duration-300 ease-out ${
           isCollapsed ? "w-16" : "w-64"
         }`}
       >
@@ -476,7 +476,11 @@ export function Sidebar({
         )}
 
         {/* Desktop Chat List */}
-        <div className="flex-1 overflow-y-auto scrollbar-none">
+        <div
+          className={`flex-1 overflow-y-auto scrollbar-none ${
+            isCollapsed ? "hidden" : "block"
+          }`}
+        >
           <div className="px-2">
             {/* Collapsed Search Icon - only show when collapsed and there are chats */}
             {isCollapsed && recentChats && recentChats.length > 0 && (
