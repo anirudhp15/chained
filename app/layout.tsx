@@ -42,14 +42,14 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "Chained - Build Powerful AI Workflows",
+    title: "ChainedChat",
     description:
       "Chain multiple AI models together to create sophisticated workflows. Connect GPT-4, Claude, Gemini, and more in powerful sequences.",
     url: "https://chained.chat",
-    siteName: "Chained",
+    siteName: "ChainedChat",
     images: [
       {
-        url: "/og-image.png",
+        url: "/cc_logo.png",
         width: 1200,
         height: 630,
         alt: "Chained - AI Workflow Builder",
@@ -61,10 +61,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Chained - Build Powerful AI Workflows",
-    description:
-      "Chain multiple AI models together to create sophisticated workflows. Connect GPT-4, Claude, Gemini, and more in powerful sequences.",
-    creator: "@chained_app",
-    images: ["/og-image.png"],
+    description: "Orchestrate multiple LLMs in a single chat interface",
+    creator: "@anipotts",
+    images: ["/cc_logo.png"],
   },
   robots: {
     index: true,
@@ -85,19 +84,17 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon-16x16.ico", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.ico", sizes: "32x32", type: "image/png" },
-      { url: "/favicon.ico", sizes: "any" },
+      { url: "/cc_logo.png", sizes: "16x16", type: "image/png" },
+      { url: "/cc_logo.png", sizes: "32x32", type: "image/png" },
+      { url: "/cc_logo.png", sizes: "any" },
     ],
-    shortcut: "/favicon.ico",
-    apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
+    shortcut: "/cc_logo.png",
+    apple: [{ url: "/cc_logo.png", sizes: "180x180", type: "image/png" }],
     other: [
       {
         rel: "mask-icon",
-        url: "/safari-pinned-tab.png",
-        color: "#9333ea",
+        url: "/cc_logo.png",
+        color: "#030712",
       },
     ],
   },

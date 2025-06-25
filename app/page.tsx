@@ -491,7 +491,7 @@ export default function LandingPage() {
                 <Unlink className="h-6 w-6 text-lavender-400/80 group-hover/logo:text-lavender-400 transition-all duration-200 group-hover/logo:block hidden" />
               </div>
               <span className="text-xl font-semibold text-lavender-400 group-hover:text-white transition-colors duration-300">
-                Ch<span className="text-lavender-400">ai</span>ned
+                Ch<span className="text-lavender-400">ai</span>nedChat
               </span>
             </Link>
 
@@ -1081,7 +1081,7 @@ export default function LandingPage() {
                   <Unlink className="h-6 w-6 text-lavender-400/80 group-hover/logo:text-lavender-400 transition-all duration-200 group-hover/logo:block hidden" />
                 </div>
                 <span className="text-xl font-semibold text-lavender-400 group-hover:text-white transition-colors duration-300">
-                  Ch<span className="text-lavender-400">ai</span>ned
+                  Ch<span className="text-lavender-400">ai</span>nedChat
                 </span>
               </Link>
             </div>
