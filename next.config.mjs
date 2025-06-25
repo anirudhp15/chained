@@ -32,28 +32,50 @@ const nextConfig = {
 
   // Security headers
   async headers() {
+    const isDev = process.env.NODE_ENV === "development";
+
+    // More permissive CSP for development to avoid CAPTCHA issues
+    const devCSP = [
+      "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: *",
+      "style-src 'self' 'unsafe-inline' *",
+      "img-src 'self' data: blob: *",
+      "connect-src 'self' data: blob: *",
+      "font-src 'self' data: *",
+      "media-src 'self' data: blob: *",
+      "frame-src 'self' *",
+      "worker-src 'self' blob: *",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self' *",
+    ].join("; ");
+
+    // Production CSP with specific domains
+    const prodCSP = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat *.clerk.com img.clerk.com *.gstatic.com *.recaptcha.net *.google.com *.googletagmanager.com worker.clerkprod-cloudflare.net clerk.services 'wasm-unsafe-eval'",
+      "worker-src 'self' blob:",
+      "style-src 'self' 'unsafe-inline' fonts.googleapis.com *.gstatic.com *.google.com",
+      "img-src 'self' data: blob: *.amazonaws.com *.convex.cloud *.clerk.accounts.dev *.clerk.dev *.chained.chat *.clerk.com img.clerk.com *.clerk.services *.gstatic.com *.google.com *.googleusercontent.com",
+      "connect-src 'self' *.convex.cloud *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat *.clerk.com accounts.google.com github.com api.github.com www.linkedin.com *.google.com *.recaptcha.net *.googletagmanager.com worker.clerkprod-cloudflare.net clerk.services wss:",
+      "font-src 'self' fonts.gstatic.com *.google.com",
+      "media-src 'self' blob:",
+      "frame-src 'self' *.google.com *.recaptcha.net *.gstatic.com *.clerk.com clerk.chained.chat",
+      "child-src 'self' *.google.com *.recaptcha.net",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self' accounts.google.com github.com www.linkedin.com *.clerk.com",
+      "frame-ancestors 'none'",
+      "upgrade-insecure-requests",
+    ].join("; ");
+
     return [
       {
         source: "/(.*)",
         headers: [
           {
             key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat img.clerk.com *.gstatic.com *.recaptcha.net *.google.com worker.clerkprod-cloudflare.net 'wasm-unsafe-eval'",
-              "worker-src 'self' blob:",
-              "style-src 'self' 'unsafe-inline' fonts.googleapis.com *.gstatic.com",
-              "img-src 'self' data: blob: *.amazonaws.com *.convex.cloud *.clerk.accounts.dev *.clerk.dev *.chained.chat img.clerk.com *.clerk.services *.gstatic.com *.google.com",
-              "connect-src 'self' *.convex.cloud *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat accounts.google.com github.com api.github.com www.linkedin.com *.google.com *.recaptcha.net worker.clerkprod-cloudflare.net wss:",
-              "font-src 'self' fonts.gstatic.com",
-              "media-src 'self' blob:",
-              "frame-src 'self' *.google.com *.recaptcha.net *.gstatic.com",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self' accounts.google.com github.com www.linkedin.com",
-              "frame-ancestors 'none'",
-              "upgrade-insecure-requests",
-            ].join("; "),
+            value: isDev ? devCSP : prodCSP,
           },
           {
             key: "Strict-Transport-Security",
