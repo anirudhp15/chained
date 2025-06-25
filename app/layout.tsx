@@ -16,9 +16,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Chained",
-  description:
-    "Chain multiple AI models together to create sophisticated workflows. Connect GPT-4, Claude, Gemini, and more in powerful sequences.",
+  title: "ChainedChat",
+  description: "Orchestrate multiple LLMs in a single chat interface",
   keywords: [
     "AI workflow",
     "AI chaining",
@@ -28,23 +27,29 @@ export const metadata: Metadata = {
     "AI automation",
     "AI agents",
     "workflow builder",
+    "chainedchat",
+    "chained",
+    "chat",
+    "chatbot",
+    "chatgpt",
+    "claude",
+    "gemini",
   ],
-  authors: [{ name: "Chained" }],
-  creator: "Chained",
-  publisher: "Chained",
+  authors: [{ name: "Ani Potts" }],
+  creator: "Ani Potts",
+  publisher: "Ani Potts",
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://chained.chat"), // Replace with your actual domain
+  metadataBase: new URL("https://chained.chat"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "ChainedChat",
-    description:
-      "Chain multiple AI models together to create sophisticated workflows. Connect GPT-4, Claude, Gemini, and more in powerful sequences.",
+    description: "Orchestrate multiple LLMs in a single chat interface",
     url: "https://chained.chat",
     siteName: "ChainedChat",
     images: [
@@ -52,7 +57,7 @@ export const metadata: Metadata = {
         url: "/cc_logo.png",
         width: 1200,
         height: 630,
-        alt: "Chained - AI Workflow Builder",
+        alt: "ChainedChat - Orchestrate multiple LLMs in a single chat interface",
       },
     ],
     locale: "en_US",
@@ -60,7 +65,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Chained - Build Powerful AI Workflows",
+    title: "ChainedChat - Orchestrate multiple LLMs in a single chat interface",
     description: "Orchestrate multiple LLMs in a single chat interface",
     creator: "@anipotts",
     images: ["/cc_logo.png"],
@@ -77,8 +82,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    // Add your verification codes here when ready
-    // google: 'your-google-verification-code',
+    google: "K3n_KG2bYC5_hME2PSZQtA_Hi-nU9S14ony0Ny1vrdA",
     // yandex: 'your-yandex-verification-code',
     // yahoo: 'your-yahoo-verification-code',
   },
