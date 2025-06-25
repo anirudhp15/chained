@@ -543,12 +543,21 @@ export function InitialChainInput({
   const getContainerStyle = () => {
     // Only apply margin on desktop (md and up)
     if (typeof window !== "undefined" && window.innerWidth >= 768) {
-      return {
-        marginLeft: `${sidebarWidth}px`,
-        width: `calc(100% - ${sidebarWidth}px)`,
-        transition:
-          "margin-left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-      };
+      if (agents.length === 1) {
+        // For single agent, just offset from sidebar but don't force width
+        return {
+          marginLeft: `${sidebarWidth}px`,
+          transition: "margin-left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        };
+      } else {
+        // For multiple agents, take full remaining width
+        return {
+          marginLeft: `${sidebarWidth}px`,
+          width: `calc(100% - ${sidebarWidth}px)`,
+          transition:
+            "margin-left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        };
+      }
     }
     return {};
   };
@@ -673,13 +682,38 @@ export function InitialChainInput({
   // Helper function to get consistent sizing for all agents
   const getAgentContainerClasses = () => {
     if (agents.length === 1) {
-      return "w-full lg:max-w-4xl lg:min-w-[894px]";
-    } else if (agents.length === 2) {
-      return "w-full lg:max-w-none lg:min-w-[550px] lg:flex-1";
+      return "w-full max-w-4xl mx-auto";
     } else {
-      return "w-full lg:max-w-none lg:min-w-[450px] lg:flex-1";
+      // For multiple agents, each takes equal space with flex-1
+      return "w-full flex-1";
     }
   };
+
+  // Helper function to get container layout classes based on agent count
+  const getLayoutClasses = () => {
+    if (agents.length === 1) {
+      // Single agent: centered with max-width constraint
+      return {
+        outerContainer: "w-full flex justify-center px-4",
+        innerContainer: "w-full max-w-4xl",
+        flexContainer:
+          "flex flex-col lg:flex-row lg:items-end lg:justify-center w-full",
+        agentWrapper:
+          "flex relative flex-col lg:flex-row lg:items-stretch w-full",
+      };
+    } else {
+      // Multiple agents: full width, evenly distributed
+      return {
+        outerContainer: "w-full",
+        innerContainer: "w-full",
+        flexContainer: "flex flex-col lg:flex-row lg:items-end lg:gap-4 w-full",
+        agentWrapper:
+          "flex relative flex-col lg:flex-row lg:items-stretch flex-1",
+      };
+    }
+  };
+
+  const layoutClasses = getLayoutClasses();
 
   // Regular Chain Mode Input - Mobile Responsive Layout
   return (
@@ -695,106 +729,107 @@ export function InitialChainInput({
     >
       <div className="w-full flex justify-center">
         <div className="w-full flex items-end justify-center lg:mb-2">
-          <div className="w-full max-w-7xl">
-            {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-center ">
-              {agents.map((agent, index) => (
-                <div
-                  key={agent.id}
-                  className="flex relative flex-col lg:flex-row lg:items-stretch lg:max-w-4xl"
-                >
-                  {/* Agent Card using AgentInput component */}
-                  <div
-                    className={`${getAgentContainerClasses()} backdrop-blur-sm lg:px-4 ${
-                      queuedAgents.some((qa) => qa.id === agent.id)
-                        ? "border-lavender-400/50"
-                        : ""
-                    } `}
-                  >
+          <div className={layoutClasses.outerContainer}>
+            <div className={layoutClasses.innerContainer}>
+              {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
+              <div className={layoutClasses.flexContainer}>
+                {agents.map((agent, index) => (
+                  <div key={agent.id} className={layoutClasses.agentWrapper}>
+                    {/* Agent Card using AgentInput component */}
                     <div
-                      className={`${
-                        animatingAgentId === agent.id
-                          ? "animate-in slide-in-from-bottom-4 lg:slide-in-from-right-8 fade-in duration-300 ease-out"
+                      className={`${getAgentContainerClasses()} backdrop-blur-sm ${agents.length > 1 ? "lg:px-2" : ""} ${
+                        queuedAgents.some((qa) => qa.id === agent.id)
+                          ? "border-lavender-400/50"
                           : ""
-                      }`}
+                      } `}
                     >
-                      <NodePill
+                      <div
+                        className={`${
+                          animatingAgentId === agent.id
+                            ? "animate-in slide-in-from-bottom-4 lg:slide-in-from-right-8 fade-in duration-300 ease-out"
+                            : ""
+                        }`}
+                      >
+                        <NodePill
+                          agent={agent}
+                          onUpdate={(updatedAgent) =>
+                            updateAgent(index, updatedAgent)
+                          }
+                          index={index}
+                          canAddAgent={agents.length < MAX_AGENTS_PER_CHAIN}
+                          onAddAgent={
+                            agents.length < MAX_AGENTS_PER_CHAIN
+                              ? addAgent
+                              : undefined
+                          }
+                          isLastAgent={index === agents.length - 1}
+                          onRemove={() => removeAgent(index)}
+                          canRemove={canRemove}
+                          // Mobile-specific props
+                          isExpanded={expandedAgents.has(agent.id)}
+                          onToggleExpansion={() =>
+                            toggleAgentExpansion(agent.id)
+                          }
+                          onLongPressStart={(e: React.TouchEvent) =>
+                            handleLongPressStart(agent.id, e)
+                          }
+                          onLongPressEnd={handleLongPressEnd}
+                          onTouchStart={hideTooltip}
+                          // Indicate if this agent can be collapsed (not the last one)
+                          isCollapsible={index !== agents.length - 1}
+                          // Show mobile connection for non-first agents
+                          showMobileConnection={index > 0}
+                          // Pass source agent name for connection display
+                          sourceAgentName={
+                            index > 0
+                              ? agents[index - 1]?.name || `Node ${index}`
+                              : undefined
+                          }
+                        />
+                      </div>
+                      <AgentInput
                         agent={agent}
                         onUpdate={(updatedAgent) =>
                           updateAgent(index, updatedAgent)
                         }
                         index={index}
-                        canAddAgent={agents.length < MAX_AGENTS_PER_CHAIN}
-                        onAddAgent={
-                          agents.length < MAX_AGENTS_PER_CHAIN
-                            ? addAgent
-                            : undefined
-                        }
                         isLastAgent={index === agents.length - 1}
-                        onRemove={() => removeAgent(index)}
-                        canRemove={canRemove}
-                        // Mobile-specific props
-                        isExpanded={expandedAgents.has(agent.id)}
-                        onToggleExpansion={() => toggleAgentExpansion(agent.id)}
-                        onLongPressStart={(e: React.TouchEvent) =>
-                          handleLongPressStart(agent.id, e)
-                        }
-                        onLongPressEnd={handleLongPressEnd}
-                        onTouchStart={hideTooltip}
-                        // Indicate if this agent can be collapsed (not the last one)
-                        isCollapsible={index !== agents.length - 1}
-                        // Show mobile connection for non-first agents
-                        showMobileConnection={index > 0}
-                        // Pass source agent name for connection display
-                        sourceAgentName={
-                          index > 0
-                            ? agents[index - 1]?.name || `Node ${index}`
+                        onSendChain={
+                          index === agents.length - 1
+                            ? handleSendChain
                             : undefined
                         }
+                        canSend={canSend}
+                        isLoading={isLoading || isStreaming}
+                        // Mobile-specific props
+                        isMobileCollapsed={!expandedAgents.has(agent.id)}
                       />
+
+                      {/* Queued Agent Indicator */}
+                      {queuedAgents.some((qa) => qa.id === agent.id) && (
+                        <div className="text-xs text-lavender-400/60 text-center mt-0.5 lg:mt-1">
+                          Queued...
+                        </div>
+                      )}
                     </div>
-                    <AgentInput
-                      agent={agent}
-                      onUpdate={(updatedAgent) =>
-                        updateAgent(index, updatedAgent)
-                      }
-                      index={index}
-                      isLastAgent={index === agents.length - 1}
-                      onSendChain={
-                        index === agents.length - 1
-                          ? handleSendChain
-                          : undefined
-                      }
-                      canSend={canSend}
-                      isLoading={isLoading || isStreaming}
-                      // Mobile-specific props
-                      isMobileCollapsed={!expandedAgents.has(agent.id)}
-                    />
 
-                    {/* Queued Agent Indicator */}
-                    {queuedAgents.some((qa) => qa.id === agent.id) && (
-                      <div className="text-xs text-lavender-400/60 text-center mt-0.5 lg:mt-1">
-                        Queued...
+                    {/* Desktop: Interactive Connection Selector - positioned absolutely */}
+                    {agents.length > 1 && index < agents.length - 1 && (
+                      <div className="hidden lg:block absolute top-8 -right-[24px] z-10">
+                        <div className="flex items-center justify-center">
+                          <DesktopConnectionSelector
+                            agent={agents[index + 1]}
+                            onUpdate={(updatedAgent) =>
+                              updateAgent(index + 1, updatedAgent)
+                            }
+                            index={index + 1}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
-
-                  {/* Desktop: Interactive Connection Selector - positioned absolutely */}
-                  <div className="hidden lg:block absolute top-8 -right-[44px] pr-[20px]">
-                    {index < agents.length - 1 && (
-                      <div className="flex items-center justify-center px-2">
-                        <DesktopConnectionSelector
-                          agent={agents[index + 1]}
-                          onUpdate={(updatedAgent) =>
-                            updateAgent(index + 1, updatedAgent)
-                          }
-                          index={index + 1}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>

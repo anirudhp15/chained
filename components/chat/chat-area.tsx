@@ -38,6 +38,7 @@ import { useCopyTracking } from "../../lib/copy-tracking-context";
 import { setupGlobalCopyDetection } from "../../utils/copy-detection";
 import { HighlightWrapper } from "../ui/HighlightWrapper";
 import { EditableText } from "../ui/EditableText";
+import Beams from "../Backgrounds/Beams/Beams";
 
 interface AgentConversationTurn {
   userPrompt: string;

@@ -477,8 +477,8 @@ export function Sidebar({
 
         {/* Desktop Chat List */}
         <div
-          className={`flex-1 overflow-y-auto scrollbar-none ${
-            isCollapsed ? "hidden" : "block"
+          className={`flex-1 overflow-y-auto scrollbar-none cursor-not-allowed ${
+            isCollapsed ? "opacity-0 " : "opacity-100"
           }`}
         >
           <div className="px-2">

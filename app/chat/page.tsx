@@ -125,7 +125,7 @@ function ChatLandingContent() {
       <div className="flex-1 flex flex-col relative w-full">
         {/* Welcome Screen - only show if no preset agents are loaded */}
         {!presetAgents && (
-          <div className="flex-1 flex items-center justify-center w-full bg-gray-950/70">
+          <div className="flex-1 flex items-center justify-center w-full bg-gray-950/25">
             <WelcomeScreen onLoadPreset={handleLoadPreset} />
           </div>
         )}
