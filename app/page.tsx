@@ -483,8 +483,8 @@ export default function LandingPage() {
 
       {/* Navigation */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full">
-        <motion.div className="transition-all duration-300 ease-out border-y p-2 border-gray-800/50 bg-gray-950/80 backdrop-blur-xl lg:mt-4 lg:max-w-7xl lg:mx-auto lg:rounded-3xl">
-          <div className="flex  items-center justify-between px-4 sm:px-16">
+        <motion.div className="transition-all duration-300 ease-out border-y lg:border-x p-2 border-gray-800/50 bg-gray-950/80  lg:mt-4 lg:max-w-7xl lg:mx-auto lg:rounded-3xl">
+          <div className="flex  items-center justify-between px-4">
             <Link href="/" className="flex items-center space-x-2 group">
               <div className="relative group/logo hidden md:block">
                 <Link2 className="h-6 w-6 text-lavender-400 group-hover/logo:hidden transition-all duration-200 group-hover:-rotate-45 block" />
@@ -529,7 +529,7 @@ export default function LandingPage() {
               >
                 <button
                   onClick={handleAccessRequest}
-                  className="inline-flex items-center bg-lavender-600/20 border border-lavender-600/50 hover:bg-lavender-600/30 text-lavender-400 px-4 py-2 text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group rounded-xl"
+                  className="inline-flex items-center bg-lavender-600/20 border border-lavender-600/50 hover:bg-lavender-600/30 text-lavender-400 px-2 py-1 text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group rounded-xl"
                 >
                   {hasAccess ? "Continue Building" : "Get Access"}
                 </button>
@@ -724,7 +724,7 @@ export default function LandingPage() {
               Powerful Features
             </h2>
             <p className="text-lg sm:text-xl text-gray-400 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-              Everything you need to easily build sophisticated AI workflows
+              Everything you need to easily build sophisticated AI workflows.
             </p>
           </div>
 
@@ -732,7 +732,7 @@ export default function LandingPage() {
             {FEATURE_DETAILS.map((feature, index) => (
               <div
                 key={feature.id}
-                className={`group relative bg-gray-900/30 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 lg:p-8 hover:border-lavender-500/50 transition-all duration-500 hover:bg-gray-900/50 cursor-pointer overflow-hidden animate-in fade-in slide-in-from-bottom-8 ${feature.delay}`}
+                className={`group relative bg-gray-900/30 backdrop-blur-2xl border border-gray-700/50 rounded-2xl p-6 lg:p-8 hover:border-lavender-500/50 transition-all duration-500 hover:bg-gray-900/50 cursor-pointer overflow-hidden animate-in fade-in slide-in-from-bottom-8 ${feature.delay}`}
               >
                 {/* Enhanced Background Glow Effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-lavender-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -932,7 +932,7 @@ export default function LandingPage() {
       {/* Demo Section */}
       <section id="demo" className="relative z-10 px-4 sm:px-6 py-20 sm:py-32">
         <div className="max-w-7xl mx-auto">
-          <div className="border border-gray-700/50 rounded-3xl bg-gray-900/30 backdrop-blur-xl p-12 lg:p-16 relative overflow-hidden">
+          <div className="border border-gray-700/50 rounded-3xl bg-gray-900/30 backdrop-blur-2xl p-12 lg:p-16 relative overflow-hidden">
             <div className="grid lg:grid-cols-2 gap-0 lg:gap-16 items-center min-h-[400px]">
               {/* Header - Left side on desktop, top on mobile */}
               <div className="text-left animate-in fade-in slide-in-from-left-8 duration-700">
@@ -1071,7 +1071,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 p-8 xl:p-16 xl:pb-8 bg-gradient-to-b from-gray-950/80 to-transparent max-w-7xl mx-auto rounded-t-3xl backdrop-blur-2xl border border-x-0 lg:border-x border-gray-800/50 border-b-0">
+      <footer className="relative z-10 p-8 xl:p-16 xl:pb-8 bg-gradient-to-b from-gray-950/80 to-transparent max-w-7xl mx-auto rounded-t-3xl  border border-x-0 lg:border-x border-gray-800/50 border-b-0">
         <div className="max-w-7xl mx-auto">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="lg:col-span-2">
@@ -1165,7 +1165,7 @@ export default function LandingPage() {
 
           <div className="border-t border-gray-800/50 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2025 ChainedChat AI. All rights reserved.
+              © 2025 ChainedChat. All rights reserved.
             </p>
             <div className="flex space-x-4 mt-4 sm:mt-0">
               <Link href="https://www.linkedin.com/company/chained-chat">
