@@ -50,18 +50,18 @@ const nextConfig = {
       "form-action 'self' *",
     ].join("; ");
 
-    // Production CSP with specific domains
+    // Production CSP with specific domains - more permissive for reCAPTCHA
     const prodCSP = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat *.clerk.com img.clerk.com *.gstatic.com *.recaptcha.net *.google.com *.googletagmanager.com worker.clerkprod-cloudflare.net clerk.services 'wasm-unsafe-eval'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat *.clerk.com img.clerk.com https://www.gstatic.com https://www.google.com https://*.gstatic.com https://*.google.com https://*.recaptcha.net https://*.googletagmanager.com worker.clerkprod-cloudflare.net clerk.services 'wasm-unsafe-eval'",
       "worker-src 'self' blob:",
-      "style-src 'self' 'unsafe-inline' fonts.googleapis.com *.gstatic.com *.google.com",
-      "img-src 'self' data: blob: *.amazonaws.com *.convex.cloud *.clerk.accounts.dev *.clerk.dev *.chained.chat *.clerk.com img.clerk.com *.clerk.services *.gstatic.com *.google.com *.googleusercontent.com",
-      "connect-src 'self' *.convex.cloud *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat *.clerk.com accounts.google.com github.com api.github.com www.linkedin.com *.google.com *.recaptcha.net *.googletagmanager.com worker.clerkprod-cloudflare.net clerk.services wss:",
-      "font-src 'self' fonts.gstatic.com *.google.com",
+      "style-src 'self' 'unsafe-inline' fonts.googleapis.com https://*.gstatic.com https://*.google.com",
+      "img-src 'self' data: blob: *.amazonaws.com *.convex.cloud *.clerk.accounts.dev *.clerk.dev *.chained.chat *.clerk.com img.clerk.com *.clerk.services https://*.gstatic.com https://*.google.com https://*.googleusercontent.com",
+      "connect-src 'self' *.convex.cloud *.posthog.com *.clerk.accounts.dev *.clerk.dev *.chained.chat *.clerk.com accounts.google.com github.com api.github.com www.linkedin.com https://*.google.com https://*.recaptcha.net https://*.googletagmanager.com https://*.gstatic.com worker.clerkprod-cloudflare.net clerk.services wss:",
+      "font-src 'self' fonts.gstatic.com https://*.google.com",
       "media-src 'self' blob:",
-      "frame-src 'self' *.google.com *.recaptcha.net *.gstatic.com *.clerk.com clerk.chained.chat",
-      "child-src 'self' *.google.com *.recaptcha.net",
+      "frame-src 'self' https://*.google.com https://*.recaptcha.net https://*.gstatic.com *.clerk.com clerk.chained.chat",
+      "child-src 'self' https://*.google.com https://*.recaptcha.net",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self' accounts.google.com github.com www.linkedin.com *.clerk.com",
