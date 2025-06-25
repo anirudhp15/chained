@@ -623,28 +623,9 @@ export default function LandingPage() {
 
               {/* Hero Title */}
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-                <div className="flex flex-wrap justify-center items-center gap-2 lg:gap-4 mb-4 text-2xl sm:text-4xl lg:text-5xl">
+                <div className="flex flex-wrap justify-center items-center gap-2 lg:gap-4 mb-2 text-2xl sm:text-4xl lg:text-5xl">
                   <span>Use</span>
-                  <RotatingText
-                    texts={[
-                      "Claude",
-                      "ChatGPT",
-                      "Gemini",
-                      "Grok",
-                      "Perplexity",
-                    ]}
-                    rotationInterval={2000}
-                    className="bg-lavender-500 px-2 rounded-lg"
-                    mainClassName="inline-block"
-                    staggerFrom={"last"}
-                    initial={{ y: "100%" }}
-                    animate={{ y: 0 }}
-                    exit={{ y: "-120%" }}
-                    staggerDuration={0.025}
-                    splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
-                    transition={{ type: "spring", damping: 30, stiffness: 400 }}
-                  />
-                  ,
+
                   <RotatingText
                     texts={[
                       "Claude",
@@ -667,11 +648,11 @@ export default function LandingPage() {
                   <span>and</span>
                   <RotatingText
                     texts={[
+                      "Perplexity",
+                      "Grok",
+                      "Gemini",
                       "Claude",
                       "ChatGPT",
-                      "Gemini",
-                      "Grok",
-                      "Perplexity",
                     ]}
                     rotationInterval={3000}
                     className="bg-lavender-500 px-2 rounded-lg"
@@ -685,15 +666,12 @@ export default function LandingPage() {
                     transition={{ type: "spring", damping: 30, stiffness: 400 }}
                   />
                 </div>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-lavender-400 via-purple-400 to-lavender-500 relative block">
-                  Side by Side
-                  <div className="absolute inset-0 bg-gradient-to-r from-lavender-400/20 via-purple-400/20 to-lavender-500/20 blur-2xl"></div>
-                </span>
+                <span className="text-lavender-500">side by side</span>
               </h1>
 
               {/* Hero Subtitle */}
               <p className="text-lg sm:text-xl text-gray-400 mb-12 max-w-4xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
-                All your favorite LLMs, one intuitive workspace.
+                Every LLM, one intuitive workspace.
               </p>
 
               {/* CTA Buttons */}
