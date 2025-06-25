@@ -31,8 +31,12 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     const origin = req.headers.get("origin");
     const allowedOrigins =
       process.env.NODE_ENV === "production"
-        ? [process.env.NEXT_PUBLIC_APP_URL || "https://your-domain.com"]
-        : ["http://localhost:3000", "http://127.0.0.1:3000"];
+        ? [process.env.NEXT_PUBLIC_APP_URL || "https://chained.chat"]
+        : [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:3002",
+          ];
 
     if (origin && allowedOrigins.includes(origin)) {
       response.headers.set("Access-Control-Allow-Origin", origin);

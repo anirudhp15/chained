@@ -35,8 +35,6 @@ import {
   CheckCircle,
   Linkedin,
   Instagram,
-  Twitter,
-  XIcon,
   Unlink,
 } from "lucide-react";
 import { AccessGate } from "@/components/auth/access-gate";
@@ -46,6 +44,10 @@ import {
   useScrollTracking,
   useSectionTracking,
 } from "@/lib/analytics";
+import CardSwap, { Card } from "@/components/Components/CardSwap/CardSwap";
+import RotatingText from "@/components/TextAnimations/RotatingText/RotatingText";
+import Beams from "@/components/Backgrounds/Beams/Beams";
+import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
 
 // Feature data structure matching welcome screen pattern
 interface FeatureDetail {
@@ -368,288 +370,6 @@ const FEATURE_DETAILS: FeatureDetail[] = [
   },
 ];
 
-// Animated Background Component
-const AnimatedBackground = () => {
-  const particles = Array.from({ length: 50 }, (_, i) => i);
-  const geometricShapes = Array.from({ length: 8 }, (_, i) => i);
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Morphing Gradient Orbs */}
-      <motion.div
-        className="absolute w-[800px] h-[800px] rounded-full opacity-10 md:opacity-40"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(147,112,219,0.5) 0%, rgba(138,43,226,0.3) 50%, transparent 100%)",
-          filter: "blur(1px)",
-          boxShadow:
-            "0 0 100px rgba(147,112,219,0.3), 0 0 200px rgba(147,112,219,0.1)",
-        }}
-        animate={{
-          x: [-100, 100, -100],
-          y: [-50, 50, -50],
-          scale: [1, 1.2, 1],
-          rotate: [0, 180, 360],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        initial={{ x: -200, y: -200 }}
-      />
-
-      <motion.div
-        className="absolute w-[600px] h-[600px] rounded-full opacity-[0.08] md:opacity-35"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(64,224,208,0.4) 0%, rgba(0,255,127,0.2) 50%, transparent 100%)",
-          filter: "blur(1px)",
-          boxShadow:
-            "0 0 80px rgba(64,224,208,0.2), 0 0 160px rgba(64,224,208,0.1)",
-        }}
-        animate={{
-          x: [200, -200, 200],
-          y: [100, -100, 100],
-          scale: [1.2, 0.8, 1.2],
-          rotate: [360, 180, 0],
-        }}
-        transition={{
-          duration: 25,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        initial={{
-          x: typeof window !== "undefined" ? window.innerWidth : 1200,
-          y: typeof window !== "undefined" ? window.innerHeight : 800,
-        }}
-      />
-
-      <motion.div
-        className="absolute w-[400px] h-[400px] rounded-full opacity-[0.08] md:opacity-40"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(255,20,147,0.3) 0%, rgba(138,43,226,0.2) 50%, transparent 100%)",
-          filter: "blur(1px)",
-          boxShadow:
-            "0 0 60px rgba(255,20,147,0.2), 0 0 120px rgba(255,20,147,0.1)",
-        }}
-        animate={{
-          x: [0, 300, -300, 0],
-          y: [0, -200, 200, 0],
-          scale: [0.8, 1.5, 0.8],
-        }}
-        transition={{
-          duration: 30,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        initial={{ x: 400, y: 300 }}
-      />
-
-      {/* Floating Particles - reduced on mobile */}
-      {particles
-        .slice(
-          0,
-          typeof window !== "undefined" && window.innerWidth < 768 ? 20 : 50
-        )
-        .map((particle) => (
-          <motion.div
-            key={particle}
-            className="absolute w-1 h-1 rounded-full bg-lavender-400/15 md:bg-lavender-400/40"
-            style={{
-              boxShadow:
-                "0 0 4px rgba(147,112,219,0.4), 0 0 8px rgba(147,112,219,0.2)",
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [-20, -100, -20],
-              x: [
-                Math.random() * 50 - 25,
-                Math.random() * 100 - 50,
-                Math.random() * 50 - 25,
-              ],
-              opacity: [0, 1, 0],
-              scale: [0, 1, 0],
-            }}
-            transition={{
-              duration: Math.random() * 10 + 10,
-              repeat: Infinity,
-              delay: Math.random() * 5,
-              ease: "easeOut",
-            }}
-          />
-        ))}
-
-      {/* Geometric Shapes - reduced on mobile */}
-      {geometricShapes
-        .slice(
-          0,
-          typeof window !== "undefined" && window.innerWidth < 768 ? 3 : 8
-        )
-        .map((shape) => (
-          <motion.div
-            key={shape}
-            className="absolute border border-lavender-400/[0.08] md:border-lavender-400/20"
-            style={{
-              width: Math.random() * 100 + 50,
-              height: Math.random() * 100 + 50,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              borderRadius: Math.random() > 0.5 ? "50%" : "0%",
-              boxShadow:
-                "0 0 10px rgba(147,112,219,0.15), inset 0 0 10px rgba(147,112,219,0.05)",
-            }}
-            animate={{
-              rotate: [0, 360],
-              scale: [1, 1.2, 1],
-              opacity: [0.1, 0.4, 0.1],
-            }}
-            transition={{
-              duration: Math.random() * 20 + 15,
-              repeat: Infinity,
-              ease: "linear",
-              delay: Math.random() * 5,
-            }}
-          />
-        ))}
-
-      {/* Flowing Lines - reduced on mobile */}
-      <svg className="absolute inset-0 w-full h-full opacity-30 md:opacity-100">
-        <defs>
-          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgba(147,112,219,0.1)" />
-            <stop offset="50%" stopColor="rgba(64,224,208,0.2)" />
-            <stop offset="100%" stopColor="rgba(147,112,219,0.1)" />
-          </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        {Array.from(
-          {
-            length:
-              typeof window !== "undefined" && window.innerWidth < 768 ? 3 : 6,
-          },
-          (_, i) => (
-            <motion.path
-              key={i}
-              d={`M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`}
-              stroke="url(#lineGradient)"
-              strokeWidth="2"
-              fill="none"
-              filter="url(#glow)"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{
-                pathLength: [0, 1, 0],
-                opacity: [0, 0.7, 0],
-                d: [
-                  `M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`,
-                  `M${Math.random() * 200 + 100},${Math.random() * 200 + 100} Q${Math.random() * 400 + 300},${Math.random() * 400 + 300} ${Math.random() * 200 + 700},${Math.random() * 200 + 500}`,
-                  `M${Math.random() * 200},${Math.random() * 200} Q${Math.random() * 400 + 200},${Math.random() * 400 + 200} ${Math.random() * 200 + 600},${Math.random() * 200 + 400}`,
-                ],
-              }}
-              transition={{
-                duration: Math.random() * 15 + 10,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: i * 2,
-              }}
-            />
-          )
-        )}
-      </svg>
-
-      {/* Neural Network Pattern - reduced on mobile */}
-      <motion.div
-        className="absolute inset-0 opacity-20 md:opacity-100"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 0.15, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <svg className="w-full h-full">
-          {Array.from(
-            {
-              length:
-                typeof window !== "undefined" && window.innerWidth < 768
-                  ? 10
-                  : 20,
-            },
-            (_, i) => (
-              <g key={i}>
-                <motion.circle
-                  cx={`${(i % 5) * 25 + 10}%`}
-                  cy={`${Math.floor(i / 5) * 25 + 10}%`}
-                  r="2"
-                  fill="rgba(147,112,219,0.4)"
-                  filter="url(#glow)"
-                  animate={{
-                    r: [1, 3, 1],
-                    opacity: [0.3, 0.8, 0.3],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    delay: i * 0.2,
-                  }}
-                />
-                {i <
-                  (typeof window !== "undefined" && window.innerWidth < 768
-                    ? 9
-                    : 19) && (
-                  <motion.line
-                    x1={`${(i % 5) * 25 + 10}%`}
-                    y1={`${Math.floor(i / 5) * 25 + 10}%`}
-                    x2={`${((i + 1) % 5) * 25 + 10}%`}
-                    y2={`${Math.floor((i + 1) / 5) * 25 + 10}%`}
-                    stroke="rgba(147,112,219,0.2)"
-                    strokeWidth="0.5"
-                    filter="url(#glow)"
-                    animate={{
-                      opacity: [0, 0.4, 0],
-                    }}
-                    transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      delay: i * 0.3,
-                    }}
-                  />
-                )}
-              </g>
-            )
-          )}
-        </svg>
-      </motion.div>
-
-      {/* Subtle Grid Animation - reduced on mobile */}
-      <motion.div
-        className="absolute inset-0 opacity-[0.1] md:opacity-[0.5]"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(147,112,219,0.15) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(147,112,219,0.15) 1px, transparent 1px)
-          `,
-          backgroundSize: "60px 60px",
-          filter: "blur(0.5px)",
-        }}
-        animate={{
-          backgroundPosition: ["0px 0px", "60px 60px", "0px 0px"],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-      />
-    </div>
-  );
-};
-
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -738,108 +458,35 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Background Effects */}
-      {/* Desktop: Complex animated background */}
-      <div className="hidden md:block">
-        <AnimatedBackground />
-      </div>
-
-      {/* Mobile: Simplified animated background */}
-      <div className="block md:hidden absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-br from-lavender-500/10 via-transparent to-purple-500/10" />
-        <motion.div
-          className="absolute top-1/4 left-1/4 w-72 h-72 bg-lavender-500/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+      {/* Beams Background */}
+      <motion.div
+        className="fixed inset-0 z-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{
+          duration: 3,
+          delay: 0.5,
+          ease: "easeInOut",
+        }}
+      >
+        <Beams
+          beamWidth={2}
+          beamHeight={20}
+          beamNumber={20}
+          lightColor="#8b5cf6"
+          speed={5}
+          noiseIntensity={2}
+          scale={0.15}
+          rotation={20}
         />
-        <motion.div
-          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1.2, 0.8, 1.2],
-            opacity: [0.4, 0.7, 0.4],
-          }}
-          transition={{
-            duration: 5,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1,
-          }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/2 w-48 h-48 bg-pink-500/15 rounded-full blur-2xl transform -translate-x-1/2 -translate-y-1/2"
-          animate={{
-            rotate: [0, 360],
-            scale: [0.8, 1.1, 0.8],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        />
-
-        {/* Floating particles for mobile */}
-        {Array.from({ length: 15 }, (_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 rounded-full bg-lavender-400/30"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [-20, -80, -20],
-              x: [
-                Math.random() * 30 - 15,
-                Math.random() * 60 - 30,
-                Math.random() * 30 - 15,
-              ],
-              opacity: [0, 0.8, 0],
-              scale: [0, 1.2, 0],
-            }}
-            transition={{
-              duration: Math.random() * 8 + 6,
-              repeat: Infinity,
-              delay: Math.random() * 3,
-              ease: "easeOut",
-            }}
-          />
-        ))}
-
-        {/* Subtle grid for mobile */}
-        <motion.div
-          className="absolute inset-0 opacity-[0.15]"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(147,112,219,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(147,112,219,0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: "40px 40px",
-          }}
-          animate={{
-            backgroundPosition: ["0px 0px", "40px 40px", "0px 0px"],
-          }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        />
-      </div>
+      </motion.div>
 
       {/* Navigation */}
       <header className="fixed top-0 left-0 right-0 z-50 w-full">
         <motion.div className="transition-all duration-300 ease-out border-y p-2 border-gray-800/50 bg-gray-950/80 backdrop-blur-xl lg:mt-4 lg:max-w-7xl lg:mx-auto lg:rounded-3xl">
           <div className="flex  items-center justify-between px-4 sm:px-16">
             <Link href="/" className="flex items-center space-x-2 group">
-              <div className="relative group/logo">
+              <div className="relative group/logo hidden md:block">
                 <Link2 className="h-6 w-6 text-lavender-400 group-hover/logo:hidden transition-all duration-200 group-hover:-rotate-45 block" />
                 <Unlink className="h-6 w-6 text-lavender-400/80 group-hover/logo:text-lavender-400 transition-all duration-200 group-hover/logo:block hidden" />
               </div>
@@ -878,7 +525,7 @@ export default function LandingPage() {
                 style={{
                   borderRadius: containerRadius,
                 }}
-                className="hidden sm:block transition-all duration-300 ease-out"
+                className="hidden md:block transition-all duration-300 ease-out"
               >
                 <button
                   onClick={handleAccessRequest}
@@ -892,107 +539,180 @@ export default function LandingPage() {
               <div className="md:hidden relative">
                 <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="p-2 rounded-lg hover:bg-gray-800/50 transition-colors duration-300"
+                  className={`p-2 rounded-lg transition-colors duration-300 ${
+                    isMenuOpen
+                      ? "fixed top-4 right-4 z-[110] hover:bg-black/10"
+                      : "relative hover:bg-gray-800/50"
+                  }`}
                 >
                   {isMenuOpen ? (
-                    <X className="h-5 w-5 text-gray-400" />
+                    <Unlink className="h-5 w-5 text-black" />
                   ) : (
-                    <Menu className="h-5 w-5 text-gray-400" />
+                    <Link2 className="h-5 w-5 -rotate-45 text-lavender-400" />
                   )}
                 </button>
-
-                {/* Simple Dropdown Menu */}
-                {isMenuOpen && (
-                  <motion.div
-                    className="absolute right-0 top-12 w-48 bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-lg shadow-xl z-50"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="py-2">
-                      <Link
-                        href="#features"
-                        className="block px-4 py-2 text-gray-300 hover:text-lavender-400 hover:bg-gray-800/50 transition-colors duration-200"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        Features
-                      </Link>
-                      <Link
-                        href="#demo"
-                        className="block px-4 py-2 text-gray-300 hover:text-lavender-400 hover:bg-gray-800/50 transition-colors duration-200"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        Demo
-                      </Link>
-                      <Link
-                        href="#workflow"
-                        className="block px-4 py-2 text-gray-300 hover:text-lavender-400 hover:bg-gray-800/50 transition-colors duration-200"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        Workflow
-                      </Link>
-                      <div className="border-t border-gray-700/50 my-2"></div>
-                      <button
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          handleAccessRequest();
-                        }}
-                        className="block w-full text-left px-4 py-2 text-lavender-400 hover:text-white hover:bg-lavender-600/20 transition-colors duration-200"
-                      >
-                        {hasAccess ? "Continue Building" : "Get Access"}
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
               </div>
             </div>
           </div>
         </motion.div>
       </header>
+
+      {/* Full Screen Mobile Menu Overlay */}
+      {isMenuOpen && (
+        <motion.div
+          className="fixed inset-0 bg-lavender-400 z-[100] flex flex-col items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {/* Close Button */}
+          <button
+            onClick={() => setIsMenuOpen(false)}
+            className="fixed top-2 right-6 z-[110] p-2 rounded-lg hover:bg-black/10 transition-colors duration-300"
+          >
+            <Unlink className="h-5 w-5 text-black" />
+          </button>
+
+          <div className="flex flex-col items-center space-y-12">
+            <Link
+              href="#features"
+              className="text-black text-4xl font-bold hover:text-gray-800 transition-colors duration-200"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Features
+            </Link>
+            <Link
+              href="#demo"
+              className="text-black text-4xl font-bold hover:text-gray-800 transition-colors duration-200"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Demo
+            </Link>
+            <Link
+              href="#workflow"
+              className="text-black text-4xl font-bold hover:text-gray-800 transition-colors duration-200"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Workflow
+            </Link>
+            <button
+              onClick={() => {
+                setIsMenuOpen(false);
+                handleAccessRequest();
+              }}
+              className="text-black text-4xl font-bold hover:text-gray-800 transition-colors duration-200"
+            >
+              {hasAccess ? "Continue Building" : "Get Access"}
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Hero Section */}
       <main className="relative z-10 px-4 sm:px-6 py-24 sm:py-32 mt-16 sm:mt-0">
         <div className="max-w-8xl mx-auto">
           <div className="text-center max-w-7xl mx-auto">
-            {/* Hero Badge */}
-            <div className="inline-flex items-center px-4 py-2 rounded-full bg-gray-900/50 border border-gray-700/50 text-sm text-gray-300 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <Sparkles className="h-4 w-4 text-lavender-400 mr-2" />
-              <span>Chain LLMs Together</span>
-              <div className="ml-2 w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
-            </div>
+            <div className="flex flex-col items-center justify-center min-h-[75vh]">
+              {/* Hero Badge */}
+              <div className="inline-flex items-center px-4 py-2 rounded-full bg-gray-900/50 border border-gray-700/50 text-sm text-gray-300 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <Sparkles className="h-4 w-4 text-lavender-400 mr-2" />
+                <span>Chain LLMs Together</span>
+                <div className="ml-2 w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
+              </div>
 
-            {/* Hero Title */}
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-              Build Powerful
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-lavender-400 via-purple-400 to-lavender-500 relative">
-                LLM Chains
-                <div className="absolute inset-0 bg-gradient-to-r from-lavender-400/20 via-purple-400/20 to-lavender-500/20 blur-2xl"></div>
-              </span>
-            </h1>
+              {/* Hero Title */}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+                <div className="flex flex-wrap justify-center items-center gap-2 lg:gap-4 mb-4 text-2xl sm:text-4xl lg:text-5xl">
+                  <span>Use</span>
+                  <RotatingText
+                    texts={[
+                      "Claude",
+                      "ChatGPT",
+                      "Gemini",
+                      "Grok",
+                      "Perplexity",
+                    ]}
+                    rotationInterval={2000}
+                    className="bg-lavender-500 px-2 rounded-lg"
+                    mainClassName="inline-block"
+                    staggerFrom={"last"}
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    exit={{ y: "-120%" }}
+                    staggerDuration={0.025}
+                    splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
+                    transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                  />
+                  ,
+                  <RotatingText
+                    texts={[
+                      "Claude",
+                      "ChatGPT",
+                      "Gemini",
+                      "Grok",
+                      "Perplexity",
+                    ]}
+                    rotationInterval={2500}
+                    className="bg-lavender-500 px-2 rounded-lg"
+                    mainClassName="inline-block"
+                    staggerFrom={"last"}
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    exit={{ y: "-120%" }}
+                    staggerDuration={0.025}
+                    splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
+                    transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                  />
+                  <span>and</span>
+                  <RotatingText
+                    texts={[
+                      "Claude",
+                      "ChatGPT",
+                      "Gemini",
+                      "Grok",
+                      "Perplexity",
+                    ]}
+                    rotationInterval={3000}
+                    className="bg-lavender-500 px-2 rounded-lg"
+                    mainClassName="inline-block"
+                    staggerFrom={"last"}
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    exit={{ y: "-120%" }}
+                    staggerDuration={0.025}
+                    splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
+                    transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                  />
+                </div>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-lavender-400 via-purple-400 to-lavender-500 relative block">
+                  Side by Side
+                  <div className="absolute inset-0 bg-gradient-to-r from-lavender-400/20 via-purple-400/20 to-lavender-500/20 blur-2xl"></div>
+                </span>
+              </h1>
 
-            {/* Hero Subtitle */}
-            <p className="text-lg sm:text-xl text-gray-400 mb-12 max-w-4xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
-              ChatGPT, Claude, Gemini, Grok, and more—all your favorite LLMs,
-              one intuitive workspace.
-            </p>
+              {/* Hero Subtitle */}
+              <p className="text-lg sm:text-xl text-gray-400 mb-12 max-w-4xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
+                All your favorite LLMs, one intuitive workspace.
+              </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-row gap-4 justify-center mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-600">
-              <button
-                onClick={handleAccessRequest}
-                className="group inline-flex items-center justify-center bg-lavender-600/20 hover:bg-lavender-600/30 text-lavender-400 border border-lavender-600/50 hover:border-lavender-600/10 lg:px-8 lg:py-4 px-4 py-2 rounded-xl text-sm lg:text-lg font-medium transition-all duration-300 shadow-2xl hover:shadow-lavender-500/25 relative overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                <Zap className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
-                {hasAccess ? "Start Building" : "Get Beta Access"}
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </button>
+              {/* CTA Buttons */}
+              <div className="flex flex-row gap-4 justify-center mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-600">
+                <button
+                  onClick={handleAccessRequest}
+                  className="group inline-flex items-center justify-center bg-lavender-600/20 hover:bg-lavender-600/30 text-lavender-400 border border-lavender-600/50 hover:border-lavender-600/10 lg:px-8 lg:py-4 px-4 py-2 rounded-xl text-xs sm:text-sm lg:text-lg font-medium transition-all duration-300 shadow-2xl hover:shadow-lavender-500/25 relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                  <Zap className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
+                  {hasAccess ? "Start Building" : "Access Beta"}
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
+                </button>
 
-              <button className="group inline-flex items-center justify-center bg-gray-900/50 hover:bg-gray-800/50 text-white lg:px-8 lg:py-4 px-4 py-2 rounded-xl font-medium transition-all duration-300 border border-gray-700/50 hover:border-lavender-500/50 text-sm lg:text-lg">
-                <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
-                Watch Demo
-              </button>
+                <button className="group inline-flex items-center justify-center bg-gray-900/50 hover:bg-gray-800/50 text-white lg:px-8 lg:py-4 px-4 py-2 rounded-xl font-medium transition-all duration-300 border border-gray-700/50 hover:border-lavender-500/50 text-xs sm:text-sm lg:text-lg">
+                  <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
+                  Watch Demo
+                </button>
+              </div>
             </div>
 
             {/* Chain Interface Preview */}
@@ -1014,6 +734,7 @@ export default function LandingPage() {
           </div>
         </div>
       </main>
+
       {/* Features Section */}
       <section
         id="features"
@@ -1233,170 +954,116 @@ export default function LandingPage() {
       {/* Demo Section */}
       <section id="demo" className="relative z-10 px-4 sm:px-6 py-20 sm:py-32">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div className="animate-in fade-in slide-in-from-left-8 duration-700">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
-                See It In Action
-              </h2>
-              <p className="text-lg sm:text-xl text-gray-400 mb-8">
-                Watch how easy it is to create powerful AI workflows with our
-                intuitive interface.
-              </p>
-
-              <div className="space-y-6">
-                {[
-                  {
-                    icon: Code,
-                    title: "Visual Chain Builder",
-                    description:
-                      "Drag and drop interface to build complex workflows",
-                  },
-                  {
-                    icon: Database,
-                    title: "Real-time Processing",
-                    description:
-                      "See your chains execute in real-time with live updates",
-                  },
-                  {
-                    icon: Sparkles,
-                    title: "Smart Optimization",
-                    description:
-                      "Automatic optimization for better performance and cost",
-                  },
-                ].map((item, index) => (
-                  <div key={index} className="flex items-start space-x-4">
-                    <div className="bg-lavender-600/20 w-10 h-10 rounded-lg flex items-center justify-center mt-1 flex-shrink-0">
-                      <item.icon className="h-5 w-5 text-lavender-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">
-                        {item.title}
-                      </h3>
-                      <p className="text-gray-400">{item.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Demo Video Placeholder */}
-            <div className="relative rounded-xl animate-in fade-in slide-in-from-right-8 duration-700 delay-300">
-              <video
-                src="/videos/chained_demo_v2.mp4"
-                autoPlay
-                muted
-                loop
-                playsInline
-                disablePictureInPicture
-                controlsList="nodownload nofullscreen noremoteplayback"
-                onContextMenu={(e) => e.preventDefault()}
-                className="w-full h-auto rounded-xl opacity-90 hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-      {/* Workflow Section */}
-      <section
-        id="workflow"
-        className="relative z-10 px-4 sm:px-6 py-20 sm:py-32"
-      >
-        <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
-            Choose Your Models
-          </h2>
-          <p className="text-lg sm:text-xl text-gray-400 mb-16 max-w-3xl mx-auto">
-            Mix and match from the best AI models to create your perfect
-            workflow
-          </p>
-
-          <div className="bg-gray-900/30 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 sm:p-8 max-w-5xl mx-auto relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-lavender-500/3 to-purple-500/3"></div>
-
-            <div className="relative">
-              <div className="mb-8">
-                <h3 className="text-2xl font-semibold text-white mb-4">
-                  Available Models
-                </h3>
-                <p className="text-gray-400">
-                  Select and chain together powerful AI models
+          <div className="border border-gray-700/50 rounded-3xl bg-gray-900/30 backdrop-blur-xl p-12 lg:p-16 relative overflow-hidden">
+            <div className="grid lg:grid-cols-2 gap-0 lg:gap-16 items-center min-h-[400px]">
+              {/* Header - Left side on desktop, top on mobile */}
+              <div className="text-left animate-in fade-in slide-in-from-left-8 duration-700">
+                <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+                  See It In Action
+                </h2>
+                <p className="text-lg sm:text-xl text-gray-400 lg:max-w-none max-w-3xl mx-auto lg:mx-0">
+                  Just look at it go!
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-                {[
-                  {
-                    name: "GPT-4",
-                    provider: "OpenAI",
-                    color: "from-green-400 to-green-600",
-                    letter: "G",
-                  },
-                  {
-                    name: "Claude",
-                    provider: "Anthropic",
-                    color: "from-orange-400 to-orange-600",
-                    letter: "C",
-                  },
-                  {
-                    name: "Gemini",
-                    provider: "Google",
-                    color: "from-blue-400 to-blue-600",
-                    letter: "G",
-                  },
-                  {
-                    name: "Llama",
-                    provider: "Meta",
-                    color: "from-purple-400 to-purple-600",
-                    letter: "L",
-                  },
-                  {
-                    name: "Mistral",
-                    provider: "Mistral AI",
-                    color: "from-pink-400 to-pink-600",
-                    letter: "M",
-                  },
-                ].map((model, index) => (
-                  <div
-                    key={index}
-                    className={`group bg-gray-800/50 border border-gray-600/50 rounded-xl p-4 text-center hover:border-lavender-500/50 transition-all duration-300 hover:bg-gray-800/70 cursor-pointer animate-in fade-in slide-in-from-bottom-4 `}
-                    style={{ animationDelay: `${index * 100}ms` }}
+              {/* Card Swap Demo - Right side on desktop, bottom on mobile */}
+              <div className="relative h-[200px] md:h-[500px] flex items-center justify-center lg:justify-end animate-in fade-in slide-in-from-right-8 duration-700 delay-300">
+                <div className="w-full">
+                  <CardSwap
+                    width={500}
+                    height={300}
+                    cardDistance={45}
+                    verticalDistance={55}
+                    delay={5000}
+                    pauseOnHover={true}
+                    skewAmount={6}
+                    easing="elastic"
                   >
-                    <div
-                      className={`w-10 h-10 bg-gradient-to-br ${model.color} rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold text-sm group-hover:scale-110 transition-transform duration-300`}
-                    >
-                      {model.letter}
-                    </div>
-                    <h4 className="text-white font-medium text-sm mb-1">
-                      {model.name}
-                    </h4>
-                    <p className="text-gray-400 text-xs">{model.provider}</p>
-                  </div>
-                ))}
-              </div>
+                    <Card className="bg-gray-950/90 backdrop-blur-lg border-gray-800/50 shadow-2xl overflow-hidden">
+                      <div className="px-4 py-2 h-full flex flex-col">
+                        <div className="flex items-center gap-2 mb-3">
+                          <h3 className="text-lg font-normal text-white">
+                            Smooth
+                          </h3>
+                          <p className="text-gray-400 text-sm">
+                            This is a demo of the smooth feature.
+                          </p>
+                        </div>
+                        <div className="flex-1 rounded-lg overflow-hidden bg-gray-200">
+                          <video
+                            src="/videos/chained_demo_v2.mp4"
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            disablePictureInPicture
+                            controlsList="nodownload nofullscreen noremoteplayback"
+                            onContextMenu={(e) => e.preventDefault()}
+                            className="w-full h-full object-cover pointer-events-none"
+                          />
+                        </div>
+                      </div>
+                    </Card>
 
-              <div className="bg-gray-800/30 rounded-xl p-6 mb-6 border border-gray-700/30">
-                <div className="flex items-center space-x-2 text-sm text-gray-400 mb-3">
-                  <ChevronRight className="h-4 w-4 text-lavender-400" />
-                  <span>Chain Preview</span>
+                    <Card className="bg-gray-950/90 backdrop-blur-lg border-gray-600/50 shadow-2xl overflow-hidden">
+                      <div className="px-4 py-2 h-full flex flex-col">
+                        <div className="flex items-center gap-2 mb-3">
+                          <h3 className="text-lg font-normal text-white">
+                            Customizable
+                          </h3>
+                          <p className="text-gray-400 text-sm">
+                            This is a demo of the smooth feature.
+                          </p>
+                        </div>
+                        <div className="flex-1 rounded-lg overflow-hidden bg-gray-200">
+                          <video
+                            src="/videos/chained_demo_v2.mp4"
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            disablePictureInPicture
+                            controlsList="nodownload nofullscreen noremoteplayback"
+                            onContextMenu={(e) => e.preventDefault()}
+                            className="w-full h-full object-cover pointer-events-none"
+                          />
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="bg-gray-950/90 backdrop-blur-lg border-gray-600/50 shadow-2xl overflow-hidden">
+                      <div className="px-4 py-2 h-full flex flex-col">
+                        <div className="flex items-center gap-2 mb-3">
+                          <h3 className="text-lg font-normal text-white">
+                            Reliable
+                          </h3>
+                          <p className="text-gray-400 text-sm">
+                            This is a demo of the smooth feature.
+                          </p>
+                        </div>
+                        <div className="flex-1 rounded-lg overflow-hidden bg-gray-200">
+                          <video
+                            src="/videos/chained_demo_v2.mp4"
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            disablePictureInPicture
+                            controlsList="nodownload nofullscreen noremoteplayback"
+                            onContextMenu={(e) => e.preventDefault()}
+                            className="w-full h-full object-cover pointer-events-none"
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  </CardSwap>
                 </div>
-                <p className="text-gray-300 text-left">
-                  Connect models in sequence to process inputs step by step,
-                  with each model building on the previous output.
-                </p>
               </div>
-
-              <button
-                onClick={handleAccessRequest}
-                className="inline-flex items-center bg-lavender-600/20 border border-lavender-600/50 hover:bg-lavender-600/30 text-lavender-400 px-8 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group"
-              >
-                <Zap className="mr-2 h-5 w-5" />
-                {hasAccess ? "Create Your Chain" : "Get Access to Build"}
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
-              </button>
             </div>
           </div>
         </div>
       </section>
+
       {/* Final CTA Section */}
       <section className="relative z-10 px-4 sm:px-6 py-20 sm:py-32">
         <div className="max-w-4xl mx-auto text-center">
@@ -1424,8 +1091,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
       {/* Footer */}
-      <footer className="relative z-10 px-4 sm:px-6 py-12 bg-gray-950/80 backdrop-blur-xl border-t border-gray-800/50">
+      <footer className="relative z-10 p-8 xl:p-16 xl:pb-8 bg-gradient-to-b from-gray-950/80 to-transparent max-w-7xl mx-auto rounded-t-3xl backdrop-blur-2xl border border-x-0 lg:border-x border-gray-800/50 border-b-0">
         <div className="max-w-7xl mx-auto">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="lg:col-span-2">
@@ -1438,26 +1106,11 @@ export default function LandingPage() {
                   Ch<span className="text-lavender-400">ai</span>ned
                 </span>
               </Link>
-              <p className="text-gray-400 mb-6 max-w-md">
-                Create powerful AI workflows by chaining multiple models
-                together for enhanced results.
-              </p>
-              <div className="flex space-x-4">
-                <Link href="https://www.linkedin.com/company/chained-ai">
-                  <Linkedin className="h-6 w-6 text-lavender-400" />
-                </Link>
-                <Link href="https://www.x.com/chained_ai">
-                  <XIcon className="h-6 w-6 text-lavender-400" />
-                </Link>
-                <Link href="https://www.instagram.com/chained_ai">
-                  <Instagram className="h-6 w-6 text-lavender-400" />
-                </Link>
-              </div>
             </div>
 
-            <div>
+            <div className="lg:text-right">
               <h3 className="text-white font-semibold mb-4">Product</h3>
-              <ul className="space-y-3 text-gray-400">
+              <ul className="space-y-4 text-gray-400 text-xs lg:text-sm">
                 <li>
                   <Link
                     href="#features"
@@ -1493,9 +1146,9 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            <div>
+            <div className="lg:text-right hidden lg:block">
               <h3 className="text-white font-semibold mb-4">Company</h3>
-              <ul className="space-y-3 text-gray-400">
+              <ul className="space-y-4 text-gray-400 text-xs lg:text-sm">
                 <li>
                   <Link
                     href="#about"
@@ -1534,20 +1187,26 @@ export default function LandingPage() {
 
           <div className="border-t border-gray-800/50 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2025 Chained. All rights reserved.
+              © 2025 ChainedChat AI. All rights reserved.
             </p>
-            <div className="flex space-x-6 mt-4 sm:mt-0">
-              <Link
-                href="#privacy"
-                className="text-gray-400 text-sm hover:text-lavender-400 transition-colors duration-300"
-              >
-                Privacy Policy
+            <div className="flex space-x-4 mt-4 sm:mt-0">
+              <Link href="https://www.linkedin.com/company/chained-chat">
+                <Linkedin className="h-6 w-6 text-lavender-400" />
               </Link>
-              <Link
-                href="#terms"
-                className="text-gray-400 text-sm hover:text-lavender-400 transition-colors duration-300"
-              >
-                Terms of Service
+              <Link href="https://www.x.com/chainedchat">
+                <FaXTwitter className="h-6 w-6 text-lavender-400" />
+              </Link>
+              <Link href="https://www.instagram.com/chainedchat">
+                <Instagram className="h-6 w-6 text-lavender-400" />
+              </Link>
+              <Link href="https://www.youtube.com/@chainedchat">
+                <FaYoutube className="h-6 w-6 text-lavender-400" />
+              </Link>
+              <Link href="https://www.tiktok.com/@chainedchat">
+                <FaTiktok className="h-6 w-6 text-lavender-400" />
+              </Link>
+              <Link href="https://www.threads.net/@chainedchat">
+                <FaThreads className="h-6 w-6 text-lavender-400" />
               </Link>
             </div>
           </div>
