@@ -4,7 +4,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { auth } from "@clerk/nextjs/server";
 import { streamLLM } from "../../../lib/llm-stream";
-import { executeAgentInternally } from "../../../lib/internal-agent-execution";
+
 import {
   parseSupervisorPrompt,
   buildSupervisorPrompt,
@@ -17,7 +17,36 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(request: NextRequest) {
   try {
-    const { sessionId, userInput } = await request.json();
+    const requestBody = await request.json();
+    const { sessionId } = requestBody;
+
+    // Handle both legacy string format and new structured format
+    let userInput: string;
+    let references: any[] = [];
+    let fullContextForAI: string;
+
+    if (typeof requestBody.userInput === "string") {
+      // Legacy format - just a string
+      userInput = requestBody.userInput;
+      fullContextForAI = userInput;
+    } else if (requestBody.userInput) {
+      // New structured format - parse JSON
+      try {
+        const parsed = JSON.parse(requestBody.userInput);
+        userInput = parsed.userInput;
+        references = parsed.references || [];
+        fullContextForAI = parsed.fullContext || parsed.userInput;
+      } catch (e) {
+        // Fallback to treating as string if JSON parsing fails
+        userInput = requestBody.userInput;
+        fullContextForAI = userInput;
+      }
+    } else {
+      // Direct properties (alternative structured format)
+      userInput = requestBody.userInput || "";
+      references = requestBody.references || [];
+      fullContextForAI = requestBody.fullContext || userInput;
+    }
 
     if (!sessionId || !userInput) {
       return NextResponse.json(
@@ -59,14 +88,16 @@ export async function POST(request: NextRequest) {
       sessionId: sessionId as Id<"chatSessions">,
     });
 
-    // Parse user input for @mentions
+    // Parse user input for @mentions (use fullContext for AI processing)
     const recentSteps = agentSteps.slice(-5);
-    const parsedPrompt = parseSupervisorPrompt(userInput, recentSteps);
+    const parsedPrompt = parseSupervisorPrompt(fullContextForAI, recentSteps);
     const { valid: validMentions, invalid: invalidMentions } =
       validateAgentMentions(parsedPrompt.mentionTasks, recentSteps);
 
     // 🔍 DEBUG - Critical supervisor flow debugging
-    console.log("🔍 DEBUG - User input:", userInput);
+    console.log("🔍 DEBUG - Clean user input:", userInput);
+    console.log("🔍 DEBUG - References:", references);
+    console.log("🔍 DEBUG - Full context for AI:", fullContextForAI);
     console.log("🔍 DEBUG - Parsed mentions:", parsedPrompt.mentionTasks);
     console.log("🔍 DEBUG - Valid mentions:", validMentions);
     console.log("🔍 DEBUG - Invalid mentions:", invalidMentions);
@@ -76,7 +107,7 @@ export async function POST(request: NextRequest) {
       agentSteps.map((s) => ({ index: s.index, name: s.name }))
     );
 
-    // Build supervisor context
+    // Build supervisor context (use fullContext for AI processing)
     const supervisorHistory = supervisorTurns
       .slice(-3) // Last 3 turns for context
       .map(
@@ -86,7 +117,7 @@ export async function POST(request: NextRequest) {
       .join("\n\n");
 
     const supervisorPrompt = buildSupervisorPrompt(
-      userInput,
+      fullContextForAI,
       recentSteps,
       supervisorHistory
     );
@@ -98,10 +129,11 @@ export async function POST(request: NextRequest) {
     );
     console.log("🔍 DEBUG - Supervisor history:", supervisorHistory);
 
-    // Start supervisor turn in database
+    // Start supervisor turn in database (store clean userInput and references separately)
     const turnId = await convex.mutation(api.mutations.startSupervisorTurn, {
       sessionId: sessionId as Id<"chatSessions">,
-      userInput,
+      userInput, // Clean user input without reference context
+      references: references.length > 0 ? references : undefined,
     });
 
     // Create streaming response
@@ -121,7 +153,8 @@ export async function POST(request: NextRequest) {
             )
           );
 
-          // NEW FLOW: For @mentions, execute agents FIRST, then supervisor completion
+          // CONVERSATION-ISOLATED FLOW: For @mentions, execute agents in conversation-only mode
+          // This preserves original agent step data while enabling supervisor interactions
           if (validMentions.length > 0) {
             // 🔍 DEBUG - Agent execution flow
             console.log(
@@ -202,15 +235,16 @@ export async function POST(request: NextRequest) {
                 console.log("🚀 AGENT MODEL:", agentStep.model);
                 console.log("🚀 AGENT INDEX:", mention.agentIndex);
 
-                // SINGLE UNIFIED STREAM - eliminates duplicate prompts and streaming
+                // CONVERSATION-ISOLATED STREAM - preserves original agent data
                 let agentResponse = "";
                 await streamLLM({
                   model: agentStep.model,
                   prompt: agentPrompt,
+                  // NO stepId passed - prevents original agentStep data modification
                   onChunk: async (chunk: string) => {
                     agentResponse += chunk;
 
-                    // Stream only to agent column (no supervisor stream duplication)
+                    // Stream only to conversation UI (no agentStep data pollution)
                     controller.enqueue(
                       new TextEncoder().encode(
                         `data: ${JSON.stringify({
@@ -238,7 +272,7 @@ export async function POST(request: NextRequest) {
                       )
                     );
 
-                    // Store in conversation history for persistence
+                    // Store ONLY in conversation history - DO NOT modify original agentStep
                     await convex.mutation(
                       api.mutations.appendAgentConversation,
                       {

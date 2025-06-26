@@ -324,7 +324,7 @@ export function Sidebar({
         }`}
       >
         {/* Desktop Header */}
-        <div className="border-b-2 border-gray-700 flex items-center justify-center relative group">
+        <div className="flex items-center justify-center relative group">
           {isCollapsed ? (
             // Collapsed state - just the link icon
             <button
@@ -363,7 +363,6 @@ export function Sidebar({
                       className="rotate-0 group-hover/header-icon:block hidden transition-transform duration-200 ease-out"
                     />
                   </span>
-                  Ch<span className="text-lavender-400">ai</span>ned
                 </h1>
               </Link>
               <button
@@ -599,11 +598,11 @@ export function Sidebar({
                                 }
                                 onBlur={handleSaveEdit}
                                 onKeyDown={handleKeyPress}
-                                className="flex-1 bg-gray-700 text-white px-2 py-1 rounded text-sm focus:outline-none focus:ring-2 focus:ring-lavender-400 transition-all duration-200 focus:scale-105"
+                                className="flex-1 bg-gray-700 text-white px-2 rounded text-xs focus:outline-none focus:ring-2 focus:ring-lavender-400 transition-all duration-200 focus:scale-105"
                                 autoFocus
                               />
                             ) : (
-                              <span className="truncate flex-1 transition-colors duration-200">
+                              <span className="line-clamp-1 flex-1 transition-colors duration-200">
                                 <HighlightedText
                                   text={chat.title}
                                   searchQuery={searchQuery}

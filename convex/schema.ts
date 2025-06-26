@@ -262,6 +262,27 @@ export default defineSchema({
     userId: v.id("users"), // Direct user association for easier querying
     userInput: v.string(),
     supervisorResponse: v.string(),
+    // Store copy references separately from user input
+    references: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          sourceType: v.union(
+            v.literal("user-prompt"),
+            v.literal("agent-response"),
+            v.literal("code-block"),
+            v.literal("supervisor-response")
+          ),
+          agentIndex: v.optional(v.number()),
+          agentName: v.optional(v.string()),
+          agentModel: v.optional(v.string()),
+          content: v.string(),
+          truncatedPreview: v.string(),
+          timestamp: v.number(),
+          sessionId: v.optional(v.string()),
+        })
+      )
+    ),
     parsedMentions: v.optional(
       v.array(
         v.object({

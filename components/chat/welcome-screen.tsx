@@ -434,7 +434,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                       className={clsx(
                         "flex items-center justify-center gap-1 md:gap-3",
                         "px-2 sm:px-3 md:px-6 py-2.5 md:py-3",
-                        "bg-gray-800/70 border border-gray-600/50 rounded-lg",
+                        "bg-gray-900/50 border border-gray-600/50 rounded-3xl",
                         "text-gray-300 hover:text-lavender-400",
                         "hover:bg-gray-700/70 hover:border-lavender-400/50",
                         "backdrop-blur-sm transition-all duration-200 hover:scale-105",
@@ -469,7 +469,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                 >
                   <button
                     onClick={handleBackToCategories}
-                    className="flex items-center gap-2 px-3 md:px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500/50 rounded-lg text-lavender-400 hover:text-white transition-all duration-200 group"
+                    className="flex items-center gap-2 px-3 md:px-4 py-2 bg-gray-900/50 hover:bg-gray-700/50 border border-gray-600/50 hover:border-gray-500/50 rounded-3xl text-lavender-400 hover:text-white transition-all duration-200 group"
                   >
                     <ArrowLeft
                       size={14}

@@ -6,7 +6,6 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { MarkdownRenderer } from "../chat/markdown-renderer";
 import { MessageBubble } from "../chat/message-bubble";
-import { ChainProgress } from "../performance/chain-progress";
 import { SupervisorConversationContent } from "./supervisor-conversation-content";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -115,6 +114,7 @@ export function CollapsibleAgentExecution({
     return "text-gray-400";
   };
 
+  // Always prioritize original chain data - never show supervisor-contaminated content
   const hasContent =
     agentStep &&
     (agentStep.response ||
@@ -123,7 +123,7 @@ export function CollapsibleAgentExecution({
       agentStep.isStreaming);
 
   return (
-    <div className="border border-gray-700/30 rounded-lg text-xs overflow-hidden bg-gray-800/70">
+    <div className="border border-gray-600/75 rounded-lg text-xs overflow-hidden bg-gray-800/70">
       {/* Collapsed Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -162,7 +162,7 @@ export function CollapsibleAgentExecution({
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-3 space-y-3 border-t border-gray-700/30">
+            <div className="px-3 pb-3 space-y-3 border-t border-gray-600/75">
               {/* Task Prompt */}
               <div className="pt-3">
                 <div className="text-sm text-gray-400 leading-relaxed">
@@ -170,7 +170,7 @@ export function CollapsibleAgentExecution({
                 </div>
               </div>
 
-              {/* Agent Response */}
+              {/* Original Chain Response - isolated from supervisor interactions */}
               {hasContent && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -245,8 +245,19 @@ export function SupervisorInterface({
   supervisorStatus,
   supervisorStreamContent = {},
 }: SupervisorInterfaceProps) {
-  // Local state for maximize functionality
+  // Enhanced modal state for professional resize functionality
   const [isMaximized, setIsMaximized] = useState(false);
+  const [modalHeight, setModalHeight] = useState(() => {
+    // Restore user's preferred height from localStorage
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("supervisor-modal-height");
+      return saved ? parseInt(saved) : 320;
+    }
+    return 320;
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartY, setDragStartY] = useState(0);
+  const [dragStartHeight, setDragStartHeight] = useState(0);
   // Chat input state
   const [prompt, setPrompt] = useState("");
   const [showAgentDropdown, setShowAgentDropdown] = useState(false);
@@ -257,10 +268,8 @@ export function SupervisorInterface({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-hide functionality
-  const [isInputHidden, setIsInputHidden] = useState(true);
+  // Hover state for better UX
   const [isHovering, setIsHovering] = useState(false);
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Get sidebar state for positioning
@@ -277,7 +286,13 @@ export function SupervisorInterface({
     clearAllReferences,
     getTrackedCopy,
     addReference,
+    setSession,
   } = useCopyTracking();
+
+  // Set current session for copy tracking
+  useEffect(() => {
+    setSession(sessionId);
+  }, [sessionId, setSession]);
 
   // Modal data
   const supervisorTurns = useQuery(api.queries.getSupervisorTurns, {
@@ -287,7 +302,7 @@ export function SupervisorInterface({
   // Available agents for @mention autocomplete
   const availableAgents: AgentOption[] = agentSteps.map((step, index) => ({
     index,
-    name: step.name || `Agent ${index + 1}`,
+    name: step.name || `LLM ${index + 1}`,
     model: step.model,
   }));
 
@@ -305,25 +320,35 @@ export function SupervisorInterface({
     return {};
   };
 
-  // Handle ESC key for maximize exit
+  // Enhanced keyboard shortcuts for modal control
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isMaximized) {
-        setIsMaximized(false);
+      // Only handle shortcuts when supervisor modal is open
+      if (!isOpen) return;
+
+      if (e.key === "Escape") {
+        if (isMaximized) {
+          setIsMaximized(false);
+        } else if (isDragging) {
+          setIsDragging(false);
+        }
+      }
+
+      // Ctrl/Cmd + M to toggle maximize (when modal is focused)
+      if ((e.metaKey || e.ctrlKey) && e.key === "m" && isOpen) {
+        e.preventDefault();
+        handleMaximizeToggle();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isMaximized]);
+  }, [isMaximized, isOpen, isDragging]);
 
   // Input handling functions
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setPrompt(value);
-
-    // Reset hide timer on interaction
-    resetHideTimer();
 
     // Trigger typing indicator
     if (onSupervisorTyping) {
@@ -401,9 +426,22 @@ export function SupervisorInterface({
         onSupervisorTyping(false);
       }
 
-      // Format message with references for supervisor context
-      let messageContent = prompt.trim();
+      // Prepare structured data for API
+      const cleanUserInput = prompt.trim();
+      const referencesData = references.map((ref) => ({
+        id: ref.id,
+        sourceType: ref.sourceType,
+        agentIndex: ref.agentIndex,
+        agentName: ref.agentName,
+        agentModel: ref.agentModel,
+        content: ref.content,
+        truncatedPreview: ref.truncatedPreview,
+        timestamp: ref.timestamp,
+        sessionId: ref.sessionId,
+      }));
 
+      // Construct full context message for AI (keeping existing logic for AI)
+      let fullContextMessage = cleanUserInput;
       if (references.length > 0) {
         const referencesContext = references
           .map((ref, index) => {
@@ -413,10 +451,17 @@ export function SupervisorInterface({
           })
           .join("\n\n");
 
-        messageContent = `${messageContent}\n\n--- References ---\n${referencesContext}`;
+        fullContextMessage = `${cleanUserInput}\n\n--- References ---\n${referencesContext}`;
       }
 
-      onSupervisorSend(messageContent);
+      // Send structured data to API
+      onSupervisorSend(
+        JSON.stringify({
+          userInput: cleanUserInput,
+          references: referencesData,
+          fullContext: fullContextMessage, // For AI processing
+        })
+      );
 
       // Clear prompt and references after sending
       setPrompt("");
@@ -471,63 +516,14 @@ export function SupervisorInterface({
     };
   }, []);
 
-  // Auto-hide timer management
-  const resetHideTimer = () => {
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-    }
-
-    // Only start hide timer if input is empty and not hovering
-    if (!prompt.trim() && !isHovering) {
-      hideTimeoutRef.current = setTimeout(() => {
-        setIsInputHidden(true);
-      }, 5000); // 10 seconds
-    }
-  };
-
-  const showInput = () => {
-    setIsInputHidden(false);
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-    }
-  };
-
-  // Reset timer on prompt changes
-  useEffect(() => {
-    if (prompt.trim()) {
-      // If there's text, always show input and clear timer
-      setIsInputHidden(false);
-      if (hideTimeoutRef.current) {
-        clearTimeout(hideTimeoutRef.current);
-      }
-    } else {
-      // If empty, start/reset hide timer
-      resetHideTimer();
-    }
-  }, [prompt, isHovering]);
-
-  // Handle mouse interactions
+  // Handle mouse interactions for basic hover effects
   const handleMouseEnter = () => {
     setIsHovering(true);
-    showInput();
   };
 
   const handleMouseLeave = () => {
     setIsHovering(false);
-    // Start hide timer if input is empty
-    if (!prompt.trim()) {
-      resetHideTimer();
-    }
   };
-
-  // Cleanup hide timer on unmount
-  useEffect(() => {
-    return () => {
-      if (hideTimeoutRef.current) {
-        clearTimeout(hideTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const getStatusText = () => {
     switch (supervisorStatus) {
@@ -555,10 +551,102 @@ export function SupervisorInterface({
     }
   };
 
-  // Handle maximize toggle
+  // Enhanced resize and maximize functionality
   const handleMaximizeToggle = () => {
-    setIsMaximized(!isMaximized);
+    if (isMaximized) {
+      // When minimizing, restore to previous height or default
+      setIsMaximized(false);
+    } else {
+      // When maximizing, go full screen
+      setIsMaximized(true);
+    }
   };
+
+  // Drag resize functionality
+  const handleResizeStart = (e: React.MouseEvent) => {
+    if (isMaximized) return; // Don't allow resize when maximized
+
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStartY(e.clientY);
+    setDragStartHeight(modalHeight);
+  };
+
+  const handleResizeMove = (e: MouseEvent) => {
+    if (!isDragging || isMaximized) return;
+
+    e.preventDefault();
+    const deltaY = dragStartY - e.clientY; // Inverted because we're dragging from top
+    const minHeight =
+      typeof window !== "undefined" && window.innerWidth < 768 ? 250 : 200; // Taller min on mobile
+    const maxHeight =
+      (typeof window !== "undefined" ? window.innerHeight : 800) - 120; // More space for mobile UI
+    const newHeight = Math.max(
+      minHeight,
+      Math.min(maxHeight, dragStartHeight + deltaY)
+    );
+    setModalHeight(newHeight);
+  };
+
+  const handleResizeEnd = () => {
+    setIsDragging(false);
+    // Save user's preferred height to localStorage
+    if (typeof window !== "undefined") {
+      localStorage.setItem("supervisor-modal-height", modalHeight.toString());
+    }
+  };
+
+  // Touch resize for mobile
+  const handleTouchResizeStart = (e: React.TouchEvent) => {
+    if (isMaximized) return;
+
+    e.preventDefault();
+    const touch = e.touches[0];
+    setIsDragging(true);
+    setDragStartY(touch.clientY);
+    setDragStartHeight(modalHeight);
+  };
+
+  const handleTouchResizeMove = (e: TouchEvent) => {
+    if (!isDragging || isMaximized) return;
+
+    e.preventDefault();
+    const touch = e.touches[0];
+    const deltaY = dragStartY - touch.clientY;
+    const minHeight =
+      typeof window !== "undefined" && window.innerWidth < 768 ? 250 : 200; // Taller min on mobile
+    const maxHeight =
+      (typeof window !== "undefined" ? window.innerHeight : 800) - 120; // More space for mobile UI
+    const newHeight = Math.max(
+      minHeight,
+      Math.min(maxHeight, dragStartHeight + deltaY)
+    );
+    setModalHeight(newHeight);
+  };
+
+  // Global mouse/touch event listeners for drag
+  useEffect(() => {
+    if (isDragging) {
+      const handleMouseMove = (e: MouseEvent) => handleResizeMove(e);
+      const handleMouseUp = () => handleResizeEnd();
+      const handleTouchMove = (e: TouchEvent) => handleTouchResizeMove(e);
+      const handleTouchEnd = () => handleResizeEnd();
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("touchmove", handleTouchMove, {
+        passive: false,
+      });
+      document.addEventListener("touchend", handleTouchEnd);
+
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.removeEventListener("touchmove", handleTouchMove);
+        document.removeEventListener("touchend", handleTouchEnd);
+      };
+    }
+  }, [isDragging, dragStartY, dragStartHeight, modalHeight, isMaximized]);
 
   // Regular integrated interface
   return (
@@ -571,11 +659,10 @@ export function SupervisorInterface({
         ${isMaximized ? "top-0 bottom-0" : "bottom-0"}
       `}
       style={{
-        paddingBottom: isInputHidden
-          ? "8px" // No spacing when input is hidden - flush with bottom
-          : typeof window !== "undefined" &&
-              window.innerWidth >= 768 &&
-              !isMaximized
+        paddingBottom:
+          typeof window !== "undefined" &&
+          window.innerWidth >= 768 &&
+          !isMaximized
             ? "max(0.5rem, env(safe-area-inset-bottom))"
             : "0px",
         paddingTop: isMaximized ? "1rem" : "0",
@@ -587,49 +674,51 @@ export function SupervisorInterface({
       <div
         className={`
         w-full flex flex-col items-center justify-end
-        transition-all duration-300 ease-in-out ${isInputHidden ? "h-min" : "h-full"}
+        transition-all duration-300 ease-in-out h-full
         md:max-w-4xl
         ${isMaximized ? "h-full" : ""}
       `}
       >
-        {/* Supervisor Modal/Indicator with smooth animations */}
+        {/* Supervisor Modal/Indicator with enhanced resize functionality */}
         <motion.div
           className={`
-        relative w-[90%] bg-gray-600/25 backdrop-blur-lg mb-2 group border border-gray-600/50 rounded-3xl 
+        relative w-[90%] lg:w-full bg-gray-800 mb-2 group border border-gray-600/50 rounded-3xl 
         shadow-2xl shadow-gray-950/50
         transition-all duration-300 ease-in-out md:max-w-4xl
-        ${isMaximized ? "max-w-full h-full flex flex-col" : ""}
+        ${isMaximized ? "max-w-full h-full flex flex-col" : "flex flex-col"}
         ${
           isOpen
             ? isMaximized
               ? "opacity-100"
-              : "max-h-96 opacity-100 "
+              : "opacity-100"
             : "max-h-16 opacity-95 hover:opacity-100 hover:bg-gray-700/60"
         }
+        ${isDragging ? "select-none" : ""}
       `}
+          style={
+            isOpen && !isMaximized
+              ? { height: `${modalHeight}px`, maxHeight: `${modalHeight}px` }
+              : {}
+          }
           initial={false}
-          animate={{
-            y: !isOpen && isInputHidden ? 144 : 0, // Always 0 when input is hidden and modal is closed
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 500,
-            damping: 25,
-            mass: 0.5,
-            duration: 0.25,
-          }}
         >
-          {/* Toggle Button - absolutely positioned above and centered */}
-          {/* <button
-            type="button"
-            onClick={onToggle}
-            className="absolute -top-6 left-0 right-0 mx-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          >
-            <kbd className="text-gray-400/50 hover:text-gray-400/80 animate-pulse hover:animate-none text-xs font-medium z-20 transition-colors">
-              {isOpen ? "Collapse" : "Open"}
-            </kbd>
-          </button> */}
-          {/* Header - always visible, transforms based on state */}
+          {/* Resize Handle - appears when modal is open but not maximized */}
+          {isOpen && !isMaximized && (
+            <div
+              className={`
+                absolute -top-1 left-1/2 transform -translate-x-1/2 w-12 h-3 
+                flex items-center justify-center cursor-row-resize z-10
+                opacity-0 group-hover:opacity-60 hover:opacity-100 transition-opacity duration-200
+                ${isDragging ? "opacity-100" : ""}
+              `}
+              onMouseDown={handleResizeStart}
+              onTouchStart={handleTouchResizeStart}
+              title="Drag to resize"
+            >
+              <div className="w-8 h-1 bg-gray-400 rounded-full"></div>
+            </div>
+          )}
+
           <div
             className={`
             flex items-center justify-between px-4 group
@@ -639,7 +728,7 @@ export function SupervisorInterface({
                 ? "py-2 border-b border-gray-600/50"
                 : "py-3 hover:border-emerald-400/30"
             }
-            ${isInputHidden && !isOpen ? "hover:bg-gray-700/40 hover:scale-[1.02]" : ""}
+
           `}
             onClick={onToggle}
           >
@@ -658,13 +747,13 @@ export function SupervisorInterface({
                 <>
                   <button
                     onClick={handleMaximizeToggle}
-                    className="p-1.5 hover:bg-gray-800/50 rounded transition-colors"
-                    title={isMaximized ? "Minimize" : "Maximize"}
+                    className="p-1.5 hover:bg-gray-800/50 rounded transition-colors group/maximize"
+                    title={isMaximized ? "Minimize (Esc)" : "Maximize (⌘+M)"}
                   >
                     {isMaximized ? (
-                      <Minimize2 className="w-3 h-3 text-gray-400 hover:text-white" />
+                      <Minimize2 className="w-3 h-3 text-gray-400 group-hover/maximize:text-white transition-colors" />
                     ) : (
-                      <Maximize2 className="w-3 h-3 text-gray-400 hover:text-white" />
+                      <Maximize2 className="w-3 h-3 text-gray-400 group-hover/maximize:text-white transition-colors" />
                     )}
                   </button>
                   {!isMaximized ? (
@@ -683,7 +772,7 @@ export function SupervisorInterface({
             </div>
           </div>
 
-          {/* Modal Content - slides in/out smoothly */}
+          {/* Modal Content - responsive and resizable */}
           <div
             className={`
             overflow-hidden transition-all duration-300 ease-in-out
@@ -691,7 +780,7 @@ export function SupervisorInterface({
               isOpen
                 ? isMaximized
                   ? "flex-1 opacity-100"
-                  : "max-h-80 opacity-100"
+                  : "flex-1 opacity-100"
                 : "max-h-0 opacity-0"
             }
           `}
@@ -699,10 +788,15 @@ export function SupervisorInterface({
             <div
               className={`
               overflow-y-auto scrollbar-thin scrollbar-dark
-              transition-transform duration-300 ease-in-out
+              transition-transform duration-300 ease-in-out max-w-3xl mx-auto scrollbar-none
               ${isOpen ? "translate-y-0" : "-translate-y-4"}
-              ${isMaximized ? "h-full" : "max-h-80"}
+              ${isMaximized ? "h-full" : ""}
             `}
+              style={
+                isOpen && !isMaximized
+                  ? { height: `${modalHeight - 60}px` } // Account for header height
+                  : {}
+              }
             >
               <SupervisorConversationContent
                 supervisorTurns={supervisorTurns}
@@ -719,21 +813,6 @@ export function SupervisorInterface({
           relative w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 border-x-0 md:border-x border-b-0 md:border-b rounded-3xl rounded-b-none md:rounded-b-3xl
           transition-all duration-300 ease-in-out md:max-w-4xl"
           initial={false}
-          animate={{
-            y: isInputHidden && !isOpen ? 100 : 0,
-            opacity: isInputHidden && !isOpen ? 0 : 1,
-            scale: isInputHidden && !isOpen ? 0.95 : 1,
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 500,
-            damping: 25,
-            mass: 0.5,
-            duration: 0.15,
-          }}
-          style={{
-            pointerEvents: isInputHidden ? "none" : "auto",
-          }}
         >
           <textarea
             ref={textareaRef}
@@ -742,15 +821,6 @@ export function SupervisorInterface({
             onKeyDown={handleKeyDown}
             onKeyPress={handleKeyPress}
             onPaste={handlePaste}
-            onFocus={() => {
-              showInput();
-              resetHideTimer();
-            }}
-            onBlur={() => {
-              if (!prompt.trim()) {
-                resetHideTimer();
-              }
-            }}
             placeholder="What do you want to do next?"
             className="w-full rounded-t-3xl border-none max-h-24 h-auto p-4 outline-none ring-0 text-base md:text-sm bg-transparent text-white placeholder-gray-400 focus:outline-none resize-none transition-all supervisor-textarea"
             style={{ fontSize: "16px" }}

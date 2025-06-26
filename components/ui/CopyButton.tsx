@@ -34,7 +34,7 @@ export function CopyButton({
   tooltipPosition = "top",
 }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
-  const { trackCopy } = useCopyTracking();
+  const { trackCopy, currentSessionId } = useCopyTracking();
 
   const handleCopy = async () => {
     try {
@@ -49,7 +49,7 @@ export function CopyButton({
           agentIndex: sourceContext.agentIndex,
           agentName: sourceContext.agentName,
           agentModel: sourceContext.agentModel,
-          sessionId: sourceContext.sessionId,
+          sessionId: sourceContext.sessionId || currentSessionId || undefined,
         });
         trackCopy(metadata);
       }

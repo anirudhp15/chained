@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { MessageBubble } from "../chat/message-bubble";
 import { ChainProgress } from "../performance/chain-progress";
 import { CopyButton } from "../ui/CopyButton";
+import { CopyReference } from "../ui/CopyReference";
 import { CollapsibleAgentExecution } from "./supervisor-interface";
 
 // Helper function to generate complete content for copying
@@ -47,6 +48,47 @@ function generateCompleteContent(
   return completeContent;
 }
 
+// Component to display user message with reference chips
+function UserMessageWithReferences({
+  userInput,
+  references = [],
+}: {
+  userInput: string;
+  references?: any[];
+}) {
+  return (
+    <div className="group/message-bubble">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-medium text-white">
+          U
+        </div>
+        <span className="text-sm font-medium text-gray-300">You</span>
+      </div>
+
+      <div className="ml-8 bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+        <p className="text-white whitespace-pre-wrap leading-relaxed mb-3">
+          {userInput}
+        </p>
+
+        {/* Display reference chips if any */}
+        {references && references.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-blue-500/20">
+            {references.map((ref, index) => (
+              <CopyReference
+                key={ref.id || index}
+                reference={ref}
+                onRemove={undefined} // No remove functionality in conversation display
+                isCompact={true}
+                showPreview={false}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface SupervisorConversationContentProps {
   supervisorTurns: any[] | undefined;
   supervisorStreamContent?: { [turnId: string]: string };
@@ -62,15 +104,43 @@ export function SupervisorConversationContent({
   useMotion = false,
   className = "",
 }: SupervisorConversationContentProps) {
-  // Show chain progress when there are no supervisor turns but there are agent steps
+  // Show agent executions when there are no supervisor turns but there are agent steps
   if (
     (!supervisorTurns || supervisorTurns.length === 0) &&
     agentSteps &&
     agentSteps.length > 0
   ) {
     const content = (
-      <div className="px-8 py-8">
-        <ChainProgress agentSteps={agentSteps} />
+      <div className="p-4 max-w-4xl mx-auto">
+        <div className="space-y-0 text-xs lg:text-sm">
+          {/* Initial Agent Executions */}
+          <div className="group/message-bubble">
+            <div className="flex items-center gap-2 mb-3 text-gray-400">
+              <div className="w-2 h-2 bg-lavender-400 rounded-full"></div>
+              <span className="text-xs font-medium">Chain Initialization</span>
+            </div>
+
+            <div className="space-y-2">
+              {agentSteps.map((agentStep, index) => {
+                // Create a mock mention object for consistency with conversation UI
+                const mockMention = {
+                  agentIndex: index,
+                  agentName: agentStep.name || `LLM ${index + 1}`,
+                  taskPrompt:
+                    agentStep.prompt || "Processing initial chain request...",
+                };
+
+                return (
+                  <CollapsibleAgentExecution
+                    key={index}
+                    mention={mockMention}
+                    agentStep={agentStep}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     );
 
@@ -97,9 +167,9 @@ export function SupervisorConversationContent({
             Coordinate your agents by mentioning them in your messages.
           </p>
           <div className="text-sm text-gray-500 space-y-2">
-            <p>"@Agent1 analyze this data"</p>
-            <p>"@Agent2 summarize the findings"</p>
-            <p>"@Agent1 @Agent2 collaborate"</p>
+            <p>"@LLM1 analyze this data"</p>
+            <p>"@LLM2 summarize the findings"</p>
+            <p>"@LLM1 @LLM2 collaborate"</p>
           </div>
         </div>
       </div>
@@ -121,71 +191,109 @@ export function SupervisorConversationContent({
   // Full conversation history with all turns
   const conversationContent = (
     <div className={`p-4 max-w-4xl mx-auto ${className}`}>
-      {supervisorTurns.map((turn, index) => (
-        <div key={turn._id} className="space-y-8 text-xs lg:text-sm">
-          {/* User Message */}
-          <MessageBubble content={turn.userInput} isUser={true} />
-
+      <div className="space-y-8 text-xs lg:text-sm">
+        {/* Show initial agent executions if this is the first supervisor interaction */}
+        {supervisorTurns.length > 0 && agentSteps && agentSteps.length > 0 && (
           <div className="group/message-bubble">
-            {/* Supervisor Response */}
-            {(turn.supervisorResponse ||
-              turn.isStreaming ||
-              supervisorStreamContent[turn._id]) && (
-              <MessageBubble
-                content={turn.supervisorResponse || ""}
-                isStreaming={turn.isStreaming}
-                streamingContent={supervisorStreamContent[turn._id]}
-                copyable={false}
-              >
-                {/* Agent Executions */}
-                {turn.parsedMentions && turn.parsedMentions.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {turn.parsedMentions.map(
-                      (mention: any, mentionIndex: number) => {
-                        // Find the corresponding agent step
-                        const agentStep = agentSteps?.find(
-                          (step) => step.index === mention.agentIndex
-                        );
+            <div className="flex items-center gap-2 mb-3 text-gray-400">
+              <div className="w-2 h-2 bg-lavender-400 rounded-full"></div>
+              <span className="text-xs font-medium">Chain Initialization</span>
+            </div>
 
-                        return (
-                          <CollapsibleAgentExecution
-                            key={mentionIndex}
-                            mention={mention}
-                            agentStep={agentStep}
-                          />
-                        );
-                      }
-                    )}
-                  </div>
-                )}
+            <div className="space-y-2">
+              {agentSteps.map((agentStep, index) => {
+                // Create a mock mention object for consistency with conversation UI
+                const mockMention = {
+                  agentIndex: index,
+                  agentName: agentStep.name || `LLM ${index + 1}`,
+                  taskPrompt:
+                    agentStep.prompt || "Processing initial chain request...",
+                };
 
-                {/* Custom Copy Button for Everything */}
-                {(turn.supervisorResponse ||
-                  supervisorStreamContent[turn._id]) &&
-                  !turn.isStreaming && (
-                    <div className="mt-2 flex opacity-0 group-hover/message-bubble:opacity-100 transition-opacity duration-200 justify-start">
-                      <CopyButton
-                        text={generateCompleteContent(
-                          turn.supervisorResponse ||
-                            supervisorStreamContent[turn._id] ||
-                            "",
-                          turn.parsedMentions || [],
-                          agentSteps || []
-                        )}
-                        size="sm"
-                        tooltipPosition="top"
-                        sourceContext={{
-                          sourceType: "supervisor-response",
-                          sessionId: turn.sessionId,
-                        }}
-                      />
-                    </div>
-                  )}
-              </MessageBubble>
-            )}
+                return (
+                  <CollapsibleAgentExecution
+                    key={index}
+                    mention={mockMention}
+                    agentStep={agentStep}
+                  />
+                );
+              })}
+            </div>
           </div>
+        )}
+
+        {/* Supervisor conversation turns */}
+        <div className="">
+          {supervisorTurns.map((turn, index) => (
+            <div key={turn._id}>
+              {/* User Message */}
+              <UserMessageWithReferences
+                userInput={turn.userInput}
+                references={turn.references}
+              />
+
+              <div className="group/message-bubble">
+                {/* Supervisor Response */}
+                {(turn.supervisorResponse ||
+                  turn.isStreaming ||
+                  supervisorStreamContent[turn._id]) && (
+                  <MessageBubble
+                    content={turn.supervisorResponse || ""}
+                    isStreaming={turn.isStreaming}
+                    streamingContent={supervisorStreamContent[turn._id]}
+                    copyable={false}
+                  >
+                    {/* Agent Executions */}
+                    {turn.parsedMentions && turn.parsedMentions.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {turn.parsedMentions.map(
+                          (mention: any, mentionIndex: number) => {
+                            // Find the corresponding agent step
+                            const agentStep = agentSteps?.find(
+                              (step) => step.index === mention.agentIndex
+                            );
+
+                            return (
+                              <CollapsibleAgentExecution
+                                key={mentionIndex}
+                                mention={mention}
+                                agentStep={agentStep}
+                              />
+                            );
+                          }
+                        )}
+                      </div>
+                    )}
+
+                    {/* Custom Copy Button for Everything */}
+                    {(turn.supervisorResponse ||
+                      supervisorStreamContent[turn._id]) &&
+                      !turn.isStreaming && (
+                        <div className="mt-2 flex opacity-0 group-hover/message-bubble:opacity-100 transition-opacity duration-200 justify-start">
+                          <CopyButton
+                            text={generateCompleteContent(
+                              turn.supervisorResponse ||
+                                supervisorStreamContent[turn._id] ||
+                                "",
+                              turn.parsedMentions || [],
+                              agentSteps || []
+                            )}
+                            size="sm"
+                            tooltipPosition="top"
+                            sourceContext={{
+                              sourceType: "supervisor-response",
+                              sessionId: turn.sessionId,
+                            }}
+                          />
+                        </div>
+                      )}
+                  </MessageBubble>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 

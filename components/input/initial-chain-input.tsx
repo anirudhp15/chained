@@ -737,7 +737,7 @@ export function InitialChainInput({
                   <div key={agent.id} className={layoutClasses.agentWrapper}>
                     {/* Agent Card using AgentInput component */}
                     <div
-                      className={`${getAgentContainerClasses()} backdrop-blur-sm ${agents.length > 1 ? "lg:px-2" : ""} ${
+                      className={`${getAgentContainerClasses()} backdrop-blur-sm ${agents.length > 1 ? "lg:px-4" : ""} ${
                         queuedAgents.some((qa) => qa.id === agent.id)
                           ? "border-lavender-400/50"
                           : ""

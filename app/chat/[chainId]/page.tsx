@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   useMutation,
@@ -26,6 +26,7 @@ import { PerformanceProvider } from "../../../lib/performance-context";
 import Link from "next/link";
 import { ArrowLeft, Bot, MessageSquare } from "lucide-react";
 import { SupervisorInterface } from "../../../components/supervisor/supervisor-interface";
+import { useCopyTracking } from "../../../lib/copy-tracking-context";
 
 // Parallel execution type definitions
 interface ExecutionGroup {
@@ -91,6 +92,10 @@ function ChatPageContent() {
   const [agentConversations, setAgentConversations] = useState<{
     [agentIndex: number]: AgentConversationTurn[];
   }>({});
+
+  // Track whether auto-prompt has been sent for initial chain completion
+  const hasAutoPromptedRef = useRef(false);
+  const previousChainCompleteRef = useRef(false);
 
   const createSession = useMutation(api.mutations.createSession);
   const addAgentStep = useMutation(api.mutations.addAgentStep);
@@ -311,303 +316,357 @@ function ChatPageContent() {
     }
   };
 
-  const handleSupervisorSend = async (message: string) => {
-    if (!chainId || !message.trim()) return;
+  const handleSupervisorSend = useCallback(
+    async (message: string) => {
+      if (!chainId || !message.trim()) return;
 
-    setSupervisorTyping(false);
-    setSupervisorStatus("thinking");
+      setSupervisorTyping(false);
+      setSupervisorStatus("thinking");
 
-    try {
-      const response = await fetch("/api/supervisor-interact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sessionId: chainId,
-          userInput: message.trim(),
-        }),
-      });
+      try {
+        // Handle both structured JSON and legacy string formats
+        let requestBody: any;
+        try {
+          // Try to parse as JSON (new structured format)
+          const parsed = JSON.parse(message);
+          requestBody = {
+            sessionId: chainId,
+            userInput: parsed.userInput,
+            references: parsed.references,
+            fullContext: parsed.fullContext,
+          };
+        } catch (e) {
+          // Fallback to legacy string format
+          requestBody = {
+            sessionId: chainId,
+            userInput: message.trim(),
+          };
+        }
 
-      if (!response.ok) {
-        throw new Error("Failed to send supervisor message");
-      }
+        const response = await fetch("/api/supervisor-interact", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        });
 
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("No response stream");
-      }
+        if (!response.ok) {
+          throw new Error("Failed to send supervisor message");
+        }
 
-      let currentTurnId: string | null = null;
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error("No response stream");
+        }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        let currentTurnId: string | null = null;
 
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split("\n");
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
+          const chunk = new TextDecoder().decode(value);
+          const lines = chunk.split("\n");
 
-              switch (data.type) {
-                case "supervisor_turn_start":
-                  currentTurnId = data.turnId;
-                  setSupervisorStreamContent((prev) => ({
-                    ...prev,
-                    [data.turnId]: "",
-                  }));
-                  setSupervisorStatus("thinking");
-                  break;
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const data = JSON.parse(line.slice(6));
 
-                case "supervisor_chunk":
-                  if (currentTurnId) {
+                switch (data.type) {
+                  case "supervisor_turn_start":
+                    currentTurnId = data.turnId;
                     setSupervisorStreamContent((prev) => ({
                       ...prev,
-                      [currentTurnId!]:
-                        (prev[currentTurnId!] || "") + data.content,
+                      [data.turnId]: "",
                     }));
-                  }
-                  break;
+                    setSupervisorStatus("thinking");
+                    break;
 
-                case "agent_stream_start":
-                  // REMOVED: This event is no longer needed with unified streaming
-                  // The agent_chunk handler now creates the conversation turn
-                  console.log(
-                    "Agent stream starting for agent:",
-                    data.agentName,
-                    "at index",
-                    data.agentIndex,
-                    "(handled by agent_chunk)"
-                  );
-                  break;
-
-                case "agent_chunk":
-                  // UPDATED: Handle unified stream with userPrompt included
-                  console.log(
-                    "Agent chunk received for agent:",
-                    data.agentIndex,
-                    "Content:",
-                    data.content
-                  );
-
-                  setAgentConversations((prev) => {
-                    const updated = { ...prev };
-
-                    // Check if we need to create a new conversation turn
-                    // This happens when receiving first chunk with userPrompt
-                    if (
-                      !updated[data.agentIndex] ||
-                      updated[data.agentIndex].length === 0 ||
-                      (data.userPrompt &&
-                        !updated[data.agentIndex].some(
-                          (turn) =>
-                            turn.userPrompt === data.userPrompt &&
-                            turn.isStreaming
-                        ))
-                    ) {
-                      // Create new conversation turn with the userPrompt from the chunk
-                      if (data.userPrompt) {
-                        if (!updated[data.agentIndex]) {
-                          updated[data.agentIndex] = [];
-                        }
-
-                        // Add new conversation turn
-                        updated[data.agentIndex].push({
-                          userPrompt: data.userPrompt,
-                          agentResponse: data.content || "",
-                          timestamp: Date.now(),
-                          isStreaming: true,
-                          isComplete: false,
-                        });
-
-                        return updated;
-                      }
-                      return prev; // No conversation turn to update and no userPrompt
+                  case "supervisor_chunk":
+                    if (currentTurnId) {
+                      setSupervisorStreamContent((prev) => ({
+                        ...prev,
+                        [currentTurnId!]:
+                          (prev[currentTurnId!] || "") + data.content,
+                      }));
                     }
+                    break;
 
-                    // Otherwise update existing conversation
-                    const lastTurnIndex = updated[data.agentIndex].length - 1;
-                    const lastTurn = updated[data.agentIndex][lastTurnIndex];
+                  case "agent_stream_start":
+                    // REMOVED: This event is no longer needed with unified streaming
+                    // The agent_chunk handler now creates the conversation turn
+                    console.log(
+                      "Agent stream starting for agent:",
+                      data.agentName,
+                      "at index",
+                      data.agentIndex,
+                      "(handled by agent_chunk)"
+                    );
+                    break;
 
-                    if (lastTurn.isStreaming) {
+                  case "agent_chunk":
+                    // UPDATED: Handle unified stream with userPrompt included
+                    console.log(
+                      "Agent chunk received for agent:",
+                      data.agentIndex,
+                      "Content:",
+                      data.content
+                    );
+
+                    setAgentConversations((prev) => {
+                      const updated = { ...prev };
+
+                      // Check if we need to create a new conversation turn
+                      // This happens when receiving first chunk with userPrompt
+                      if (
+                        !updated[data.agentIndex] ||
+                        updated[data.agentIndex].length === 0 ||
+                        (data.userPrompt &&
+                          !updated[data.agentIndex].some(
+                            (turn) =>
+                              turn.userPrompt === data.userPrompt &&
+                              turn.isStreaming
+                          ))
+                      ) {
+                        // Create new conversation turn with the userPrompt from the chunk
+                        if (data.userPrompt) {
+                          if (!updated[data.agentIndex]) {
+                            updated[data.agentIndex] = [];
+                          }
+
+                          // Add new conversation turn
+                          updated[data.agentIndex].push({
+                            userPrompt: data.userPrompt,
+                            agentResponse: data.content || "",
+                            timestamp: Date.now(),
+                            isStreaming: true,
+                            isComplete: false,
+                          });
+
+                          return updated;
+                        }
+                        return prev; // No conversation turn to update and no userPrompt
+                      }
+
+                      // Otherwise update existing conversation
+                      const lastTurnIndex = updated[data.agentIndex].length - 1;
+                      const lastTurn = updated[data.agentIndex][lastTurnIndex];
+
+                      if (lastTurn.isStreaming) {
+                        updated[data.agentIndex][lastTurnIndex] = {
+                          ...lastTurn,
+                          agentResponse: lastTurn.agentResponse + data.content,
+                        };
+                      }
+
+                      return updated;
+                    });
+                    break;
+
+                  case "agent_complete":
+                    // UPDATED: Handle unified stream completion with full response
+                    console.log(
+                      "Agent completed streaming:",
+                      data.agentName,
+                      "at index",
+                      data.agentIndex
+                    );
+
+                    setAgentConversations((prev) => {
+                      const updated = { ...prev };
+
+                      // Create new conversation if needed (for cases where we missed chunks)
+                      if (
+                        !updated[data.agentIndex] ||
+                        updated[data.agentIndex].length === 0
+                      ) {
+                        if (data.userPrompt && data.response) {
+                          updated[data.agentIndex] = [
+                            {
+                              userPrompt: data.userPrompt,
+                              agentResponse: data.response,
+                              timestamp: Date.now(),
+                              isStreaming: false,
+                              isComplete: true,
+                            },
+                          ];
+                          return updated;
+                        }
+                        return prev;
+                      }
+
+                      // Find the right conversation turn to update
+                      let turnIndex = updated[data.agentIndex].length - 1;
+
+                      // If we have userPrompt in the data, find the matching turn
+                      if (data.userPrompt) {
+                        const matchingTurnIndex = updated[
+                          data.agentIndex
+                        ].findIndex(
+                          (turn) => turn.userPrompt === data.userPrompt
+                        );
+
+                        if (matchingTurnIndex >= 0) {
+                          turnIndex = matchingTurnIndex;
+                        }
+                      }
+
+                      // Update the turn with complete status
+                      updated[data.agentIndex][turnIndex] = {
+                        ...updated[data.agentIndex][turnIndex],
+                        // Use data.response if available (for cases where chunks were missed)
+                        agentResponse:
+                          data.response ||
+                          updated[data.agentIndex][turnIndex].agentResponse,
+                        isStreaming: false,
+                        isComplete: true,
+                      };
+
+                      return updated;
+                    });
+                    break;
+
+                  case "agent_error":
+                    // NEW: Handle agent streaming errors
+                    console.error(
+                      "Agent streaming error:",
+                      data.agentIndex,
+                      "Error:",
+                      data.error
+                    );
+
+                    setAgentConversations((prev) => {
+                      const updated = { ...prev };
+                      if (
+                        !updated[data.agentIndex] ||
+                        updated[data.agentIndex].length === 0
+                      ) {
+                        return prev;
+                      }
+
+                      const lastTurnIndex = updated[data.agentIndex].length - 1;
+                      const lastTurn = updated[data.agentIndex][lastTurnIndex];
+
                       updated[data.agentIndex][lastTurnIndex] = {
                         ...lastTurn,
-                        agentResponse: lastTurn.agentResponse + data.content,
+                        agentResponse:
+                          lastTurn.agentResponse + `\n\nError: ${data.error}`,
+                        isStreaming: false,
+                        isComplete: false, // Mark as incomplete due to error
                       };
-                    }
 
-                    return updated;
-                  });
-                  break;
-
-                case "agent_complete":
-                  // UPDATED: Handle unified stream completion with full response
-                  console.log(
-                    "Agent completed streaming:",
-                    data.agentName,
-                    "at index",
-                    data.agentIndex
-                  );
-
-                  setAgentConversations((prev) => {
-                    const updated = { ...prev };
-
-                    // Create new conversation if needed (for cases where we missed chunks)
-                    if (
-                      !updated[data.agentIndex] ||
-                      updated[data.agentIndex].length === 0
-                    ) {
-                      if (data.userPrompt && data.response) {
-                        updated[data.agentIndex] = [
-                          {
-                            userPrompt: data.userPrompt,
-                            agentResponse: data.response,
-                            timestamp: Date.now(),
-                            isStreaming: false,
-                            isComplete: true,
-                          },
-                        ];
-                        return updated;
-                      }
-                      return prev;
-                    }
-
-                    // Find the right conversation turn to update
-                    let turnIndex = updated[data.agentIndex].length - 1;
-
-                    // If we have userPrompt in the data, find the matching turn
-                    if (data.userPrompt) {
-                      const matchingTurnIndex = updated[
-                        data.agentIndex
-                      ].findIndex(
-                        (turn) => turn.userPrompt === data.userPrompt
-                      );
-
-                      if (matchingTurnIndex >= 0) {
-                        turnIndex = matchingTurnIndex;
-                      }
-                    }
-
-                    // Update the turn with complete status
-                    updated[data.agentIndex][turnIndex] = {
-                      ...updated[data.agentIndex][turnIndex],
-                      // Use data.response if available (for cases where chunks were missed)
-                      agentResponse:
-                        data.response ||
-                        updated[data.agentIndex][turnIndex].agentResponse,
-                      isStreaming: false,
-                      isComplete: true,
-                    };
-
-                    return updated;
-                  });
-                  break;
-
-                case "agent_error":
-                  // NEW: Handle agent streaming errors
-                  console.error(
-                    "Agent streaming error:",
-                    data.agentIndex,
-                    "Error:",
-                    data.error
-                  );
-
-                  setAgentConversations((prev) => {
-                    const updated = { ...prev };
-                    if (
-                      !updated[data.agentIndex] ||
-                      updated[data.agentIndex].length === 0
-                    ) {
-                      return prev;
-                    }
-
-                    const lastTurnIndex = updated[data.agentIndex].length - 1;
-                    const lastTurn = updated[data.agentIndex][lastTurnIndex];
-
-                    updated[data.agentIndex][lastTurnIndex] = {
-                      ...lastTurn,
-                      agentResponse:
-                        lastTurn.agentResponse + `\n\nError: ${data.error}`,
-                      isStreaming: false,
-                      isComplete: false, // Mark as incomplete due to error
-                    };
-
-                    return updated;
-                  });
-                  break;
-
-                case "mention_execution_start":
-                  setSupervisorStatus("orchestrating");
-                  break;
-
-                case "agent_execution_internal":
-                  // Agent is executing internally - no new UI updates needed
-                  // The agent steps will update via the existing queries
-                  console.log(
-                    "Agent executing internally:",
-                    data.agentName,
-                    "at index",
-                    data.agentIndex
-                  );
-                  break;
-
-                case "agent_execution_complete":
-                  console.log(
-                    "Agent completed:",
-                    data.agentName,
-                    "Preview:",
-                    data.responsePreview
-                  );
-                  break;
-
-                case "agent_execution_error":
-                  console.error(
-                    "Agent execution failed:",
-                    data.agentName,
-                    "Error:",
-                    data.error
-                  );
-                  break;
-
-                case "supervisor_complete":
-                case "complete":
-                  setSupervisorStatus("ready");
-                  // Clear streaming content for this turn since it's now persisted
-                  if (currentTurnId) {
-                    setSupervisorStreamContent((prev) => {
-                      const newState = { ...prev };
-                      delete newState[currentTurnId!];
-                      return newState;
+                      return updated;
                     });
-                  }
-                  break;
+                    break;
 
-                case "error":
-                  setSupervisorStatus("ready");
-                  console.error("Supervisor error:", data.error);
-                  break;
+                  case "mention_execution_start":
+                    setSupervisorStatus("orchestrating");
+                    break;
 
-                default:
-                  console.log("Unhandled supervisor event:", data.type, data);
+                  case "agent_execution_internal":
+                    // Agent is executing internally - no new UI updates needed
+                    // The agent steps will update via the existing queries
+                    console.log(
+                      "Agent executing internally:",
+                      data.agentName,
+                      "at index",
+                      data.agentIndex
+                    );
+                    break;
+
+                  case "agent_execution_complete":
+                    console.log(
+                      "Agent completed:",
+                      data.agentName,
+                      "Preview:",
+                      data.responsePreview
+                    );
+                    break;
+
+                  case "agent_execution_error":
+                    console.error(
+                      "Agent execution failed:",
+                      data.agentName,
+                      "Error:",
+                      data.error
+                    );
+                    break;
+
+                  case "supervisor_complete":
+                  case "complete":
+                    setSupervisorStatus("ready");
+                    // Clear streaming content for this turn since it's now persisted
+                    if (currentTurnId) {
+                      setSupervisorStreamContent((prev) => {
+                        const newState = { ...prev };
+                        delete newState[currentTurnId!];
+                        return newState;
+                      });
+                    }
+                    break;
+
+                  case "error":
+                    setSupervisorStatus("ready");
+                    console.error("Supervisor error:", data.error);
+                    break;
+
+                  default:
+                    console.log("Unhandled supervisor event:", data.type, data);
+                }
+              } catch (e) {
+                console.error("Error parsing supervisor stream:", e);
               }
-            } catch (e) {
-              console.error("Error parsing supervisor stream:", e);
             }
           }
         }
+      } catch (error) {
+        console.error("Error in supervisor interaction:", error);
+        setSupervisorStatus("ready");
       }
-    } catch (error) {
-      console.error("Error in supervisor interaction:", error);
-      setSupervisorStatus("ready");
-    }
-  };
+    },
+    [chainId]
+  );
 
   const handleSupervisorTyping = (isTyping: boolean) => {
     setSupervisorTyping(isTyping);
   };
+
+  // Auto-prompt when chain initialization completes
+  useEffect(() => {
+    if (agentSteps && agentSteps.length > 1 && supervisorTurns) {
+      const allCompleted = agentSteps.every(
+        (step) => step.isComplete || step.wasSkipped
+      );
+      const anyStreaming = agentSteps.some((step) => step.isStreaming);
+      const anyStarted = agentSteps.some(
+        (step) => step.response || step.streamedContent || step.isStreaming
+      );
+
+      const isChainComplete = allCompleted && !anyStreaming && anyStarted;
+      const hasNoSupervisorTurns = supervisorTurns.length === 0;
+
+      // Only auto-prompt if:
+      // 1. Chain is complete for the first time
+      // 2. No supervisor turns exist (indicating this is initial chain completion)
+      // 3. We haven't already sent the auto-prompt
+      // 4. We have multiple agents (single agents use focused mode)
+      if (
+        isChainComplete &&
+        hasNoSupervisorTurns &&
+        !hasAutoPromptedRef.current &&
+        !previousChainCompleteRef.current
+      ) {
+        console.log("Chain initialization complete - sending auto-prompt");
+        handleSupervisorSend("What would you like to do next?");
+        hasAutoPromptedRef.current = true;
+      }
+
+      // Track chain completion state for next render
+      previousChainCompleteRef.current = isChainComplete;
+    }
+  }, [agentSteps, supervisorTurns, handleSupervisorSend]);
 
   const buildConversationContext = async (
     sessionId: Id<"chatSessions">,
@@ -1384,6 +1443,16 @@ function ChatPageContent() {
       }
     }
   }, [agentSteps?.length]);
+
+  // Copy tracking session management
+  const { setSession } = useCopyTracking();
+
+  // Set current session for copy tracking
+  useEffect(() => {
+    if (chainId) {
+      setSession(chainId);
+    }
+  }, [chainId, setSession]);
 
   // Show loading state while validating session
   if (isValidSession === null) {

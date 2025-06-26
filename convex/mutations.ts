@@ -682,6 +682,26 @@ export const addSupervisorTurn = mutation({
     sessionId: v.id("chatSessions"),
     userInput: v.string(),
     supervisorResponse: v.string(),
+    references: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          sourceType: v.union(
+            v.literal("user-prompt"),
+            v.literal("agent-response"),
+            v.literal("code-block"),
+            v.literal("supervisor-response")
+          ),
+          agentIndex: v.optional(v.number()),
+          agentName: v.optional(v.string()),
+          agentModel: v.optional(v.string()),
+          content: v.string(),
+          truncatedPreview: v.string(),
+          timestamp: v.number(),
+          sessionId: v.optional(v.string()),
+        })
+      )
+    ),
     parsedMentions: v.optional(
       v.array(
         v.object({
@@ -708,6 +728,7 @@ export const addSupervisorTurn = mutation({
       userId: user._id,
       userInput: args.userInput,
       supervisorResponse: args.supervisorResponse,
+      references: args.references,
       parsedMentions: args.parsedMentions,
       executedStepIds: args.executedStepIds,
       timestamp: Date.now(),
@@ -722,6 +743,26 @@ export const startSupervisorTurn = mutation({
   args: {
     sessionId: v.id("chatSessions"),
     userInput: v.string(),
+    references: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          sourceType: v.union(
+            v.literal("user-prompt"),
+            v.literal("agent-response"),
+            v.literal("code-block"),
+            v.literal("supervisor-response")
+          ),
+          agentIndex: v.optional(v.number()),
+          agentName: v.optional(v.string()),
+          agentModel: v.optional(v.string()),
+          content: v.string(),
+          truncatedPreview: v.string(),
+          timestamp: v.number(),
+          sessionId: v.optional(v.string()),
+        })
+      )
+    ),
   },
   handler: async (ctx, args) => {
     const user = await getOrCreateUser(ctx);
@@ -738,6 +779,7 @@ export const startSupervisorTurn = mutation({
       userId: user._id,
       userInput: args.userInput,
       supervisorResponse: "",
+      references: args.references,
       timestamp: Date.now(),
       isComplete: false,
       isStreaming: true,
@@ -751,6 +793,26 @@ export const updateSupervisorTurn = mutation({
     turnId: v.id("supervisorTurns"),
     supervisorResponse: v.optional(v.string()),
     streamedContent: v.optional(v.string()),
+    references: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          sourceType: v.union(
+            v.literal("user-prompt"),
+            v.literal("agent-response"),
+            v.literal("code-block"),
+            v.literal("supervisor-response")
+          ),
+          agentIndex: v.optional(v.number()),
+          agentName: v.optional(v.string()),
+          agentModel: v.optional(v.string()),
+          content: v.string(),
+          truncatedPreview: v.string(),
+          timestamp: v.number(),
+          sessionId: v.optional(v.string()),
+        })
+      )
+    ),
     parsedMentions: v.optional(
       v.array(
         v.object({
@@ -780,6 +842,7 @@ export const updateSupervisorTurn = mutation({
       updateData.supervisorResponse = args.supervisorResponse;
     if (args.streamedContent !== undefined)
       updateData.streamedContent = args.streamedContent;
+    if (args.references !== undefined) updateData.references = args.references;
     if (args.parsedMentions !== undefined)
       updateData.parsedMentions = args.parsedMentions;
     if (args.executedStepIds !== undefined)

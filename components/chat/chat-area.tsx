@@ -39,6 +39,7 @@ import { setupGlobalCopyDetection } from "../../utils/copy-detection";
 import { HighlightWrapper } from "../ui/HighlightWrapper";
 import { EditableText } from "../ui/EditableText";
 import Beams from "../Backgrounds/Beams/Beams";
+import ShinyText from "../TextAnimations/ShinyText/ShinyText";
 
 interface AgentConversationTurn {
   userPrompt: string;
@@ -567,72 +568,55 @@ function MobileAgentCard({
             !agent.response &&
             !agent.streamedContent &&
             !agent.error && (
-              <div
-                className={`border rounded-lg p-3 ${
-                  agent.connectionType === "parallel"
-                    ? "bg-purple-500/10 border-purple-500/30"
-                    : "bg-gray-800/50 border-gray-700/50"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  {agent.connectionType === "parallel" ? (
-                    <div className="flex items-center gap-1">
-                      <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
-                      <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-100"></div>
-                      <div className="w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-200"></div>
-                    </div>
-                  ) : (
-                    <div className="thinking-dots">
-                      <div className="thinking-dot"></div>
-                      <div className="thinking-dot"></div>
-                      <div className="thinking-dot"></div>
-                    </div>
-                  )}
-                  <span className="text-xs text-lavender-400/80">
-                    {(() => {
-                      // Check if this agent is waiting for a previous agent to complete
+              <div className="flex items-center gap-3 pl-2">
+                <ShinyText
+                  text={(() => {
+                    // Check if this agent is waiting for a previous agent to complete
+                    if (agent.connectionType === "direct" && agent.index > 0) {
+                      const previousAgent = agentGroups.find(
+                        (a) => a.index === agent.index - 1
+                      );
                       if (
-                        agent.connectionType === "direct" &&
-                        agent.index > 0
+                        previousAgent &&
+                        !previousAgent.isComplete &&
+                        !previousAgent.wasSkipped
                       ) {
-                        const previousAgent = agentGroups.find(
-                          (a) => a.index === agent.index - 1
-                        );
-                        if (
-                          previousAgent &&
-                          !previousAgent.isComplete &&
-                          !previousAgent.wasSkipped
-                        ) {
-                          return `Waiting for Node ${previousAgent.index + 1} to complete...`;
-                        }
+                        const previousAgentName =
+                          previousAgent.name ||
+                          `LLM ${previousAgent.index + 1}`;
+                        return `Waiting for ${previousAgentName}`;
                       }
+                    }
 
+                    if (
+                      agent.connectionType === "conditional" &&
+                      agent.index > 0
+                    ) {
+                      const sourceAgent = agentGroups.find(
+                        (a) =>
+                          a.index ===
+                          (agent.sourceAgentIndex || agent.index - 1)
+                      );
                       if (
-                        agent.connectionType === "conditional" &&
-                        agent.index > 0
+                        sourceAgent &&
+                        !sourceAgent.isComplete &&
+                        !sourceAgent.wasSkipped
                       ) {
-                        const sourceAgent = agentGroups.find(
-                          (a) =>
-                            a.index ===
-                            (agent.sourceAgentIndex || agent.index - 1)
-                        );
-                        if (
-                          sourceAgent &&
-                          !sourceAgent.isComplete &&
-                          !sourceAgent.wasSkipped
-                        ) {
-                          return `Waiting for Node ${sourceAgent.index + 1} to complete...`;
-                        }
+                        const sourceAgentName =
+                          sourceAgent.name || `LLM ${sourceAgent.index + 1}`;
+                        return `Waiting for ${sourceAgentName}`;
                       }
+                    }
 
-                      if (agent.connectionType === "parallel") {
-                        return "Executing in parallel...";
-                      }
+                    if (agent.connectionType === "parallel") {
+                      return "Executing in parallel";
+                    }
 
-                      return "Thinking...";
-                    })()}
-                  </span>
-                </div>
+                    return "Thinking...";
+                  })()}
+                  className="text-xs text-lavender-400/80"
+                  speed={8}
+                />
               </div>
             )}
 
@@ -750,7 +734,7 @@ function MobileFocusView({
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 25, stiffness: 200 }}
-          className="absolute inset-x-0 bottom-0 top-16 bg-gray-900 rounded-t-2xl overflow-hidden pb-56"
+          className="absolute inset-x-0 bottom-0 top-16 bg-gray-900/50 backdrop-blur-sm rounded-t-2xl overflow-hidden pb-56"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -830,8 +814,8 @@ function MobileFocusView({
                     </div>
 
                     {/* Agent Response */}
-                    <div className="flex justify-start">
-                      <div className="max-w-[85%]">
+                    <div className="flex justify-start w-full">
+                      <div className="max-w-full w-full">
                         <HighlightWrapper
                           content={conversation.agentResponse}
                           contentId={`mobile-focus-response-${agent.index}-${conversation.timestamp}`}
@@ -879,7 +863,7 @@ function MobileFocusView({
                 agent.streamedContent ||
                 agent.isStreaming) && (
                 <div className="flex justify-start">
-                  <div className="max-w-[85%]">
+                  <div className="max-w-full w-full">
                     <HighlightWrapper
                       content={agent.response || agent.streamedContent || ""}
                       contentId={`mobile-focus-legacy-${agent.index}`}
@@ -929,19 +913,12 @@ function MobileFocusView({
               !agent.streamedContent &&
               !agent.error &&
               agentConversations.length === 0 && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="thinking-dots">
-                        <div className="thinking-dot"></div>
-                        <div className="thinking-dot"></div>
-                        <div className="thinking-dot"></div>
-                      </div>
-                      <span className="text-xs text-lavender-400/80">
-                        Thinking...
-                      </span>
-                    </div>
-                  </div>
+                <div className="flex justify-start pl-2">
+                  <ShinyText
+                    text="Thinking..."
+                    className="text-xs text-lavender-400/80"
+                    speed={8}
+                  />
                 </div>
               )}
 
@@ -1507,11 +1484,11 @@ export function ChatArea({
                       <ModelAvatar model={agent.model} size="sm" />
                     </div>
                     <EditableText
-                      value={agent.name || `Node ${agent.index + 1}`}
+                      value={agent.name || `LLM ${agent.index + 1}`}
                       onSave={(newName) =>
                         handleUpdateAgentName(agent._id, newName)
                       }
-                      placeholder={`Node ${agent.index + 1}`}
+                      placeholder={`LLM ${agent.index + 1}`}
                       className="min-w-0"
                       maxLength={50}
                       disabled={
@@ -1630,8 +1607,7 @@ export function ChatArea({
                             sourceContext={{
                               sourceType: "user-prompt",
                               agentIndex: agent.index,
-                              agentName:
-                                agent.name || `Node ${agent.index + 1}`,
+                              agentName: agent.name || `LLM ${agent.index + 1}`,
                               agentModel: agent.model,
                               sessionId: sessionId || undefined,
                             }}
@@ -1733,7 +1709,7 @@ export function ChatArea({
                                             agentIndex={agent.index}
                                             agentName={
                                               agent.name ||
-                                              `Node ${agent.index + 1}`
+                                              `LLM ${agent.index + 1}`
                                             }
                                             agentModel={agent.model}
                                             sessionId={sessionId || undefined}
@@ -1751,7 +1727,7 @@ export function ChatArea({
                                                 agentIndex: agent.index,
                                                 agentName:
                                                   agent.name ||
-                                                  `Node ${agent.index + 1}`,
+                                                  `LLM ${agent.index + 1}`,
                                                 agentModel: agent.model,
                                                 sessionId:
                                                   sessionId || undefined,
@@ -1794,8 +1770,7 @@ export function ChatArea({
                                         className="break-words overflow-wrap-anywhere"
                                         agentIndex={agent.index}
                                         agentName={
-                                          agent.name ||
-                                          `Node ${agent.index + 1}`
+                                          agent.name || `LLM ${agent.index + 1}`
                                         }
                                         agentModel={agent.model}
                                         sessionId={sessionId || undefined}
@@ -1818,7 +1793,7 @@ export function ChatArea({
                                             agentIndex: agent.index,
                                             agentName:
                                               agent.name ||
-                                              `Node ${agent.index + 1}`,
+                                              `LLM ${agent.index + 1}`,
                                             agentModel: agent.model,
                                             sessionId: sessionId || undefined,
                                           }}
@@ -1838,15 +1813,9 @@ export function ChatArea({
                           !agent.streamedContent &&
                           !agent.error && (
                             <div className="pt-4">
-                              <div
-                                className={`flex items-center gap-3 border rounded-lg p-2 ${
-                                  agent.connectionType === "parallel"
-                                    ? "bg-purple-500/10 border-purple-500/30"
-                                    : "bg-gray-800/50 border-gray-700/50"
-                                }`}
-                              >
-                                <span className="text-xs text-lavender-400/80">
-                                  {(() => {
+                              <div className="flex items-center gap-3 pl-2">
+                                <ShinyText
+                                  text={(() => {
                                     // Check if this agent is waiting for a previous agent to complete
                                     if (
                                       agent.connectionType === "direct" &&
@@ -1860,7 +1829,10 @@ export function ChatArea({
                                         !previousAgent.isComplete &&
                                         !previousAgent.wasSkipped
                                       ) {
-                                        return `Waiting for Node ${previousAgent.index + 1} to complete...`;
+                                        const previousAgentName =
+                                          previousAgent.name ||
+                                          `LLM ${previousAgent.index + 1}`;
+                                        return `Waiting for ${previousAgentName}`;
                                       }
                                     }
 
@@ -1879,17 +1851,22 @@ export function ChatArea({
                                         !sourceAgent.isComplete &&
                                         !sourceAgent.wasSkipped
                                       ) {
-                                        return `Waiting for Node ${sourceAgent.index + 1} to complete...`;
+                                        const sourceAgentName =
+                                          sourceAgent.name ||
+                                          `LLM ${sourceAgent.index + 1}`;
+                                        return `Waiting for ${sourceAgentName}`;
                                       }
                                     }
 
                                     if (agent.connectionType === "parallel") {
-                                      return "Executing in parallel...";
+                                      return "Executing in parallel";
                                     }
 
                                     return "Thinking...";
                                   })()}
-                                </span>
+                                  className="text-xs text-lavender-400/80"
+                                  speed={8}
+                                />
                               </div>
                             </div>
                           )}

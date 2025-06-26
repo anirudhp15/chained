@@ -7,6 +7,7 @@ import React, {
   useEffect,
   ReactNode,
   useCallback,
+  useMemo,
 } from "react";
 import {
   saveCopyReferences,
@@ -58,6 +59,11 @@ interface CopyTrackingContextType {
   clearAllReferences: () => void;
   getReference: (id: string) => CopyReference | undefined;
 
+  // Session management
+  currentSessionId: string | null;
+  setSession: (sessionId: string | null) => void;
+  clearSessionReferences: () => void;
+
   // Copy tracking
   trackCopy: (metadata: CopyMetadata) => void;
   getTrackedCopy: (content: string) => CopyMetadata | null;
@@ -96,6 +102,7 @@ export function CopyTrackingProvider({
     new Map()
   );
   const [highlights, setHighlights] = useState<VisualHighlight[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   // Load references from storage on mount
   useEffect(() => {
@@ -115,6 +122,35 @@ export function CopyTrackingProvider({
       console.error("Failed to save copy references:", error);
     }
   }, [references]);
+
+  // Filter references by current session
+  const sessionReferences = useMemo(() => {
+    if (!currentSessionId) return [];
+    return references.filter((ref) => ref.sessionId === currentSessionId);
+  }, [references, currentSessionId]);
+
+  // Set current session and clear references from other sessions
+  const setSession = useCallback(
+    (sessionId: string | null) => {
+      if (sessionId !== currentSessionId) {
+        setCurrentSessionId(sessionId);
+        // Clear recent copies when switching sessions
+        setRecentCopies(new Map());
+        // Clear highlights when switching sessions
+        setHighlights([]);
+      }
+    },
+    [currentSessionId]
+  );
+
+  // Clear references for current session only
+  const clearSessionReferences = useCallback(() => {
+    if (!currentSessionId) return;
+
+    setReferences((current) =>
+      current.filter((ref) => ref.sessionId !== currentSessionId)
+    );
+  }, [currentSessionId]);
 
   // Generate truncated preview
   const generatePreview = useCallback(
@@ -198,16 +234,18 @@ export function CopyTrackingProvider({
     (metadata: CopyMetadata) => {
       const newReference: CopyReference = {
         ...metadata,
+        sessionId: currentSessionId || undefined,
         truncatedPreview: generatePreview(metadata.content),
       };
 
       setReferences((current) => {
-        // Check for duplicates
+        // Check for duplicates within current session
         const existingIndex = current.findIndex(
           (ref) =>
             ref.content === newReference.content &&
             ref.agentIndex === newReference.agentIndex &&
-            ref.sourceType === newReference.sourceType
+            ref.sourceType === newReference.sourceType &&
+            ref.sessionId === newReference.sessionId
         );
 
         if (existingIndex >= 0) {
@@ -227,7 +265,7 @@ export function CopyTrackingProvider({
       // Clear from recent copies after adding as reference
       clearTrackedCopy(metadata.id);
     },
-    [generatePreview, clearTrackedCopy]
+    [generatePreview, clearTrackedCopy, currentSessionId]
   );
 
   // Remove reference
@@ -235,33 +273,43 @@ export function CopyTrackingProvider({
     setReferences((current) => current.filter((ref) => ref.id !== id));
   }, []);
 
-  // Clear all references
+  // Clear all references for current session
   const clearAllReferences = useCallback(() => {
-    setReferences([]);
+    if (!currentSessionId) {
+      // If no session, clear all
+      setReferences([]);
+    } else {
+      // Clear only current session references
+      clearSessionReferences();
+    }
     try {
-      clearStoredReferences();
+      // Note: This will clear all stored references, not just session-specific
+      // Could be improved to only clear current session from storage
+      if (!currentSessionId) {
+        clearStoredReferences();
+      }
     } catch (error) {
       console.error("Failed to clear stored references:", error);
     }
-  }, []);
+  }, [currentSessionId, clearSessionReferences]);
 
-  // Get reference by ID
+  // Get reference by ID (search in session references)
   const getReference = useCallback(
     (id: string): CopyReference | undefined => {
-      return references.find((ref) => ref.id === id);
+      return sessionReferences.find((ref) => ref.id === id);
     },
-    [references]
+    [sessionReferences]
   );
 
   // Get visible references (for UI display)
   const getVisibleReferences = useCallback((): CopyReference[] => {
-    return references.slice(0, maxVisibleReferences);
-  }, [references, maxVisibleReferences]);
+    return sessionReferences.slice(0, maxVisibleReferences);
+  }, [sessionReferences, maxVisibleReferences]);
 
   // Get overflow count
   const getOverflowCount = useCallback((): number => {
-    return Math.max(0, references.length - maxVisibleReferences);
-  }, [references.length, maxVisibleReferences]);
+    return Math.max(0, sessionReferences.length - maxVisibleReferences);
+  }, [sessionReferences.length, maxVisibleReferences]);
 
   // Visual highlights management
   const addHighlight = useCallback(
@@ -356,12 +404,17 @@ export function CopyTrackingProvider({
   }, [trackCopy, addHighlight]);
 
   const value: CopyTrackingContextType = {
-    // References
-    references,
+    // References (session-filtered)
+    references: sessionReferences,
     addReference,
     removeReference,
     clearAllReferences,
     getReference,
+
+    // Session management
+    currentSessionId,
+    setSession,
+    clearSessionReferences,
 
     // Copy tracking
     trackCopy,
