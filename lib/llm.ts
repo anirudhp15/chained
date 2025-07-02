@@ -278,13 +278,50 @@ function buildEnhancedPrompt(
     enhancedPrompt = `**Visual Context:** ${input.images.length} image(s) provided for analysis\n\n${enhancedPrompt}`;
   }
 
+  // Add comprehensive LaTeX formatting instructions for mathematical content
+  const latexInstructions = `
+
+**IMPORTANT - Mathematical Formatting Instructions:**
+When your response contains mathematical expressions, equations, formulas, or calculations, you MUST format them using proper LaTeX syntax:
+
+• **Inline math**: Use single dollar signs: $x = 5$ or $E = mc^2$
+• **Display equations**: Use double dollar signs: $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+• **Multi-line equations**: Use double dollar signs with line breaks:
+$$
+\\begin{align}
+x &= 5 \\\\
+y &= 3x + 2 \\\\
+y &= 17
+\\end{align}
+$$
+
+**LaTeX Syntax Examples:**
+- Fractions: $\\frac{numerator}{denominator}$
+- Superscripts: $x^2$, $e^{-x}$  
+- Subscripts: $x_1$, $a_{n+1}$
+- Square roots: $\\sqrt{x}$, $\\sqrt[3]{x}$
+- Greek letters: $\\alpha$, $\\beta$, $\\pi$, $\\theta$
+- Summation: $\\sum_{i=1}^{n} x_i$
+- Integration: $\\int_0^\\infty e^{-x} dx$
+- Modular arithmetic: $a \\equiv b \\pmod{n}$
+- Matrices: $\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}$
+
+**Critical Rules:**
+1. Always use proper LaTeX delimiters ($...$ or $$...$$)
+2. Escape backslashes properly: \\frac, \\sqrt, \\sum, etc.
+3. Use \\pmod{n} for modular arithmetic, not "mod n"
+4. For long derivations, use numbered equations or align environments
+5. Never leave mathematical expressions as plain text when LaTeX formatting is appropriate
+
+This ensures your mathematical content renders beautifully in the user interface.`;
+
   // Handle custom context vs model personality
   if (input.customContext && input.customContext.trim()) {
-    // Custom context mode: Use custom context as system prompt
-    return `${input.customContext}\n\n${enhancedPrompt}`;
+    // Custom context mode: Use custom context as system prompt + LaTeX instructions
+    return `${input.customContext}${latexInstructions}\n\n${enhancedPrompt}`;
   } else {
-    // Native mode: Use completely stock model behavior with no additional personality
-    return enhancedPrompt;
+    // Native mode: Add LaTeX instructions to ensure proper math formatting
+    return `${latexInstructions}\n\n${enhancedPrompt}`;
   }
 }
 

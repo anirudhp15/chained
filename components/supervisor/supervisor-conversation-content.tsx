@@ -17,7 +17,7 @@ function generateCompleteContent(
   let completeContent = `**Supervisor Response:**\n${supervisorResponse}`;
 
   if (parsedMentions && parsedMentions.length > 0) {
-    completeContent += "\n\n**Agent Executions:**\n";
+    completeContent += "\n\n**LLM Executions:**\n";
 
     parsedMentions.forEach((mention, index) => {
       const agentStep = agentSteps?.find(
@@ -56,23 +56,25 @@ function UserMessageWithReferences({
   userInput: string;
   references?: any[];
 }) {
-  return (
-    <div className="group/message-bubble">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-medium text-white">
-          U
-        </div>
-        <span className="text-sm font-medium text-gray-300">You</span>
-      </div>
+  // Don't render if this is an auto-welcome message (empty userInput)
+  if (!userInput || userInput.trim() === "") {
+    return null;
+  }
 
-      <div className="ml-8 bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-        <p className="text-white whitespace-pre-wrap leading-relaxed mb-3">
+  return (
+    <div className="group/message-bubble max-w-[80%] ml-auto w-auto">
+      <div className="ml-0 bg-neutral-900/50 border border-neutral-700/50 rounded-lg p-2">
+        <p
+          className={`text-white whitespace-pre-wrap leading-relaxed ${
+            references && references.length > 0 ? "mb-1" : ""
+          }`}
+        >
           {userInput}
         </p>
 
         {/* Display reference chips if any */}
         {references && references.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-2 border-t border-blue-500/20">
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-neutral-700/50">
             {references.map((ref, index) => (
               <CopyReference
                 key={ref.id || index}
@@ -93,6 +95,7 @@ interface SupervisorConversationContentProps {
   supervisorTurns: any[] | undefined;
   supervisorStreamContent?: { [turnId: string]: string };
   agentSteps?: any[] | undefined;
+  onFocusAgent?: (agentIndex: number) => void;
   useMotion?: boolean; // Whether to use motion animations (for modal)
   className?: string;
 }
@@ -101,21 +104,23 @@ export function SupervisorConversationContent({
   supervisorTurns,
   supervisorStreamContent = {},
   agentSteps,
+  onFocusAgent,
   useMotion = false,
   className = "",
 }: SupervisorConversationContentProps) {
-  // Show agent executions when there are no supervisor turns but there are agent steps
-  if (
+  // Show LLM executions when there are no supervisor turns but there are agent steps
+  const showInitialAgentExecutions =
     (!supervisorTurns || supervisorTurns.length === 0) &&
     agentSteps &&
-    agentSteps.length > 0
-  ) {
-    const content = (
-      <div className="p-4 max-w-4xl mx-auto">
-        <div className="space-y-0 text-xs lg:text-sm">
-          {/* Initial Agent Executions */}
+    agentSteps.length > 0;
+
+  if (showInitialAgentExecutions) {
+    const initialContent = (
+      <div className="space-y-4">
+        {/* Initial LLM Executions */}
+        <div className="space-y-3">
           <div className="group/message-bubble">
-            <div className="flex items-center gap-2 mb-3 text-gray-400">
+            <div className="flex items-center gap-2 py-3 text-gray-400">
               <div className="w-2 h-2 bg-lavender-400 rounded-full"></div>
               <span className="text-xs font-medium">Chain Initialization</span>
             </div>
@@ -135,6 +140,7 @@ export function SupervisorConversationContent({
                     key={index}
                     mention={mockMention}
                     agentStep={agentStep}
+                    onFocus={onFocusAgent}
                   />
                 );
               })}
@@ -150,10 +156,10 @@ export function SupervisorConversationContent({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        {content}
+        {initialContent}
       </motion.div>
     ) : (
-      content
+      initialContent
     );
   }
 
@@ -164,7 +170,7 @@ export function SupervisorConversationContent({
         <div className="text-center">
           <h3 className="text-xl font-normal text-gray-200 mb-6">Supervisor</h3>
           <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-md">
-            Coordinate your agents by mentioning them in your messages.
+            Coordinate your LLMs by mentioning them in your messages.
           </p>
           <div className="text-sm text-gray-500 space-y-2">
             <p>"@LLM1 analyze this data"</p>
@@ -191,13 +197,12 @@ export function SupervisorConversationContent({
   // Full conversation history with all turns
   const conversationContent = (
     <div className={`p-4 max-w-4xl mx-auto ${className}`}>
-      <div className="space-y-8 text-xs lg:text-sm">
-        {/* Show initial agent executions if this is the first supervisor interaction */}
-        {supervisorTurns.length > 0 && agentSteps && agentSteps.length > 0 && (
-          <div className="group/message-bubble">
-            <div className="flex items-center gap-2 mb-3 text-gray-400">
-              <div className="w-2 h-2 bg-lavender-400 rounded-full"></div>
-              <span className="text-xs font-medium">Chain Initialization</span>
+      <div className="text-xs lg:text-sm">
+        {/* Show initial LLM executions if this is the first supervisor interaction */}
+        {showInitialAgentExecutions && (
+          <div className="mt-3 space-y-2">
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              Initial LLM Executions
             </div>
 
             <div className="space-y-2">
@@ -215,6 +220,7 @@ export function SupervisorConversationContent({
                     key={index}
                     mention={mockMention}
                     agentStep={agentStep}
+                    onFocus={onFocusAgent}
                   />
                 );
               })}
@@ -227,12 +233,35 @@ export function SupervisorConversationContent({
           {supervisorTurns.map((turn, index) => (
             <div key={turn._id}>
               {/* User Message */}
-              <UserMessageWithReferences
-                userInput={turn.userInput}
-                references={turn.references}
-              />
+              <div className=" group/message-bubble">
+                <UserMessageWithReferences
+                  userInput={turn.userInput}
+                  references={turn.references}
+                />
+                {(turn.supervisorResponse ||
+                  supervisorStreamContent[turn._id]) &&
+                  !turn.isStreaming && (
+                    <div className="flex opacity-0 mt-2 group-hover/message-bubble:opacity-100 transition-opacity duration-200 justify-end">
+                      <CopyButton
+                        text={generateCompleteContent(
+                          turn.supervisorResponse ||
+                            supervisorStreamContent[turn._id] ||
+                            "",
+                          turn.parsedMentions || [],
+                          agentSteps || []
+                        )}
+                        size="sm"
+                        tooltipPosition="top"
+                        sourceContext={{
+                          sourceType: "supervisor-response",
+                          sessionId: turn.sessionId,
+                        }}
+                      />
+                    </div>
+                  )}
+              </div>
 
-              <div className="group/message-bubble">
+              <div className="group/message-bubble max-w-[80%] mr-auto">
                 {/* Supervisor Response */}
                 {(turn.supervisorResponse ||
                   turn.isStreaming ||
@@ -243,7 +272,7 @@ export function SupervisorConversationContent({
                     streamingContent={supervisorStreamContent[turn._id]}
                     copyable={false}
                   >
-                    {/* Agent Executions */}
+                    {/* LLM Executions */}
                     {turn.parsedMentions && turn.parsedMentions.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {turn.parsedMentions.map(
@@ -258,6 +287,7 @@ export function SupervisorConversationContent({
                                 key={mentionIndex}
                                 mention={mention}
                                 agentStep={agentStep}
+                                onFocus={onFocusAgent}
                               />
                             );
                           }
@@ -269,7 +299,7 @@ export function SupervisorConversationContent({
                     {(turn.supervisorResponse ||
                       supervisorStreamContent[turn._id]) &&
                       !turn.isStreaming && (
-                        <div className="mt-2 flex opacity-0 group-hover/message-bubble:opacity-100 transition-opacity duration-200 justify-start">
+                        <div className="flex opacity-0 mt-2 group-hover/message-bubble:opacity-100 transition-opacity duration-200 justify-start">
                           <CopyButton
                             text={generateCompleteContent(
                               turn.supervisorResponse ||

@@ -848,11 +848,6 @@
     }
   }
 
-  /* Remove horizontal scroll styles - no longer needed */
-  .agent-layout-container {
-    /* Removed scrollbar styles */
-  }
-
   /* Optimize rendering performance */
   .markdown-content {
     contain: layout style;
@@ -863,54 +858,180 @@
     transform: translateZ(0); /* Force GPU acceleration */
   }
 
-  /* MathJax Math Styling for Dark Theme */
-  .MathJax {
-    color: #f9fafb !important;
+  /* KaTeX Math Styling for Dark Theme */
+  .katex {
     font-size: 1.1em !important;
+    color: #f8fafc !important;
   }
 
-  /* Display math styling */
-  .MathJax[display="true"] {
-    margin: 1.5rem 0 !important;
-    padding: 1.5rem !important;
-    background: rgba(31, 41, 55, 0.6) !important;
-    border-radius: 0.75rem !important;
-    border: 1px solid rgba(75, 85, 99, 0.4) !important;
-    overflow-x: auto !important;
-    box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  .katex-display .katex {
+    font-size: 1.2em !important;
     text-align: center !important;
   }
 
-  /* Inline math styling */
-  .MathJax[display="false"] {
-    background: rgba(55, 65, 81, 0.6) !important;
-    padding: 0.2rem 0.4rem !important;
-    border-radius: 0.375rem !important;
-    border: 1px solid rgba(75, 85, 99, 0.3) !important;
-    font-size: 1.05em !important;
+  /* Enhanced LaTeX Math Rendering Styles */
+  .katex-display {
+    margin: 1.5em 0 !important;
+    padding: 1em !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-radius: 8px !important;
+    border-left: 3px solid #ae81ff !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    text-align: center !important;
+  }
+
+  /* Syntax Highlighter Override - Ensure colors come through */
+  .syntax-highlighter-container .token.comment,
+  .syntax-highlighter-container .token.prolog,
+  .syntax-highlighter-container .token.doctype,
+  .syntax-highlighter-container .token.cdata {
+    color: #7c7c7c !important;
+  }
+
+  .syntax-highlighter-container .token.punctuation {
+    color: #c9c9c9 !important;
+  }
+
+  .syntax-highlighter-container .token.property,
+  .syntax-highlighter-container .token.tag,
+  .syntax-highlighter-container .token.boolean,
+  .syntax-highlighter-container .token.number,
+  .syntax-highlighter-container .token.constant,
+  .syntax-highlighter-container .token.symbol,
+  .syntax-highlighter-container .token.deleted {
+    color: #ae81ff !important;
+  }
+
+  .syntax-highlighter-container .token.selector,
+  .syntax-highlighter-container .token.attr-name,
+  .syntax-highlighter-container .token.string,
+  .syntax-highlighter-container .token.char,
+  .syntax-highlighter-container .token.builtin,
+  .syntax-highlighter-container .token.inserted {
+    color: #a6e22e !important;
+  }
+
+  .syntax-highlighter-container .token.operator,
+  .syntax-highlighter-container .token.entity,
+  .syntax-highlighter-container .token.url,
+  .syntax-highlighter-container .language-css .token.string,
+  .syntax-highlighter-container .style .token.string {
+    color: #f8f8f2 !important;
+  }
+
+  .syntax-highlighter-container .token.atrule,
+  .syntax-highlighter-container .token.attr-value,
+  .syntax-highlighter-container .token.keyword {
+    color: #f92672 !important;
+  }
+
+  .syntax-highlighter-container .token.function,
+  .syntax-highlighter-container .token.class-name {
+    color: #66d9ef !important;
+  }
+
+  .syntax-highlighter-container .token.regex,
+  .syntax-highlighter-container .token.important,
+  .syntax-highlighter-container .token.variable {
+    color: #fd971f !important;
+  }
+
+  /* Better spacing for inline math */
+  .katex.katex-inline {
+    padding: 2px 4px !important;
+    margin: 0 2px !important;
+    background: rgba(59, 130, 246, 0.1) !important;
+    border-radius: 4px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Ensure KaTeX elements render properly */
+  .katex,
+  .katex * {
+    color: #f8fafc !important;
+    font-family: KaTeX_Main, "Times New Roman", serif !important;
+  }
+
+  /* Mathematical symbols enhancement */
+  .katex .mord,
+  .katex .mop,
+  .katex .mbin,
+  .katex .mrel {
+    color: #e2e8f0 !important;
+  }
+
+  /* Fractions and complex expressions */
+  .katex .mfrac {
     vertical-align: middle !important;
   }
 
-  /* MathJax container styling */
-  .markdown-content .MathJax_Display {
-    text-align: center !important;
-    margin: 1.5rem 0 !important;
+  /* Ensure math delimiters are properly handled */
+  .katex .strut {
+    display: inline-block !important;
   }
 
-  /* Error styling for malformed math */
-  .MathJax_Error {
-    color: #fca5a5 !important;
+  /* Fix any potential font loading issues */
+  .katex .mathnormal {
+    font-family: KaTeX_Math, KaTeX_Main !important;
+  }
+
+  /* Error styling */
+  .katex-error {
+    color: #ef4444 !important;
     background: rgba(239, 68, 68, 0.1) !important;
-    border: 1px solid rgba(239, 68, 68, 0.3) !important;
-    border-radius: 0.375rem !important;
-    padding: 0.25rem 0.5rem !important;
+    padding: 2px 4px !important;
+    border-radius: 4px !important;
+    font-family: "JetBrains Mono", monospace !important;
+    font-size: 0.9em !important;
   }
 
-  /* Ensure math text doesn't get overridden by prose styles */
-  .markdown-content .MathJax * {
-    color: inherit !important;
+  /* Raw LaTeX error styling - shows the original LaTeX code */
+  .katex-error-raw {
+    color: #fbbf24 !important;
+    background: rgba(251, 191, 36, 0.1) !important;
+    padding: 2px 4px !important;
+    border-radius: 4px !important;
+    font-family: "JetBrains Mono", monospace !important;
+    font-size: 0.9em !important;
+    border: 1px solid rgba(251, 191, 36, 0.3) !important;
+    cursor: help !important;
+  }
+
+  .katex-error-raw:hover {
+    background: rgba(251, 191, 36, 0.15) !important;
+    border-color: rgba(251, 191, 36, 0.5) !important;
+  }
+
+  /* Responsive math display */
+  @media (max-width: 768px) {
+    .katex-display {
+      font-size: 0.9em !important;
+      margin: 1em 0 !important;
+      padding: 0.8em !important;
+    }
+
+    .katex {
+      font-size: 1em !important;
+    }
+  }
+
+  /* Override any prose styles that might interfere */
+  .markdown-content .katex-display {
+    margin: 1.5em 0 !important;
+    text-align: center !important;
+  }
+
+  .markdown-content .katex {
+    color: #f8fafc !important;
+  }
+
+  /* Ensure math elements don't get affected by other text styling */
+  .prose .katex,
+  .prose .katex * {
+    color: #f8fafc !important;
+    font-style: normal !important;
+    font-weight: normal !important;
   }
 
   /* Supervisor Modal Transitions */
@@ -1140,6 +1261,53 @@
           0 0 30px rgba(147, 51, 234, 0.08);
       }
     }
+  }
+
+  /* Critical: Ensure KaTeX can render properly */
+  .markdown-content .katex {
+    display: inline !important;
+    vertical-align: baseline !important;
+  }
+
+  .markdown-content .katex-display {
+    display: block !important;
+    text-align: center !important;
+    margin: 1.5em 0 !important;
+  }
+
+  /* Override any typography styles that might interfere */
+  .prose .katex .base,
+  .prose .katex .strut,
+  .prose .katex .mathnormal,
+  .prose .katex .mathit,
+  .prose .katex .mord,
+  .prose .katex .mop,
+  .prose .katex .mbin,
+  .prose .katex .mrel,
+  .prose .katex .mopen,
+  .prose .katex .mclose,
+  .prose .katex .mpunct,
+  .prose .katex .mfrac,
+  .prose .katex .mroot,
+  .prose .katex .msqrt {
+    color: inherit !important;
+    font-family: KaTeX_Main, "Times New Roman", serif !important;
+    font-style: normal !important;
+    font-weight: normal !important;
+    text-decoration: none !important;
+    background: none !important;
+  }
+
+  /* Ensure math expressions don't inherit unwanted styles */
+  .prose p .katex,
+  .prose span .katex,
+  .prose div .katex {
+    display: inline !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
+    border-radius: 0 !important;
   }
 }
 

@@ -60,6 +60,12 @@ export interface Agent {
       mimeType: string;
     }>;
   };
+  // LLM parameters
+  temperature?: number;
+  top_p?: number;
+  max_tokens?: number;
+  frequency_penalty?: number;
+  presence_penalty?: number;
 }
 
 interface AgentInputProps {

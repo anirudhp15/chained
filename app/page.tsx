@@ -733,7 +733,7 @@ export default function LandingPage() {
             <div className="relative max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
               <div className="bg-gray-800/50 p-1 rounded-2xl overflow-hidden">
                 <video
-                  src="/videos/chained_demo_v2.mp4"
+                  src="/videos/chained_demo_v3.mp4"
                   autoPlay
                   muted
                   loop
@@ -1024,7 +1024,7 @@ export default function LandingPage() {
                         </p>
                         <div className="flex-1 rounded-lg overflow-hidden bg-gray-200">
                           <video
-                            src="/videos/chained_demo_v2.mp4"
+                            src="/videos/chained_demo_v3.mp4"
                             autoPlay
                             muted
                             loop
@@ -1045,7 +1045,7 @@ export default function LandingPage() {
                         </p>
                         <div className="flex-1 rounded-lg overflow-hidden bg-gray-200">
                           <video
-                            src="/videos/chained_demo_v2.mp4"
+                            src="/videos/chained_demo.mp4"
                             autoPlay
                             muted
                             loop

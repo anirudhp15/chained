@@ -32,6 +32,119 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { useUser, UserButton, SignOutButton, UserProfile } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useSidebar } from "@/lib/sidebar-context";
+// Import LLM icons from agent-input.tsx
+import { SiOpenai, SiClaude } from "react-icons/si";
+
+// Grok Icon Component (same as in agent-input.tsx)
+const GrokIcon = ({
+  size = 16,
+  className = "",
+}: {
+  size?: number;
+  className?: string;
+}) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    fill="currentColor"
+    viewBox="0 0 24 24"
+    className={className}
+  >
+    <path d="m19.25 5.08-9.52 9.67 6.64-4.96c.33-.24.79-.15.95.23.82 1.99.45 4.39-1.17 6.03-1.63 1.64-3.89 2.01-5.96 1.18l-2.26 1.06c3.24 2.24 7.18 1.69 9.64-.8 1.95-1.97 2.56-4.66 1.99-7.09-.82-3.56.2-4.98 2.29-7.89L22 2.3zM9.72 14.75h.01zM8.35 15.96c-2.33-2.25-1.92-5.72.06-7.73 1.47-1.48 3.87-2.09 5.97-1.2l2.25-1.05c-.41-.3-.93-.62-1.52-.84a7.45 7.45 0 0 0-8.13 1.65c-2.11 2.14-2.78 5.42-1.63 8.22.85 2.09-.54 3.57-1.95 5.07-.5.53-1 1.06-1.4 1.62z" />
+  </svg>
+);
+
+// Model provider configuration (same as agent-input.tsx)
+type ModelProvider = {
+  name: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  iconColor: string;
+  bgColor: string;
+};
+
+type ModelProviders = {
+  openai: ModelProvider;
+  anthropic: ModelProvider;
+  xai: ModelProvider;
+};
+
+const MODEL_PROVIDERS: ModelProviders = {
+  openai: {
+    name: "OpenAI",
+    icon: SiOpenai,
+    iconColor: "text-white",
+    bgColor: "bg-[#000000]",
+  },
+  anthropic: {
+    name: "Anthropic",
+    icon: SiClaude,
+    iconColor: "text-[#da7756]",
+    bgColor: "bg-[#000000]",
+  },
+  xai: {
+    name: "xAI",
+    icon: GrokIcon,
+    iconColor: "text-white",
+    bgColor: "bg-[#000000]",
+  },
+};
+
+// Function to get provider from model name
+const getProviderKey = (modelValue: string): keyof ModelProviders => {
+  if (
+    modelValue.includes("gpt") ||
+    modelValue.includes("o1") ||
+    modelValue.includes("o3") ||
+    modelValue.includes("o4")
+  ) {
+    return "openai";
+  }
+  if (modelValue.includes("claude")) {
+    return "anthropic";
+  }
+  if (modelValue.includes("grok")) {
+    return "xai";
+  }
+  return "openai"; // Default fallback
+};
+
+// Component to render overlapping model logos
+const ModelLogos = ({ models }: { models: string[] }) => {
+  if (!models || models.length === 0) return null;
+
+  // Get unique providers from models
+  const uniqueProviders = Array.from(new Set(models.map(getProviderKey)));
+
+  if (uniqueProviders.length === 0) return null;
+
+  return (
+    <div className="flex items-center -space-x-1">
+      {uniqueProviders.slice(0, 3).map((providerKey, index) => {
+        const provider = MODEL_PROVIDERS[providerKey];
+        if (!provider) return null;
+
+        return (
+          <div
+            key={providerKey}
+            className={`w-5 h-5 rounded-full border border-gray-600 flex items-center justify-center ${provider.bgColor} transition-transform group-hover:scale-110`}
+            style={{
+              zIndex: uniqueProviders.length - index,
+            }}
+            title={provider.name}
+          >
+            <provider.icon size={14} className={provider.iconColor} />
+          </div>
+        );
+      })}
+      {uniqueProviders.length > 3 && (
+        <div className="w-4 h-4 rounded-full bg-gray-700 border border-gray-600 flex items-center justify-center text-xs text-gray-300 font-medium">
+          +{uniqueProviders.length - 3}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface SidebarProps {
   currentSessionId?: string;
@@ -183,7 +296,7 @@ export function Sidebar({
   onMobileToggle,
 }: SidebarProps) {
   const { user } = useUser();
-  const recentChats = useQuery(api.queries.getChatSessions);
+  const recentChats = useQuery(api.queries.getChatSessionsWithModels);
   const updateChatTitle = useMutation(api.mutations.updateSessionTitle);
   const deleteChat = useMutation(api.mutations.deleteSession);
   const router = useRouter();
@@ -319,7 +432,7 @@ export function Sidebar({
 
       {/* Desktop Sidebar */}
       <div
-        className={`hidden z-50 lg:flex bg-gray-900/50 backdrop-blur-2xl border-r border-gray-700 flex-col max-h-screen transition-all duration-300 ease-out ${
+        className={`hidden z-40 group/sidebar lg:flex bg-neutral-950 backdrop-blur-2xl border-gray-700/50 flex-col h-screen transition-[width] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${
           isCollapsed ? "w-16" : "w-64"
         }`}
       >
@@ -329,14 +442,14 @@ export function Sidebar({
             // Collapsed state - just the link icon
             <button
               onClick={() => setIsCollapsed(false)}
-              className="m-4 text-lavender-400/80 hover:text-lavender-400  transition-all duration-200 hover:scale-110"
+              className="m-4 text-lavender-400/80 group-hover/sidebar:text-lavender-400  transition-all duration-200 hover:scale-110"
               onMouseEnter={() => setIsLinkHovered(true)}
               onMouseLeave={() => setIsLinkHovered(false)}
             >
               <div className="transition-transform duration-200 ease-out group/header-icon">
                 <Link2Off
                   size={24}
-                  className="group-hover:-rotate-45 group-hover/header-icon:hidden block transition-transform duration-200 ease-out"
+                  className="group-hover/sidebar:-rotate-45 group-hover/header-icon:hidden block transition-transform duration-200 ease-out"
                 />
                 <Link2
                   size={24}
@@ -356,7 +469,7 @@ export function Sidebar({
                   >
                     <Link2
                       size={24}
-                      className="rotate-0 group-hover:-rotate-45 group-hover/header-icon:hidden block transition-transform duration-200 ease-out"
+                      className="rotate-0 group-hover/sidebar:-rotate-45 group-hover/header-icon:hidden block transition-transform duration-200 ease-out"
                     />
                     <Unlink
                       size={24}
@@ -376,10 +489,10 @@ export function Sidebar({
         </div>
 
         {/* Desktop New Chat Button */}
-        <div className="p-4 pb-2 flex justify-center">
+        <div className="p-2 pb-2 flex justify-center">
           <button
             onClick={() => router.push("/chat")}
-            className={`flex items-center text-sm justify-between font-semibold gap-2 p-2.5 bg-lavender-600/80 hover:bg-lavender-600 group text-gray-200 rounded-lg transition-all duration-200 lavender-glow hover:shadow-lavender-500/25 ${
+            className={`flex items-center text-sm justify-between font-semibold gap-2 p-2.5 bg-lavender-600/80 hover:bg-lavender-600 group text-gray-200 rounded transition-all duration-200 lavender-glow hover:shadow-lavender-500/25 ${
               isCollapsed ? "w-8 h-8 justify-center" : "w-full"
             }`}
           >
@@ -399,11 +512,11 @@ export function Sidebar({
 
         {/* Desktop Chains Button */}
         <div
-          className={`px-4 ${isCollapsed ? "py-2" : " pb-2"} flex justify-center`}
+          className={`px-2 ${isCollapsed ? "py-2" : " pb-2"} flex justify-center`}
         >
           <button
             onClick={() => router.push("/chains")}
-            className={`flex items-center text-sm justify-between font-medium gap-2 p-2.5 bg-gray-800 hover:bg-gray-700 group text-gray-300 hover:text-white rounded-lg transition-all duration-200 ${
+            className={`flex items-center text-sm justify-between font-medium gap-2 p-2.5 hover:bg-neutral-900 group text-gray-300 hover:text-white rounded transition-all duration-200 ${
               isCollapsed ? "w-8 h-8 justify-center" : "w-full"
             }`}
           >
@@ -419,9 +532,9 @@ export function Sidebar({
 
         {/* Desktop Search - Enhanced version */}
         {!isCollapsed && (
-          <div className="px-4 pb-4">
-            <div className="relative flex focus:outline-none rounded-lg items-center flex-row text-sm group">
-              <div className="p-2.5 rounded-l-lg bg-gray-800 flex items-center pointer-events-none">
+          <div className="px-2 pb-4">
+            <div className="relative flex focus:outline-none rounded-l  items-center flex-row text-sm group">
+              <div className="p-2.5 rounded-l group-hover:bg-neutral-900 transition-all duration-200 flex items-center pointer-events-none">
                 <Search
                   size={16}
                   className={`transition-colors duration-200 ${
@@ -437,7 +550,7 @@ export function Sidebar({
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 placeholder="Search chains..."
-                className="w-full p-2 bg-gray-800 rounded-r-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-200 focus:shadow-md outline-none border-r-0"
+                className="w-full p-2 group-hover:bg-neutral-900 bg-transparent rounded-r text-white placeholder-gray-400 focus:outline-none transition-all duration-200 focus:shadow-md outline-none border-r-0"
               />
 
               {/* Keyboard shortcut hint */}
@@ -572,21 +685,13 @@ export function Sidebar({
                         className={`flex relative z-10 items-center text-xs gap-2 group rounded-lg text-left transition-all duration-200 hover:scale-[1.02] ${
                           currentSessionId === chat._id
                             ? "bg-lavender-500/20 text-lavender-400 shadow-md shadow-lavender-500/10"
-                            : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                            : "text-gray-300 hover:bg-neutral-900 hover:text-white"
                         } ${
                           isCollapsed
                             ? "w-8 h-8 justify-center hover:scale-110"
-                            : "w-full px-3 py-2 pr-8"
+                            : "w-full px-3 py-2 pr-4"
                         }`}
                       >
-                        <LinkIcon
-                          size={16}
-                          className={`${isCollapsed ? "text-lavender-400/50 block " : "text-gray-400"} transition-transform duration-200 group-hover:hidden block hover:rotate-90`}
-                        />
-                        <Unlink
-                          size={16}
-                          className={`${isCollapsed ? "text-lavender-400/50 block " : "text-gray-400"} transition-transform duration-200 group-hover:block hidden hover:rotate-90`}
-                        />
                         {!isCollapsed && (
                           <>
                             {editingChatId === chat._id ? (
@@ -602,12 +707,17 @@ export function Sidebar({
                                 autoFocus
                               />
                             ) : (
-                              <span className="line-clamp-1 flex-1 transition-colors duration-200">
-                                <HighlightedText
-                                  text={chat.title}
-                                  searchQuery={searchQuery}
-                                />
-                              </span>
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <ModelLogos models={chat.models} />
+                                </div>
+                                <span className="line-clamp-1 flex-1 transition-colors duration-200">
+                                  <HighlightedText
+                                    text={chat.title}
+                                    searchQuery={searchQuery}
+                                  />
+                                </span>
+                              </>
                             )}
                           </>
                         )}
@@ -959,6 +1069,7 @@ export function Sidebar({
                             searchQuery={searchQuery}
                           />
                         </span>
+                        <ModelLogos models={chat.models} />
                       </button>
                     </div>
                   ))}

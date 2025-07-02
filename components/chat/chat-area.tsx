@@ -40,6 +40,9 @@ import { HighlightWrapper } from "../ui/HighlightWrapper";
 import { EditableText } from "../ui/EditableText";
 import Beams from "../Backgrounds/Beams/Beams";
 import ShinyText from "../TextAnimations/ShinyText/ShinyText";
+import { CopyReference } from "../ui/CopyReference";
+import { extractCleanTaskPrompt } from "../../lib/supervisor-parser";
+import { useSidebar } from "../../lib/sidebar-context";
 
 interface AgentConversationTurn {
   userPrompt: string;
@@ -47,6 +50,7 @@ interface AgentConversationTurn {
   timestamp: number;
   isStreaming?: boolean;
   isComplete?: boolean;
+  references?: any[];
 }
 
 interface ChatAreaProps {
@@ -378,7 +382,7 @@ function MobileAgentCard({
           {/* User Prompt */}
           <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg w-fit max-w-[80%] ml-auto p-3">
             <TruncatedText
-              text={agent.prompt}
+              text={extractCleanTaskPrompt(agent.prompt)}
               maxLines={3}
               className="text-white text-sm"
               showButtonText="Show all"
@@ -386,6 +390,66 @@ function MobileAgentCard({
               buttonClassName="text-xs"
               gradientFrom="from-gray-800/50"
             />
+
+            {/* Parse and display embedded references */}
+            {(() => {
+              const embeddedReferences: any[] = [];
+              const referencePattern =
+                /--- References ---\s*(\[Reference \d+\][\s\S]*?)(?=\[Reference \d+\]|$)/g;
+
+              let match;
+              while ((match = referencePattern.exec(agent.prompt)) !== null) {
+                const referenceText = match[1];
+                const sourceMatch = referenceText.match(
+                  /From (\w+) \(([^)]+)\):/
+                );
+
+                if (sourceMatch) {
+                  const sourceType = sourceMatch[2];
+                  const sourceName = sourceMatch[1];
+
+                  // Extract content after the source line
+                  const contentMatch = referenceText.match(
+                    /From[^:]+:\s*([\s\S]+)/
+                  );
+                  const content = contentMatch
+                    ? contentMatch[1].trim()
+                    : referenceText;
+
+                  embeddedReferences.push({
+                    id: `mobile-embedded-${Date.now()}-${embeddedReferences.length}`,
+                    sourceType: sourceType.includes("code")
+                      ? "code-block"
+                      : sourceType.includes("response")
+                        ? "agent-response"
+                        : "user-prompt",
+                    agentName: sourceName,
+                    content: content,
+                    truncatedPreview:
+                      content.substring(0, 100) +
+                      (content.length > 100 ? "..." : ""),
+                    timestamp: Date.now(),
+                  });
+                }
+              }
+
+              if (embeddedReferences.length > 0) {
+                return (
+                  <div className="flex flex-wrap gap-2 pt-2 mt-2 border-t border-gray-600/30">
+                    {embeddedReferences.map((ref, index) => (
+                      <CopyReference
+                        key={ref.id}
+                        reference={ref}
+                        onRemove={undefined}
+                        isCompact={true}
+                        showPreview={false}
+                      />
+                    ))}
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
           <div className="flex items-center justify-end gap-2">
             <div className="flex items-center">
@@ -584,7 +648,7 @@ function MobileAgentCard({
                         const previousAgentName =
                           previousAgent.name ||
                           `LLM ${previousAgent.index + 1}`;
-                        return `Waiting for ${previousAgentName}`;
+                        return `Waiting for ${previousAgentName}...`;
                       }
                     }
 
@@ -604,7 +668,7 @@ function MobileAgentCard({
                       ) {
                         const sourceAgentName =
                           sourceAgent.name || `LLM ${sourceAgent.index + 1}`;
-                        return `Waiting for ${sourceAgentName}`;
+                        return `Waiting for ${sourceAgentName}...`;
                       }
                     }
 
@@ -769,15 +833,80 @@ function MobileFocusView({
                 data-source-type="user-prompt"
               >
                 <HighlightWrapper
-                  content={agent.prompt}
+                  content={extractCleanTaskPrompt(agent.prompt)}
                   contentId={`mobile-focus-prompt-${agent.index}`}
                   highlightType="copy"
                 >
-                  <div className="text-white text-sm">{agent.prompt}</div>
+                  <div className="text-white text-sm">
+                    {extractCleanTaskPrompt(agent.prompt)}
+                  </div>
                 </HighlightWrapper>
+
+                {/* Parse and display embedded references */}
+                {(() => {
+                  const embeddedReferences: any[] = [];
+                  const referencePattern =
+                    /--- References ---\s*(\[Reference \d+\][\s\S]*?)(?=\[Reference \d+\]|$)/g;
+
+                  let match;
+                  while (
+                    (match = referencePattern.exec(agent.prompt)) !== null
+                  ) {
+                    const referenceText = match[1];
+                    const sourceMatch = referenceText.match(
+                      /From (\w+) \(([^)]+)\):/
+                    );
+
+                    if (sourceMatch) {
+                      const sourceType = sourceMatch[2];
+                      const sourceName = sourceMatch[1];
+
+                      // Extract content after the source line
+                      const contentMatch = referenceText.match(
+                        /From[^:]+:\s*([\s\S]+)/
+                      );
+                      const content = contentMatch
+                        ? contentMatch[1].trim()
+                        : referenceText;
+
+                      embeddedReferences.push({
+                        id: `mobile-focus-embedded-${Date.now()}-${embeddedReferences.length}`,
+                        sourceType: sourceType.includes("code")
+                          ? "code-block"
+                          : sourceType.includes("response")
+                            ? "agent-response"
+                            : "user-prompt",
+                        agentName: sourceName,
+                        content: content,
+                        truncatedPreview:
+                          content.substring(0, 100) +
+                          (content.length > 100 ? "..." : ""),
+                        timestamp: Date.now(),
+                      });
+                    }
+                  }
+
+                  if (embeddedReferences.length > 0) {
+                    return (
+                      <div className="flex flex-wrap gap-2 pt-2 mt-2 border-t border-gray-600/30">
+                        {embeddedReferences.map((ref, index) => (
+                          <CopyReference
+                            key={ref.id}
+                            reference={ref}
+                            onRemove={undefined}
+                            isCompact={true}
+                            showPreview={false}
+                          />
+                        ))}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
                 <div className="mt-2 flex justify-end">
                   <CopyButton
-                    text={agent.prompt}
+                    text={extractCleanTaskPrompt(agent.prompt)}
                     size="sm"
                     sourceContext={{
                       sourceType: "user-prompt",
@@ -804,40 +933,119 @@ function MobileFocusView({
               <div className="space-y-4">
                 {agentConversations.map((conversation, turnIndex) => (
                   <div key={turnIndex} className="space-y-3">
-                    {/* User Message */}
+                    {/* User Message with References */}
                     <div className="flex justify-end">
-                      <div className="max-w-[85%] bg-blue-600/20 border border-blue-500/30 rounded-xl px-3 py-2">
-                        <div className="text-white text-sm">
-                          {conversation.userPrompt}
-                        </div>
+                      <div className="max-w-[80%] ml-auto bg-blue-600/20 border border-blue-500/30 rounded-xl px-3 py-2">
+                        {(() => {
+                          // Extract clean prompt and parse embedded references
+                          const cleanPrompt = extractCleanTaskPrompt(
+                            conversation.userPrompt
+                          );
+
+                          // Parse embedded references if any
+                          const embeddedReferences: any[] = [];
+                          const referencePattern =
+                            /--- References ---\s*(\[Reference \d+\][\s\S]*?)(?=\[Reference \d+\]|$)/g;
+
+                          let match;
+                          while (
+                            (match = referencePattern.exec(
+                              conversation.userPrompt
+                            )) !== null
+                          ) {
+                            const referenceText = match[1];
+                            const sourceMatch = referenceText.match(
+                              /From (\w+) \(([^)]+)\):/
+                            );
+
+                            if (sourceMatch) {
+                              const sourceType = sourceMatch[2];
+                              const sourceName = sourceMatch[1];
+
+                              // Extract content after the source line
+                              const contentMatch = referenceText.match(
+                                /From[^:]+:\s*([\s\S]+)/
+                              );
+                              const content = contentMatch
+                                ? contentMatch[1].trim()
+                                : referenceText;
+
+                              embeddedReferences.push({
+                                id: `mobile-focus-conversation-embedded-${Date.now()}-${embeddedReferences.length}`,
+                                sourceType: sourceType.includes("code")
+                                  ? "code-block"
+                                  : sourceType.includes("response")
+                                    ? "agent-response"
+                                    : "user-prompt",
+                                agentName: sourceName,
+                                content: content,
+                                truncatedPreview:
+                                  content.substring(0, 100) +
+                                  (content.length > 100 ? "..." : ""),
+                                timestamp: Date.now(),
+                              });
+                            }
+                          }
+
+                          // Use embedded references if found, otherwise use stored references
+                          const finalReferences =
+                            embeddedReferences.length > 0
+                              ? embeddedReferences
+                              : conversation.references || [];
+
+                          return (
+                            <>
+                              <div className="text-white text-sm mb-2">
+                                {cleanPrompt}
+                              </div>
+
+                              {/* Display reference chips if any */}
+                              {finalReferences.length > 0 && (
+                                <div className="flex flex-wrap gap-2 pt-2 border-t border-blue-500/20">
+                                  {finalReferences.map((ref, refIndex) => (
+                                    <CopyReference
+                                      key={ref.id || refIndex}
+                                      reference={ref}
+                                      onRemove={undefined} // No remove functionality in conversation display
+                                      isCompact={true}
+                                      showPreview={false}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
 
                     {/* Agent Response */}
-                    <div className="flex justify-start w-full">
-                      <div className="max-w-full w-full">
-                        <HighlightWrapper
-                          content={conversation.agentResponse}
-                          contentId={`mobile-focus-response-${agent.index}-${conversation.timestamp}`}
-                          highlightType="copy"
-                        >
-                          <div className="text-white text-sm">
+                    <div className="flex justify-start">
+                      <div
+                        className="max-w-full p-2 w-full"
+                        data-response-content="true"
+                        data-source-type="agent-response"
+                      >
+                        <div className="text-white text-sm break-words">
+                          <HighlightWrapper
+                            content={conversation.agentResponse}
+                            contentId={`agent-response-${agent.index}-${conversation.timestamp}`}
+                            highlightType="copy"
+                          >
                             <MarkdownRenderer
                               content={conversation.agentResponse}
                               isStreaming={conversation.isStreaming}
                               className="break-words overflow-wrap-anywhere"
                               agentIndex={agent.index}
-                              agentName={
-                                agent.name || `Node ${agent.index + 1}`
-                              }
+                              agentName={agent.name || `LLM ${agent.index + 1}`}
                               agentModel={agent.model}
                               sessionId={sessionId || undefined}
                             />
-                          </div>
-                        </HighlightWrapper>
+                          </HighlightWrapper>
+                        </div>
                         {!conversation.isStreaming &&
                           conversation.agentResponse && (
-                            <div className="mt-2">
+                            <div className="mt-2 flex justify-end">
                               <CopyButton
                                 text={conversation.agentResponse}
                                 size="sm"
@@ -845,7 +1053,7 @@ function MobileFocusView({
                                   sourceType: "agent-response",
                                   agentIndex: agent.index,
                                   agentName:
-                                    agent.name || `Node ${agent.index + 1}`,
+                                    agent.name || `LLM ${agent.index + 1}`,
                                   agentModel: agent.model,
                                   sessionId: sessionId || undefined,
                                 }}
@@ -969,6 +1177,171 @@ function MobileFocusView({
   );
 }
 
+// Component to display agent prompt with reference chips
+function AgentPromptWithReferences({
+  prompt,
+  references = [],
+  agent,
+  sessionId,
+  agentGroups,
+}: {
+  prompt: string;
+  references?: any[];
+  agent: any;
+  sessionId: Id<"chatSessions"> | null;
+  agentGroups: any[];
+}) {
+  // Extract clean prompt and parse embedded references if any
+  const extractPromptAndReferences = (promptText: string) => {
+    const cleanPrompt = extractCleanTaskPrompt(promptText);
+
+    // If the prompt has reference markers, parse them into reference objects
+    const embeddedReferences: any[] = [];
+    const referencePattern =
+      /--- References ---\s*(\[Reference \d+\][\s\S]*?)(?=\[Reference \d+\]|$)/g;
+
+    let match;
+    while ((match = referencePattern.exec(promptText)) !== null) {
+      const referenceText = match[1];
+      const sourceMatch = referenceText.match(/From (\w+) \(([^)]+)\):/);
+
+      if (sourceMatch) {
+        const sourceType = sourceMatch[2];
+        const sourceName = sourceMatch[1];
+
+        // Extract content after the source line
+        const contentMatch = referenceText.match(/From[^:]+:\s*([\s\S]+)/);
+        const content = contentMatch ? contentMatch[1].trim() : referenceText;
+
+        embeddedReferences.push({
+          id: `embedded-${Date.now()}-${embeddedReferences.length}`,
+          sourceType: sourceType.includes("code")
+            ? "code-block"
+            : sourceType.includes("response")
+              ? "agent-response"
+              : "user-prompt",
+          agentName: sourceName,
+          content: content,
+          truncatedPreview:
+            content.substring(0, 100) + (content.length > 100 ? "..." : ""),
+          timestamp: Date.now(),
+        });
+      }
+    }
+
+    return {
+      cleanPrompt,
+      parsedReferences:
+        embeddedReferences.length > 0 ? embeddedReferences : references,
+    };
+  };
+
+  const { cleanPrompt, parsedReferences } = extractPromptAndReferences(prompt);
+
+  return (
+    <div className="w-full justify-end flex px-0.5">
+      <div
+        className="relative w-auto max-w-[80%] bg-gray-800/90 rounded-xl py-2 px-3 gap-2 flex flex-col"
+        data-prompt-content="true"
+        data-source-type="user-prompt"
+      >
+        <div className="absolute right-2 -bottom-8 flex flex-row gap-2 items-center">
+          {/* Show ConnectionBadge for all agents with connections (including parallel agents) */}
+          {(() => {
+            // Simple parallel detection: if this agent is parallel OR any adjacent agent is parallel
+            const isParallel =
+              agent.connectionType === "parallel" ||
+              (agent.index > 0 &&
+                agentGroups[agent.index - 1]?.connectionType === "parallel") ||
+              (agent.index < agentGroups.length - 1 &&
+                agentGroups[agent.index + 1]?.connectionType === "parallel");
+
+            // Show parallel badge for parallel agents
+            if (isParallel) {
+              return (
+                <ConnectionBadge
+                  type="parallel"
+                  sourceAgentIndex={agent.index}
+                  condition={agent.connectionCondition}
+                  agents={agentGroups.map((a) => ({
+                    index: a.index,
+                    name: a.name,
+                    connectionType: a.connectionType,
+                  }))}
+                />
+              );
+            }
+
+            // For non-parallel agents with connections, show normal badge
+            if (
+              agent.connectionType &&
+              agent.index > 0 &&
+              agent.connectionType !== "parallel"
+            ) {
+              return (
+                <ConnectionBadge
+                  type={agent.connectionType}
+                  sourceAgentIndex={agent.sourceAgentIndex || agent.index - 1}
+                  condition={agent.connectionCondition}
+                  agents={agentGroups.map((a) => ({
+                    index: a.index,
+                    name: a.name,
+                    connectionType: a.connectionType,
+                  }))}
+                />
+              );
+            }
+
+            return null;
+          })()}
+          <CopyButton
+            text={cleanPrompt} // Use clean prompt for copy button
+            size="sm"
+            sourceContext={{
+              sourceType: "user-prompt",
+              agentIndex: agent.index,
+              agentName: agent.name || `LLM ${agent.index + 1}`,
+              agentModel: agent.model,
+              sessionId: sessionId || undefined,
+            }}
+          />
+        </div>
+
+        <HighlightWrapper
+          content={cleanPrompt}
+          contentId={`user-prompt-${agent.index}`}
+          highlightType="copy"
+        >
+          <TruncatedText
+            text={cleanPrompt} // Display clean prompt without reference markers
+            maxLines={3}
+            className="text-white text-sm"
+            showButtonText="Show all"
+            hideButtonText="Show less"
+            buttonClassName="text-xs"
+            gradientFrom="from-gray-800/90"
+          />
+        </HighlightWrapper>
+
+        {/* Display reference chips if any */}
+        {parsedReferences && parsedReferences.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-600/30">
+            {parsedReferences.map((ref, index) => (
+              <CopyReference
+                key={ref.id || index}
+                reference={ref}
+                onRemove={undefined} // No remove functionality in agent column display
+                isCompact={true}
+                showPreview={false}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function ChatArea({
   sessionId,
   focusedAgentIndex,
@@ -992,11 +1365,16 @@ export function ChatArea({
   // Get user information
   const { user } = useUser();
 
+  const { isCollapsed } = useSidebar();
+
   // Get performance state
   const { showDetailedPerformance } = usePerformance();
 
   // Copy tracking
   const { trackCopy } = useCopyTracking();
+
+  // Get sidebar state for responsive layout
+  const { isCollapsed: sidebarCollapsed } = useSidebar();
 
   // Column resize state
   const [columnStates, setColumnStates] = useState<ColumnState[]>([]);
@@ -1286,17 +1664,18 @@ export function ChatArea({
     }
   }, [focusedAgentIndex]);
 
-  // Initialize column widths when agentGroups change
+  // Initialize column widths when agent groups change
   useEffect(() => {
     if (
       agentGroups.length > 0 &&
-      focusedColumnState.columnWidths.length !== agentGroups.length
+      focusedColumnState.columnWidths.length === 0
     ) {
       const initialWidths = calculateColumnWidths(agentGroups.length, null);
-      setFocusedColumnState((prev) => ({
-        ...prev,
+      setFocusedColumnState({
+        focusedIndex: null,
         columnWidths: initialWidths,
-      }));
+        isAnimating: false,
+      });
     }
   }, [
     agentGroups.length,
@@ -1304,55 +1683,103 @@ export function ChatArea({
     calculateColumnWidths,
   ]);
 
-  // Handle focus toggle with mobile support
+  // Enhanced focus handling with smooth animations
   const handleFocusToggle = useCallback(
     (agentIndex: number) => {
-      // Check if we're on mobile (window width < 768px)
-      const isMobile = window.innerWidth < 768;
+      // Set animation state
+      setFocusedColumnState((prev) => ({
+        ...prev,
+        isAnimating: true,
+      }));
 
-      if (isMobile) {
-        // Mobile: Use modal focus view
-        const newMobileFocusedAgent =
-          mobileFocusedAgent === agentIndex ? null : agentIndex;
-        setMobileFocusedAgent(newMobileFocusedAgent);
+      // Calculate new focus state
+      const newFocusIndex =
+        focusedColumnState.focusedIndex === agentIndex ? null : agentIndex;
+      const newColumnWidths = calculateColumnWidths(
+        agentGroups.length,
+        newFocusIndex
+      );
 
-        // Also update the parent component's focus state for input routing
-        if (onFocusAgent) {
-          onFocusAgent(newMobileFocusedAgent);
-        }
-      } else {
-        // Desktop: Use column focus
-        setFocusedColumnState((prev) => {
-          const newFocusedIndex =
-            prev.focusedIndex === agentIndex ? null : agentIndex;
-          const newWidths = calculateColumnWidths(
-            agentGroups.length,
-            newFocusedIndex
-          );
+      // Update focused column state with animation
+      setFocusedColumnState({
+        focusedIndex: newFocusIndex,
+        columnWidths: newColumnWidths,
+        isAnimating: true,
+      });
 
-          return {
-            focusedIndex: newFocusedIndex,
-            columnWidths: newWidths,
-            isAnimating: false, // No longer needed with framer-motion
-          };
-        });
+      // Clear animation state after transition completes
+      setTimeout(() => {
+        setFocusedColumnState((prev) => ({
+          ...prev,
+          isAnimating: false,
+        }));
+      }, 200); // Match the CSS transition duration
 
-        // Update the parent component's focus state for input routing
-        if (onFocusAgent) {
-          const newFocusIndex =
-            focusedColumnState.focusedIndex === agentIndex ? null : agentIndex;
-          onFocusAgent(newFocusIndex);
-        }
+      // Handle mobile focus toggle
+      if (window.innerWidth < 768) {
+        setMobileFocusedAgent(newFocusIndex);
+      }
+
+      // Notify parent component
+      if (onFocusAgent) {
+        onFocusAgent(newFocusIndex);
       }
     },
     [
-      mobileFocusedAgent,
       focusedColumnState.focusedIndex,
       agentGroups.length,
       calculateColumnWidths,
       onFocusAgent,
     ]
   );
+
+  // Sync internal focused state with external prop changes (e.g., from supervisor focus)
+  useEffect(() => {
+    const normalizedFocusedIndex = focusedAgentIndex ?? null;
+    if (
+      normalizedFocusedIndex !== focusedColumnState.focusedIndex &&
+      agentGroups.length > 0
+    ) {
+      const newColumnWidths = calculateColumnWidths(
+        agentGroups.length,
+        normalizedFocusedIndex
+      );
+
+      setFocusedColumnState({
+        focusedIndex: normalizedFocusedIndex,
+        columnWidths: newColumnWidths,
+        isAnimating: true,
+      });
+
+      // Clear animation state after transition
+      setTimeout(() => {
+        setFocusedColumnState((prev) => ({
+          ...prev,
+          isAnimating: false,
+        }));
+      }, 200);
+    }
+  }, [focusedAgentIndex, agentGroups.length, calculateColumnWidths]);
+
+  // Respond to sidebar changes by recalculating layout
+  useEffect(() => {
+    if (agentGroups.length > 0) {
+      const newColumnWidths = calculateColumnWidths(
+        agentGroups.length,
+        focusedColumnState.focusedIndex
+      );
+
+      setFocusedColumnState((prev) => ({
+        ...prev,
+        columnWidths: newColumnWidths,
+      }));
+    }
+  }, [
+    sidebarCollapsed,
+    agentGroups.length,
+    focusedColumnState.focusedIndex,
+    calculateColumnWidths,
+  ]);
 
   const toggleReasoning = (stepId: string) => {
     setExpandedReasoning(expandedReasoning === stepId ? null : stepId);
@@ -1397,13 +1824,18 @@ export function ChatArea({
   return (
     <div
       ref={containerRef}
-      className="flex-1 flex flex-col overflow-hidden bg-gray-900/50 scrollbar-none w-full relative"
+      className={`flex-1 flex flex-col overflow-hidden bg-lavender-400/10 ${
+        !isCollapsed ? "rounded-tl-2xl" : "rounded-tl-none"
+      } scrollbar-none w-full relative transform transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]`}
+      style={{
+        willChange: "transform, width", // Hardware acceleration hint
+      }}
     >
       {/* Chain Performance Summary with smooth animations */}
       {agentGroups.length > 1 && (
         <div
           className={`
-            flex-shrink-0 border-b border-gray-800 overflow-hidden
+            flex-shrink-0 border-b border-lavender-400/30 overflow-hidden
             transition-all duration-300 ease-in-out
             ${
               showDetailedPerformance
@@ -1423,9 +1855,14 @@ export function ChatArea({
                 tokenUsage: agent.tokenUsage,
                 executionDuration: agent.executionDuration,
                 estimatedCost: agent.estimatedCost,
+                firstTokenLatency: agent.firstTokenLatency,
+                tokensPerSecond: agent.tokensPerSecond,
+                connectionType: agent.connectionType,
                 model: agent.model,
                 isComplete: agent.isComplete,
                 wasSkipped: agent.wasSkipped,
+                name: agent.name,
+                index: agent.index,
               }))}
             />
           </div>
@@ -1434,7 +1871,7 @@ export function ChatArea({
 
       {/* Desktop: Multi-agent grid view with dynamic widths */}
       <div
-        className="hidden md:grid flex-1 overflow-hidden w-full"
+        className="hidden md:grid flex-1 overflow-hidden w-full transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{
           gridTemplateColumns: agentGroups
             .map((_, index) => {
@@ -1444,6 +1881,10 @@ export function ChatArea({
               return `${columnWidth}fr`;
             })
             .join(" "),
+          transition:
+            "grid-template-columns 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+          willChange: "grid-template-columns", // Hardware acceleration hint
+          backfaceVisibility: "hidden", // Prevent flickering
         }}
       >
         {agentGroups.map((agent, index) => {
@@ -1454,11 +1895,12 @@ export function ChatArea({
           return (
             <div
               key={agent._id}
-              className={`agent-container flex flex-col overflow-hidden relative ${
-                index > 0 ? "border-l-2 border-gray-800" : ""
+              className={`agent-container flex flex-col overflow-hidden relative transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                index > 0 ? "border-l-2 border-lavender-400/30" : ""
               } ${isFocused ? "bg-lavender-600/10" : ""}`}
               style={{
                 minWidth: 0, // Allow shrinking below content width
+                transform: `scale(${isFocused ? 1.002 : 1})`, // Subtle scale effect when focused
               }}
               data-agent-index={agent.index}
               data-agent-name={agent.name || `Node ${agent.index + 1}`}
@@ -1478,9 +1920,9 @@ export function ChatArea({
               {/* Agent Column */}
               <div className="h-full flex flex-col relative z-20">
                 {/* Agent Header */}
-                <div className="agent-header flex flex-row justify-between flex-shrink-0 pr-2 border-b-2 border-gray-800">
+                <div className="agent-header flex flex-row justify-between flex-shrink-0 pr-2 border-b-2 border-lavender-400/30 hover:bg-lavender-400/10">
                   <div className="flex items-center gap-1">
-                    <div className="border border-gray-800 border-l-0 border-y-0 p-1 mr-1">
+                    <div className="border border-lavender-400/30 border-l-0 border-y-0 p-1 mr-1">
                       <ModelAvatar model={agent.model} size="sm" />
                     </div>
                     <EditableText
@@ -1538,99 +1980,17 @@ export function ChatArea({
                     ref={(el) => {
                       agentContentRefs.current[agent.index] = el;
                     }}
-                    className="h-full overflow-y-auto overflow-x-hidden px-3 pb-48 pt-4 w-full space-y-8 agent-content scrollbar-none"
+                    className={`h-full overflow-y-auto overflow-x-hidden pb-48 px-1 pt-4 w-full space-y-10 agent-content scrollbar-none ${agentGroups.length === 1 ? "max-w-4xl mx-auto" : ""}`}
                     onScroll={() => handleScroll(agent.index)}
                   >
                     {/* User Prompt */}
-                    <div className="w-full justify-end flex px-0.5">
-                      <div
-                        className="relative w-auto max-w-[80%] bg-gray-800/90  rounded-xl py-2 px-3 gap-2 flex flex-col"
-                        data-prompt-content="true"
-                        data-source-type="user-prompt"
-                      >
-                        <div className="absolute right-2 -bottom-8 flex flex-row gap-2 items-center">
-                          {/* Show ConnectionBadge for all agents with connections (including parallel agents) */}
-                          {(() => {
-                            // Simple parallel detection: if this agent is parallel OR any adjacent agent is parallel
-                            const isParallel =
-                              agent.connectionType === "parallel" ||
-                              (agent.index > 0 &&
-                                agentGroups[agent.index - 1]?.connectionType ===
-                                  "parallel") ||
-                              (agent.index < agentGroups.length - 1 &&
-                                agentGroups[agent.index + 1]?.connectionType ===
-                                  "parallel");
-
-                            // Show parallel badge for parallel agents
-                            if (isParallel) {
-                              return (
-                                <ConnectionBadge
-                                  type="parallel"
-                                  sourceAgentIndex={agent.index}
-                                  condition={agent.connectionCondition}
-                                  agents={agentGroups.map((a) => ({
-                                    index: a.index,
-                                    name: a.name,
-                                    connectionType: a.connectionType,
-                                  }))}
-                                />
-                              );
-                            }
-
-                            // For non-parallel agents with connections, show normal badge
-                            if (
-                              agent.connectionType &&
-                              agent.index > 0 &&
-                              agent.connectionType !== "parallel"
-                            ) {
-                              return (
-                                <ConnectionBadge
-                                  type={agent.connectionType}
-                                  sourceAgentIndex={
-                                    agent.sourceAgentIndex || agent.index - 1
-                                  }
-                                  condition={agent.connectionCondition}
-                                  agents={agentGroups.map((a) => ({
-                                    index: a.index,
-                                    name: a.name,
-                                    connectionType: a.connectionType,
-                                  }))}
-                                />
-                              );
-                            }
-
-                            return null;
-                          })()}
-                          <CopyButton
-                            text={agent.prompt}
-                            size="sm"
-                            sourceContext={{
-                              sourceType: "user-prompt",
-                              agentIndex: agent.index,
-                              agentName: agent.name || `LLM ${agent.index + 1}`,
-                              agentModel: agent.model,
-                              sessionId: sessionId || undefined,
-                            }}
-                          />
-                        </div>
-
-                        <HighlightWrapper
-                          content={agent.prompt}
-                          contentId={`user-prompt-${agent.index}`}
-                          highlightType="copy"
-                        >
-                          <TruncatedText
-                            text={agent.prompt}
-                            maxLines={3}
-                            className="text-white text-sm"
-                            showButtonText="Show all"
-                            hideButtonText="Show less"
-                            buttonClassName="text-xs"
-                            gradientFrom="from-gray-800/90"
-                          />
-                        </HighlightWrapper>
-                      </div>
-                    </div>
+                    <AgentPromptWithReferences
+                      prompt={agent.prompt}
+                      references={[]}
+                      agent={agent}
+                      sessionId={sessionId}
+                      agentGroups={agentGroups}
+                    />
 
                     {/* Multimodal Attachments */}
                     <AttachmentDisplay
@@ -1672,18 +2032,140 @@ export function ChatArea({
                     {!agent.wasSkipped && (
                       <div className="space-y-4">
                         {/* EXCLUSIVE RENDERING LOGIC: Prioritize agentConversations over legacy agent step data */}
-                        {agentConversations[agent.index] &&
-                        agentConversations[agent.index].length > 0
-                          ? // NEW: Render conversation history from agentConversations state (supervisor mode)
-                            agentConversations[agent.index].map(
+                        {(() => {
+                          const hasConversationHistory =
+                            agentConversations[agent.index] &&
+                            agentConversations[agent.index].length > 0;
+                          const hasLegacyData =
+                            agent.response ||
+                            agent.streamedContent ||
+                            agent.isStreaming;
+
+                          // DEBUG: Log dual rendering detection with more detail
+                          if (hasConversationHistory && hasLegacyData) {
+                            console.warn(
+                              `🚨 DUAL RENDERING DETECTED for agent ${agent.index}:`,
+                              {
+                                conversationHistory:
+                                  agentConversations[agent.index],
+                                legacyResponse: agent.response,
+                                legacyStreamedContent: agent.streamedContent,
+                                legacyIsStreaming: agent.isStreaming,
+                                agentStepId: agent._id,
+                                blockingLegacyRender: true,
+                              }
+                            );
+                          }
+
+                          // STRICT EXCLUSIVE RENDERING: Only show conversation history if it exists
+                          // COMPLETELY BLOCK legacy rendering when conversation history exists
+                          if (hasConversationHistory) {
+                            console.log(
+                              `✅ RENDERING CONVERSATION HISTORY for agent ${agent.index}:`,
+                              {
+                                conversationCount:
+                                  agentConversations[agent.index].length,
+                                hasLegacyDataBlocked: hasLegacyData,
+                              }
+                            );
+
+                            return agentConversations[agent.index].map(
                               (conversation, turnIndex) => (
                                 <div key={turnIndex} className="space-y-3">
-                                  {/* User Message */}
-                                  <div className="flex justify-end">
-                                    <div className="max-w-full bg-blue-600/20 border border-blue-500/30 rounded-xl px-3 py-2">
-                                      <div className="text-white text-sm">
-                                        {conversation.userPrompt}
-                                      </div>
+                                  {/* User Message with References */}
+                                  <div className="flex justify-end mt-2">
+                                    <div className="max-w-[80%] ml-auto bg-blue-600/20 border border-blue-500/30 rounded-xl px-3 py-2">
+                                      {(() => {
+                                        // Extract clean prompt and parse embedded references
+                                        const cleanPrompt =
+                                          extractCleanTaskPrompt(
+                                            conversation.userPrompt
+                                          );
+
+                                        // Parse embedded references if any
+                                        const embeddedReferences: any[] = [];
+                                        const referencePattern =
+                                          /--- References ---\s*(\[Reference \d+\][\s\S]*?)(?=\[Reference \d+\]|$)/g;
+
+                                        let match;
+                                        while (
+                                          (match = referencePattern.exec(
+                                            conversation.userPrompt
+                                          )) !== null
+                                        ) {
+                                          const referenceText = match[1];
+                                          const sourceMatch =
+                                            referenceText.match(
+                                              /From (\w+) \(([^)]+)\):/
+                                            );
+
+                                          if (sourceMatch) {
+                                            const sourceType = sourceMatch[2];
+                                            const sourceName = sourceMatch[1];
+
+                                            // Extract content after the source line
+                                            const contentMatch =
+                                              referenceText.match(
+                                                /From[^:]+:\s*([\s\S]+)/
+                                              );
+                                            const content = contentMatch
+                                              ? contentMatch[1].trim()
+                                              : referenceText;
+
+                                            embeddedReferences.push({
+                                              id: `conversation-embedded-${Date.now()}-${embeddedReferences.length}`,
+                                              sourceType: sourceType.includes(
+                                                "code"
+                                              )
+                                                ? "code-block"
+                                                : sourceType.includes(
+                                                      "response"
+                                                    )
+                                                  ? "agent-response"
+                                                  : "user-prompt",
+                                              agentName: sourceName,
+                                              content: content,
+                                              truncatedPreview:
+                                                content.substring(0, 100) +
+                                                (content.length > 100
+                                                  ? "..."
+                                                  : ""),
+                                              timestamp: Date.now(),
+                                            });
+                                          }
+                                        }
+
+                                        // Use embedded references if found, otherwise use stored references
+                                        const finalReferences =
+                                          embeddedReferences.length > 0
+                                            ? embeddedReferences
+                                            : conversation.references || [];
+
+                                        return (
+                                          <>
+                                            <div className="text-white text-sm mb-2">
+                                              {cleanPrompt}
+                                            </div>
+
+                                            {/* Display reference chips if any */}
+                                            {finalReferences.length > 0 && (
+                                              <div className="flex flex-wrap gap-2 pt-2 border-t border-blue-500/20">
+                                                {finalReferences.map(
+                                                  (ref, refIndex) => (
+                                                    <CopyReference
+                                                      key={ref.id || refIndex}
+                                                      reference={ref}
+                                                      onRemove={undefined} // No remove functionality in conversation display
+                                                      isCompact={true}
+                                                      showPreview={false}
+                                                    />
+                                                  )
+                                                )}
+                                              </div>
+                                            )}
+                                          </>
+                                        );
+                                      })()}
                                     </div>
                                   </div>
 
@@ -1739,11 +2221,21 @@ export function ChatArea({
                                   </div>
                                 </div>
                               )
-                            )
-                          : // LEGACY: Show agent step response only if no conversation history exists
-                            (agent.response ||
-                              agent.streamedContent ||
-                              agent.isStreaming) && (
+                            );
+                          }
+
+                          // LEGACY: Show agent step response ONLY if NO conversation history exists
+                          if (hasLegacyData && !hasConversationHistory) {
+                            console.log(
+                              `📊 RENDERING LEGACY DATA for agent ${agent.index}:`,
+                              {
+                                hasResponse: !!agent.response,
+                                hasStreamedContent: !!agent.streamedContent,
+                                isStreaming: agent.isStreaming,
+                              }
+                            );
+
+                            return (
                               <div className="flex justify-start">
                                 <div
                                   className="max-w-full p-2 w-full"
@@ -1802,7 +2294,19 @@ export function ChatArea({
                                     )}
                                 </div>
                               </div>
-                            )}
+                            );
+                          }
+
+                          // No content to render
+                          console.log(
+                            `❌ NO CONTENT TO RENDER for agent ${agent.index}:`,
+                            {
+                              hasConversationHistory,
+                              hasLegacyData,
+                            }
+                          );
+                          return null;
+                        })()}
 
                         {/* Loading State - only show if no conversation history and no legacy response */}
                         {(!agentConversations[agent.index] ||
@@ -1832,7 +2336,7 @@ export function ChatArea({
                                         const previousAgentName =
                                           previousAgent.name ||
                                           `LLM ${previousAgent.index + 1}`;
-                                        return `Waiting for ${previousAgentName}`;
+                                        return `Waiting for ${previousAgentName}...`;
                                       }
                                     }
 
@@ -1854,7 +2358,7 @@ export function ChatArea({
                                         const sourceAgentName =
                                           sourceAgent.name ||
                                           `LLM ${sourceAgent.index + 1}`;
-                                        return `Waiting for ${sourceAgentName}`;
+                                        return `Waiting for ${sourceAgentName}...`;
                                       }
                                     }
 

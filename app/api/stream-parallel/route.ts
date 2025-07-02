@@ -210,6 +210,7 @@ export async function POST(request: NextRequest) {
               thinking: fullThinking,
               tokenUsage: tokenUsage,
               estimatedCost,
+              firstTokenLatency: undefined, // Parallel endpoint doesn't track first token latency yet
             })
             .catch(console.error);
 

@@ -160,6 +160,7 @@ export const updateAgentStep = mutation({
     provider: v.optional(v.string()),
     estimatedCost: v.optional(v.number()),
     tokensPerSecond: v.optional(v.number()),
+    firstTokenLatency: v.optional(v.number()),
     suppressResponseUpdate: v.optional(v.boolean()), // Flag to prevent response field updates in supervisor mode
   },
   handler: async (ctx, args) => {
@@ -172,14 +173,45 @@ export const updateAgentStep = mutation({
       throw new Error("Agent step not found or access denied");
     }
 
+    // SUPERVISOR MODE PROTECTION: Check if there's an active supervisor turn
+    // This prevents dual rendering when supervisor is using conversation-isolated streaming
+    if (!args.suppressResponseUpdate) {
+      const activeSupervisorTurn = await ctx.db
+        .query("supervisorTurns")
+        .withIndex("by_session", (q) => q.eq("sessionId", step.sessionId))
+        .filter((q) => q.eq(q.field("isStreaming"), true))
+        .first();
+
+      if (activeSupervisorTurn && args.response !== undefined) {
+        console.log(
+          `🚫 BLOCKING UPDATE AGENT STEP: Active supervisor turn detected for session ${step.sessionId}, agent ${step.index}`
+        );
+        console.log(
+          `🚫 BLOCKING: Not updating response field during supervisor interaction`
+        );
+        // Don't return, but suppress response update
+        args.suppressResponseUpdate = true;
+      }
+    }
+
     const updateData: any = {
       isComplete: args.isComplete,
       isStreaming: args.isStreaming,
     };
 
     // SUPERVISOR MODE FIX: Only update response field if not suppressed
-    if (args.response !== undefined && !args.suppressResponseUpdate)
+    // This prevents dual rendering when conversation history is handling display
+    if (args.response !== undefined && !args.suppressResponseUpdate) {
       updateData.response = args.response;
+      console.log(
+        `💾 UPDATE AGENT STEP: Setting response for step ${args.stepId} (${args.response.length} chars)`
+      );
+    } else if (args.suppressResponseUpdate) {
+      console.log(
+        `🚫 SUPPRESSED: Not updating response field for step ${args.stepId} (supervisor mode)`
+      );
+    }
+
     if (args.reasoning !== undefined) updateData.reasoning = args.reasoning;
     if (args.thinking !== undefined) updateData.thinking = args.thinking;
     if (args.isThinking !== undefined) updateData.isThinking = args.isThinking;
@@ -190,6 +222,8 @@ export const updateAgentStep = mutation({
       updateData.estimatedCost = args.estimatedCost;
     if (args.tokensPerSecond !== undefined)
       updateData.tokensPerSecond = args.tokensPerSecond;
+    if (args.firstTokenLatency !== undefined)
+      updateData.firstTokenLatency = args.firstTokenLatency;
 
     if (args.isComplete) {
       updateData.executionEndTime = Date.now();
@@ -207,6 +241,7 @@ export const updateStreamedContent = mutation({
   args: {
     stepId: v.id("agentSteps"),
     content: v.string(),
+    supervisorModeBypass: v.optional(v.boolean()), // Allow bypass for specific cases
   },
   handler: async (ctx, args) => {
     const user = await getUserForStreaming(ctx);
@@ -216,6 +251,43 @@ export const updateStreamedContent = mutation({
     if (!step || step.userId !== user._id) {
       throw new Error("Agent step not found or access denied");
     }
+
+    // SUPERVISOR MODE PROTECTION: Check if there's an active supervisor turn
+    // This prevents dual rendering when supervisor is using conversation-isolated streaming
+    if (!args.supervisorModeBypass) {
+      const activeSupervisorTurn = await ctx.db
+        .query("supervisorTurns")
+        .withIndex("by_session", (q) => q.eq("sessionId", step.sessionId))
+        .filter((q) => q.eq(q.field("isStreaming"), true))
+        .first();
+
+      if (activeSupervisorTurn) {
+        console.log(
+          `🚫 BLOCKING UPDATE STREAMED CONTENT: Active supervisor turn detected for session ${step.sessionId}, agent ${step.index}`
+        );
+        console.log(
+          `🚫 BLOCKING: Supervisor turn ${activeSupervisorTurn._id} is streaming`
+        );
+        return; // Block the update to prevent dual rendering
+      }
+    }
+
+    // DETAILED DEBUG: Log what's calling this during supervisor interactions
+    console.log(
+      `📝 UPDATE STREAMED CONTENT: Step ${args.stepId} content length: ${args.content.length}`
+    );
+    console.log(
+      `📝 UPDATE STREAMED CONTENT: Agent index ${step.index}, session ${step.sessionId}`
+    );
+    console.log(
+      `📝 UPDATE STREAMED CONTENT: Content preview: ${args.content.substring(0, 100)}...`
+    );
+
+    // Log stack trace to see what's calling this
+    console.log(
+      `📝 UPDATE STREAMED CONTENT: Called from:`,
+      new Error().stack?.split("\n").slice(1, 4).join("\n")
+    );
 
     await ctx.db.patch(args.stepId, {
       streamedContent: args.content,
@@ -507,16 +579,80 @@ export const deleteUserAccount = mutation({
     const user = await getOrCreateUser(ctx);
     if (!user) throw new Error("Failed to get user");
 
-    // In a real app, you might want to soft delete or anonymize data
-    // For now, we'll just mark the user as deleted
-    await ctx.db.patch(user._id, {
-      email: `deleted_${Date.now()}@deleted.com`,
-      name: "Deleted User",
-      lastSeen: Date.now(),
-    });
+    // Delete all user data in proper order (respecting foreign key constraints)
 
-    // You could also delete related data here
-    // But be careful about data retention requirements
+    // 1. Delete all agent steps for user's sessions
+    const userSessions = await ctx.db
+      .query("chatSessions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    for (const session of userSessions) {
+      const agentSteps = await ctx.db
+        .query("agentSteps")
+        .filter((q) => q.eq(q.field("sessionId"), session._id))
+        .collect();
+
+      for (const step of agentSteps) {
+        await ctx.db.delete(step._id);
+      }
+
+      // Delete supervisor turns for this session
+      const supervisorTurns = await ctx.db
+        .query("supervisorTurns")
+        .withIndex("by_session", (q) => q.eq("sessionId", session._id))
+        .collect();
+
+      for (const turn of supervisorTurns) {
+        await ctx.db.delete(turn._id);
+      }
+    }
+
+    // 2. Delete all chat sessions
+    for (const session of userSessions) {
+      await ctx.db.delete(session._id);
+    }
+
+    // 3. Delete user preferences
+    const userPrefs = await ctx.db
+      .query("userPreferences")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+    if (userPrefs) {
+      await ctx.db.delete(userPrefs._id);
+    }
+
+    // 4. Delete billing info
+    const billingInfo = await ctx.db
+      .query("userBilling")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+    if (billingInfo) {
+      await ctx.db.delete(billingInfo._id);
+    }
+
+    // 5. Delete usage history
+    const usageHistory = await ctx.db
+      .query("usageHistory")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    for (const record of usageHistory) {
+      await ctx.db.delete(record._id);
+    }
+
+    // 6. Delete saved chains
+    const savedChains = await ctx.db
+      .query("savedChains")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    for (const chain of savedChains) {
+      await ctx.db.delete(chain._id);
+    }
+
+    // 7. Finally delete the user
+    await ctx.db.delete(user._id);
+
+    return { success: true };
   },
 });
 
@@ -557,6 +693,7 @@ export const completeAgentExecution = mutation({
       })
     ),
     estimatedCost: v.optional(v.number()),
+    firstTokenLatency: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const user = await getUserForStreaming(ctx);
@@ -585,6 +722,7 @@ export const completeAgentExecution = mutation({
       tokenUsage: args.tokenUsage,
       estimatedCost: args.estimatedCost,
       tokensPerSecond,
+      firstTokenLatency: args.firstTokenLatency,
       executionEndTime: now,
       executionDuration,
       isComplete: true,
@@ -864,6 +1002,26 @@ export const appendAgentConversation = mutation({
     userPrompt: v.string(),
     agentResponse: v.string(),
     triggeredBy: v.optional(v.string()),
+    references: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          sourceType: v.union(
+            v.literal("user-prompt"),
+            v.literal("agent-response"),
+            v.literal("code-block"),
+            v.literal("supervisor-response")
+          ),
+          agentIndex: v.optional(v.number()),
+          agentName: v.optional(v.string()),
+          agentModel: v.optional(v.string()),
+          content: v.string(),
+          truncatedPreview: v.string(),
+          timestamp: v.number(),
+          sessionId: v.optional(v.string()),
+        })
+      )
+    ),
   },
   handler: async (ctx, args) => {
     const user = await getOrCreateUser(ctx);
@@ -887,6 +1045,7 @@ export const appendAgentConversation = mutation({
       agentResponse: args.agentResponse,
       timestamp: Date.now(),
       triggeredBy: args.triggeredBy || "supervisor",
+      references: args.references || [],
     };
 
     if (existing) {
@@ -1038,5 +1197,267 @@ export const joinWaitlist = mutation({
       message: "Successfully joined waitlist",
       position: totalCount.length,
     };
+  },
+});
+
+// Saved Chains Mutations
+
+// Create a new saved chain
+export const createSavedChain = mutation({
+  args: {
+    name: v.string(),
+    description: v.optional(v.string()),
+    agents: v.array(
+      v.object({
+        id: v.string(),
+        model: v.string(),
+        prompt: v.string(),
+        name: v.optional(v.string()),
+        connection: v.optional(
+          v.object({
+            type: v.union(
+              v.literal("direct"),
+              v.literal("conditional"),
+              v.literal("parallel"),
+              v.literal("collaborative")
+            ),
+            condition: v.optional(v.string()),
+            sourceAgentId: v.optional(v.string()),
+          })
+        ),
+        images: v.optional(
+          v.array(
+            v.object({
+              url: v.string(),
+              filename: v.string(),
+              size: v.number(),
+              mimeType: v.string(),
+            })
+          )
+        ),
+        audioBlob: v.optional(v.any()),
+        audioDuration: v.optional(v.number()),
+        audioTranscription: v.optional(v.string()),
+        webSearchData: v.optional(
+          v.object({
+            query: v.string(),
+            results: v.array(
+              v.object({
+                title: v.string(),
+                url: v.string(),
+                snippet: v.string(),
+              })
+            ),
+          })
+        ),
+        webSearchEnabled: v.optional(v.boolean()),
+        grokOptions: v.optional(
+          v.object({
+            realTimeData: v.optional(v.boolean()),
+            thinkingMode: v.optional(v.boolean()),
+          })
+        ),
+        claudeOptions: v.optional(
+          v.object({
+            enableTools: v.optional(v.boolean()),
+            toolSet: v.optional(
+              v.union(
+                v.literal("webSearch"),
+                v.literal("fileAnalysis"),
+                v.literal("computerUse"),
+                v.literal("full")
+              )
+            ),
+            fileAttachments: v.optional(
+              v.array(
+                v.object({
+                  name: v.string(),
+                  content: v.string(),
+                  mimeType: v.string(),
+                })
+              )
+            ),
+          })
+        ),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // TODO: Add paywall check here when implementing billing
+    // For now, no limits
+
+    const now = Date.now();
+    const chainId = await ctx.db.insert("savedChains", {
+      userId: user._id,
+      name: args.name,
+      description: args.description,
+      agents: args.agents,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return chainId;
+  },
+});
+
+// Update an existing saved chain
+export const updateSavedChain = mutation({
+  args: {
+    chainId: v.id("savedChains"),
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    agents: v.optional(
+      v.array(
+        v.object({
+          id: v.string(),
+          model: v.string(),
+          prompt: v.string(),
+          name: v.optional(v.string()),
+          connection: v.optional(
+            v.object({
+              type: v.union(
+                v.literal("direct"),
+                v.literal("conditional"),
+                v.literal("parallel"),
+                v.literal("collaborative")
+              ),
+              condition: v.optional(v.string()),
+              sourceAgentId: v.optional(v.string()),
+            })
+          ),
+          images: v.optional(
+            v.array(
+              v.object({
+                url: v.string(),
+                filename: v.string(),
+                size: v.number(),
+                mimeType: v.string(),
+              })
+            )
+          ),
+          audioBlob: v.optional(v.any()),
+          audioDuration: v.optional(v.number()),
+          audioTranscription: v.optional(v.string()),
+          webSearchData: v.optional(
+            v.object({
+              query: v.string(),
+              results: v.array(
+                v.object({
+                  title: v.string(),
+                  url: v.string(),
+                  snippet: v.string(),
+                })
+              ),
+            })
+          ),
+          webSearchEnabled: v.optional(v.boolean()),
+          grokOptions: v.optional(
+            v.object({
+              realTimeData: v.optional(v.boolean()),
+              thinkingMode: v.optional(v.boolean()),
+            })
+          ),
+          claudeOptions: v.optional(
+            v.object({
+              enableTools: v.optional(v.boolean()),
+              toolSet: v.optional(
+                v.union(
+                  v.literal("webSearch"),
+                  v.literal("fileAnalysis"),
+                  v.literal("computerUse"),
+                  v.literal("full")
+                )
+              ),
+              fileAttachments: v.optional(
+                v.array(
+                  v.object({
+                    name: v.string(),
+                    content: v.string(),
+                    mimeType: v.string(),
+                  })
+                )
+              ),
+            })
+          ),
+        })
+      )
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the chain
+    const chain = await ctx.db.get(args.chainId);
+    if (!chain || chain.userId !== user._id) {
+      throw new Error("Saved chain not found or access denied");
+    }
+
+    const updateData: any = {
+      updatedAt: Date.now(),
+    };
+
+    if (args.name !== undefined) updateData.name = args.name;
+    if (args.description !== undefined)
+      updateData.description = args.description;
+    if (args.agents !== undefined) updateData.agents = args.agents;
+
+    await ctx.db.patch(args.chainId, updateData);
+    return args.chainId;
+  },
+});
+
+// Delete a saved chain
+export const deleteSavedChain = mutation({
+  args: {
+    chainId: v.id("savedChains"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the chain
+    const chain = await ctx.db.get(args.chainId);
+    if (!chain || chain.userId !== user._id) {
+      throw new Error("Saved chain not found or access denied");
+    }
+
+    await ctx.db.delete(args.chainId);
+    return { success: true };
+  },
+});
+
+// Duplicate a saved chain
+export const duplicateSavedChain = mutation({
+  args: {
+    chainId: v.id("savedChains"),
+    newName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateUser(ctx);
+    if (!user) throw new Error("Failed to get user");
+
+    // Verify user owns the original chain
+    const originalChain = await ctx.db.get(args.chainId);
+    if (!originalChain || originalChain.userId !== user._id) {
+      throw new Error("Saved chain not found or access denied");
+    }
+
+    // TODO: Add paywall check here when implementing billing
+
+    const now = Date.now();
+    const duplicateId = await ctx.db.insert("savedChains", {
+      userId: user._id,
+      name: args.newName,
+      description: originalChain.description,
+      agents: originalChain.agents,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return duplicateId;
   },
 });

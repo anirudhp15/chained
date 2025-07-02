@@ -154,6 +154,24 @@ export async function callClaudeWithTools(
     // Prepare messages with file attachments
     const enhancedMessages = [...messages];
 
+    // Add LaTeX formatting system message if not present
+    const hasSystemMessage = enhancedMessages.some(
+      (msg) => msg.role === "system"
+    );
+    if (!hasSystemMessage) {
+      enhancedMessages.unshift({
+        role: "system",
+        content: `**Mathematical Content Formatting Instructions:**
+When your response contains mathematical expressions, equations, formulas, or calculations, format them using proper LaTeX syntax:
+- Inline math: $x = 5$ or $E = mc^2$
+- Display equations: $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+- Use proper LaTeX syntax: \\frac{}{}, \\sqrt{}, \\sum_{i=1}^{n}, \\int_{}^{}, etc.
+- For modular arithmetic: $a \\equiv b \\pmod{n}$
+
+This ensures mathematical content renders beautifully in the user interface.`,
+      });
+    }
+
     // Add file attachments to the last user message if any
     if (fileAttachments.length > 0 && enhancedMessages.length > 0) {
       const lastMessage = enhancedMessages[enhancedMessages.length - 1];
@@ -253,6 +271,24 @@ export async function* streamClaudeWithTools(
   try {
     // Prepare messages with file attachments
     const enhancedMessages = [...messages];
+
+    // Add LaTeX formatting system message if not present
+    const hasSystemMessage = enhancedMessages.some(
+      (msg) => msg.role === "system"
+    );
+    if (!hasSystemMessage) {
+      enhancedMessages.unshift({
+        role: "system",
+        content: `**Mathematical Content Formatting Instructions:**
+When your response contains mathematical expressions, equations, formulas, or calculations, format them using proper LaTeX syntax:
+- Inline math: $x = 5$ or $E = mc^2$
+- Display equations: $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+- Use proper LaTeX syntax: \\frac{}{}, \\sqrt{}, \\sum_{i=1}^{n}, \\int_{}^{}, etc.
+- For modular arithmetic: $a \\equiv b \\pmod{n}$
+
+This ensures mathematical content renders beautifully in the user interface.`,
+      });
+    }
 
     // Add file attachments to the last user message if any
     if (fileAttachments.length > 0 && enhancedMessages.length > 0) {

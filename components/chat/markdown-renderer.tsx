@@ -6,11 +6,12 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { duotoneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Copy, Check, Download } from "lucide-react";
 import { CopyButton } from "../ui/CopyButton";
 import { useCopyTracking } from "../../lib/copy-tracking-context";
 import { createCopyMetadata } from "../../utils/copy-detection";
+import "katex/dist/katex.min.css";
 
 interface MarkdownRendererProps {
   content: string;
@@ -35,13 +36,40 @@ export function MarkdownRenderer({
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const { trackCopy } = useCopyTracking();
 
+  // Extremely minimal preprocessing - preserve all content, only fix obvious streaming issues
+  const processedContent = content
+    // Only fix clear streaming artifacts, don't remove any content
+    .replace(/\$\$([^$]+?)\s+\$(?!\$)/g, "$$$$1$$") // Fix $$content $ (space before single $)
+    .replace(/\$(?!\$)([^$\n]+?)\s+\$(?!\$)/g, "$$$1$$") // Fix $content $ (spaces around single $)
+
+    // Convert LaTeX bracket notations but preserve content if conversion fails
+    .replace(/\\\[([\s\S]*?)\\\]/g, (match, content) => {
+      return content.trim() ? `$$${content}$$` : match;
+    })
+    .replace(/\\\(([\s\S]*?)\\\)/g, (match, content) => {
+      return content.trim() ? `$${content}$` : match;
+    });
+
+  // Debug logging for troubleshooting
+  useEffect(() => {
+    if (content.includes("$")) {
+      console.log("🔍 MARKDOWN RENDERER DEBUG:");
+      console.log("Original content sample:", content.substring(0, 300));
+      console.log(
+        "Processed content sample:",
+        processedContent.substring(0, 300)
+      );
+      console.log("Contains $$:", processedContent.includes("$$"));
+      console.log("Contains $:", processedContent.includes("$"));
+    }
+  }, [content, processedContent]);
+
   const copyToClipboard = async (code: string, id: string) => {
     try {
       await navigator.clipboard.writeText(code);
       setCopiedCode(id);
       setTimeout(() => setCopiedCode(null), 2000);
 
-      // Track the copy with context
       if (agentIndex !== undefined) {
         const metadata = createCopyMetadata(code, {
           sourceType: "code-block",
@@ -75,56 +103,80 @@ export function MarkdownRenderer({
 
   return (
     <div
-      className={`prose prose-invert max-w-none markdown-content ${isStreaming ? "streaming-content" : ""} ${className} font-inter`}
+      className={`prose prose-invert max-w-none markdown-content ${className}`}
     >
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
+        remarkPlugins={[
+          remarkGfm,
+          [
+            remarkMath,
+            {
+              singleDollarTextMath: true,
+              inlineMathDouble: false,
+              displayMathDouble: true,
+              // More permissive settings to preserve content
+              inlineMath: [["$", "$"]],
+              displayMath: [["$$", "$$"]],
+            },
+          ],
+        ]}
+        rehypePlugins={[
+          [
+            rehypeKatex,
+            {
+              strict: false,
+              trust: true,
+              throwOnError: false, // Critical: Don't throw errors, handle gracefully
+              errorColor: "#fbbf24", // Warning color for errors
+              displayMode: false,
+              output: "html",
+              // Preserve original content when possible
+              fleqn: false,
+              leqno: false,
+              macros: {
+                "\\mod": "\\bmod",
+              },
+            },
+          ],
+        ]}
         components={{
-          // Headings
-          h1: ({ children }) => (
-            <h1 className="text-2xl font-bold font-inter text-white mb-4 mt-6 first:mt-0 tracking-tight">
-              {children}
-            </h1>
-          ),
-          h2: ({ children }) => (
-            <h2 className="text-xl font-bold font-inter text-white mb-3 mt-5 first:mt-0 tracking-tight">
-              {children}
-            </h2>
-          ),
-          h3: ({ children }) => (
-            <h3 className="text-lg font-semibold font-inter text-white mb-2 mt-4 first:mt-0 tracking-tight">
-              {children}
-            </h3>
-          ),
-          h4: ({ children }) => (
-            <h4 className="text-base font-semibold font-inter text-white mb-2 mt-3 first:mt-0 tracking-tight">
-              {children}
-            </h4>
-          ),
-
           // Paragraphs
           p: ({ children }) => (
-            <p className="text-gray-100 font-inter mb-3 leading-relaxed last:mb-0 tracking-normal">
+            <p className="text-gray-100 mb-3 leading-relaxed last:mb-0">
               {children}
             </p>
           ),
 
+          // Headings
+          h1: ({ children }) => (
+            <h1 className="text-2xl font-bold text-white mb-4 mt-6 first:mt-0">
+              {children}
+            </h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="text-xl font-bold text-white mb-3 mt-5 first:mt-0">
+              {children}
+            </h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="text-lg font-semibold text-white mb-2 mt-4 first:mt-0">
+              {children}
+            </h3>
+          ),
+
           // Lists
           ul: ({ children }) => (
-            <ul className="list-disc list-inside text-gray-100 font-inter mb-3 space-y-1.5">
+            <ul className="list-disc list-inside text-gray-100 mb-3 space-y-1.5">
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal text-gray-100 font-inter mb-3 space-y-1.5 ml-6">
+            <ol className="list-decimal text-gray-100 mb-3 space-y-1.5 ml-6">
               {children}
             </ol>
           ),
           li: ({ children }) => (
-            <li className="text-gray-100 font-inter leading-relaxed -ml-1 tracking-normal">
-              {children}
-            </li>
+            <li className="text-gray-100 leading-relaxed">{children}</li>
           ),
 
           // Links
@@ -133,7 +185,7 @@ export function MarkdownRenderer({
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-400 font-inter hover:text-blue-300 underline transition-colors"
+              className="text-blue-400 hover:text-blue-300 underline transition-colors"
             >
               {children}
             </a>
@@ -141,12 +193,10 @@ export function MarkdownRenderer({
 
           // Emphasis
           strong: ({ children }) => (
-            <strong className="font-semibold font-inter text-white">
-              {children}
-            </strong>
+            <strong className="font-semibold text-white">{children}</strong>
           ),
           em: ({ children }) => (
-            <em className="italic font-inter text-gray-200">{children}</em>
+            <em className="italic text-gray-200">{children}</em>
           ),
 
           // Code blocks
@@ -159,140 +209,88 @@ export function MarkdownRenderer({
 
             return (
               <div className="relative group mb-4">
-                <div className="flex items-center justify-between bg-gray-800 px-4 py-2 rounded-t-lg border-b border-gray-600">
-                  <span className="text-xs text-gray-400 font-medium font-inter">
+                <div className="flex items-center justify-between bg-lavender-400/10  px-4 py-2 rounded-t-lg border-b border-gray-600">
+                  <span className="text-xs text-gray-300 font-medium">
                     {language === "text" ? "Code" : language.toUpperCase()}
                   </span>
-                  <div className="flex items-center gap-4 opacity-0 group-hover:opacity-100">
+                  <div className="flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <button
                       onClick={() => downloadCode(code, language)}
-                      className="flex items-center gap-1 text-xs text-gray-400 font-inter hover:text-gray-200 transition-colors"
+                      className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-400 transition-colors"
                       title="Download code"
                     >
                       <Download size={12} />
                     </button>
                     <button
                       onClick={() => copyToClipboard(code, codeId)}
-                      className="flex items-center gap-1 text-xs text-gray-400 font-inter hover:text-gray-200 transition-colors"
+                      className="flex items-center gap-1 text-xs text-gray-400 hover:text-green-400 transition-colors"
                       title="Copy code"
                     >
                       {copiedCode === codeId ? (
-                        <>
-                          <Check size={12} />
-                        </>
+                        <Check size={12} className="text-green-400" />
                       ) : (
-                        <>
-                          <Copy size={12} />
-                        </>
+                        <Copy size={12} />
                       )}
                     </button>
                   </div>
                 </div>
-                <SyntaxHighlighter
-                  style={oneDark}
-                  language={language}
-                  customStyle={{
-                    margin: 0,
-                    borderRadius: 0,
-                    background: "#111827",
-                    fontSize: "0.875rem",
-                    lineHeight: "1.5",
-                    overflowX: "auto",
-                    maxWidth: "100%",
-                    padding: "1rem",
-                    fontFamily:
-                      'JetBrains Mono, Menlo, Monaco, Consolas, "Courier New", monospace',
-                    fontWeight: 400,
-                    whiteSpace: "pre",
-                    wordBreak: "normal",
-                  }}
-                  codeTagProps={{
-                    style: {
-                      fontFamily:
-                        'JetBrains Mono, Menlo, Monaco, Consolas, "Courier New", monospace',
-                      fontWeight: 400,
-                      whiteSpace: "pre",
-                      wordBreak: "normal",
+                <div className="syntax-highlighter-container">
+                  <SyntaxHighlighter
+                    style={duotoneDark}
+                    language={language}
+                    customStyle={{
+                      margin: 0,
+                      borderRadius: "0 0 0.5rem 0.5rem",
+                      backgroundColor: "#0a0a0a !important", // bg-neutral-950
                       fontSize: "0.875rem",
                       lineHeight: "1.5",
-                    },
-                  }}
-                  wrapLongLines={true}
-                >
-                  {code}
-                </SyntaxHighlighter>
+                      overflowX: "auto",
+                      maxWidth: "100%",
+                      padding: "1rem",
+                      fontFamily:
+                        '"JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, "SF Mono", Monaco, monospace',
+                    }}
+                    wrapLongLines={true}
+                    showLineNumbers={false}
+                    PreTag="div"
+                    codeTagProps={{
+                      style: {
+                        fontFamily:
+                          '"JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, "SF Mono", Monaco, monospace',
+                      },
+                    }}
+                  >
+                    {code}
+                  </SyntaxHighlighter>
+                </div>
               </div>
+            );
+          },
+
+          // Inline code
+          code: ({ children, className }) => {
+            if (className) {
+              return <code className={className}>{children}</code>;
+            }
+            return (
+              <code className="bg-gray-700/50 text-gray-200 px-1.5 py-0.5 rounded text-sm">
+                {children}
+              </code>
             );
           },
 
           // Blockquotes
           blockquote: ({ children }) => (
             <blockquote className="border-l-4 border-gray-500 pl-4 py-2 my-4 bg-gray-800/30 rounded-r">
-              <div className="text-gray-300 italic font-inter tracking-normal">
-                {children}
-              </div>
+              <div className="text-gray-300 italic">{children}</div>
             </blockquote>
           ),
-
-          // Tables
-          table: ({ children }) => (
-            <div className="overflow-x-auto mb-4">
-              <table className="min-w-full border border-gray-600 rounded-lg overflow-hidden font-inter">
-                {children}
-              </table>
-            </div>
-          ),
-          thead: ({ children }) => (
-            <thead className="bg-gray-700 font-inter">{children}</thead>
-          ),
-          tbody: ({ children }) => (
-            <tbody className="bg-gray-800/50 font-inter">{children}</tbody>
-          ),
-          tr: ({ children }) => (
-            <tr className="border-b border-gray-600 last:border-b-0 font-inter">
-              {children}
-            </tr>
-          ),
-          th: ({ children }) => (
-            <th className="px-4 py-2 text-left text-white font-semibold text-sm font-inter tracking-tight">
-              {children}
-            </th>
-          ),
-          td: ({ children }) => (
-            <td className="px-4 py-2 text-gray-100 text-sm font-inter">
-              {children}
-            </td>
-          ),
-
-          // Inline code
-          code: ({ children, className }) => {
-            // If it's a code block (has className), let the pre component handle it
-            if (className) {
-              return <code className={className}>{children}</code>;
-            }
-
-            // Inline code styling with proper wrapping
-            return (
-              <code
-                className="bg-gray-700/50 text-gray-200 px-1.5 py-0.5 rounded text-sm font-jet break-all"
-                style={{
-                  fontFamily:
-                    'JetBrains Mono, Menlo, Monaco, Consolas, "Courier New", monospace',
-                  fontWeight: 400,
-                  whiteSpace: "pre",
-                  wordBreak: "normal",
-                }}
-              >
-                {children}
-              </code>
-            );
-          },
 
           // Horizontal rule
           hr: () => <hr className="border-gray-600 my-6" />,
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );

@@ -36,9 +36,9 @@ export function parseSupervisorPrompt(
   // Create agent name mapping for flexible matching
   const agentNameMap = new Map<string, number>();
   agentSteps.forEach((step, index) => {
-    const agentName = step.name || `Agent ${index + 1}`;
-    const stepNumber = `Agent ${index + 1}`;
-    const stepNumberShort = `Agent${index + 1}`;
+    const agentName = step.name || `LLM ${index + 1}`;
+    const stepNumber = `LLM ${index + 1}`;
+    const stepNumberShort = `LLM${index + 1}`;
     const stepIndex = `${index + 1}`;
 
     // Map various name formats to the same agent
@@ -46,6 +46,16 @@ export function parseSupervisorPrompt(
     agentNameMap.set(stepNumber.toLowerCase(), index);
     agentNameMap.set(stepNumberShort.toLowerCase(), index);
     agentNameMap.set(stepIndex, index);
+
+    // Add LLM patterns for common usage
+    agentNameMap.set(`llm ${index + 1}`, index);
+    agentNameMap.set(`llm${index + 1}`, index);
+    agentNameMap.set(`llm ${stepIndex}`, index);
+    agentNameMap.set(`llm${stepIndex}`, index);
+
+    // Also add Agent patterns for backward compatibility
+    agentNameMap.set(`agent ${index + 1}`, index);
+    agentNameMap.set(`agent${index + 1}`, index);
 
     // Also map by model name if unique
     const modelCount = agentSteps.filter((s) => s.model === step.model).length;
@@ -55,7 +65,8 @@ export function parseSupervisorPrompt(
   });
 
   // Enhanced @mention regex that captures the task after the mention
-  const mentionRegex = /@((?:Agent\s*)?\d+|Agent\s+\w+|\w+)(?=\s|$)/gi;
+  const mentionRegex =
+    /@((?:LLM\s*)?\d+|(?:Agent\s*)?\d+|Agent\s+\w+|\w+)(?=\s|$)/gi;
   let match;
   const processedMentions = new Set<number>();
 
@@ -87,8 +98,7 @@ export function parseSupervisorPrompt(
         .replace(/[,\s]+$/, "") // Remove trailing punctuation
         .trim();
 
-      const agentName =
-        agentSteps[agentIndex]?.name || `Agent ${agentIndex + 1}`;
+      const agentName = agentSteps[agentIndex]?.name || `LLM ${agentIndex + 1}`;
 
       const finalTaskPrompt =
         cleanTask || extractImplicitTask(userInput, agentName);
@@ -157,7 +167,7 @@ function inferAgentFromContext(
     if (lowerInput.includes(step.model.toLowerCase())) {
       return {
         agentIndex: step.index,
-        agentName: step.name || `Agent ${step.index + 1}`,
+        agentName: step.name || `LLM ${step.index + 1}`,
         taskPrompt: userInput,
       };
     }
@@ -181,7 +191,7 @@ function inferAgentFromContext(
       if (matchingAgent) {
         return {
           agentIndex: matchingAgent.index,
-          agentName: matchingAgent.name || `Agent ${matchingAgent.index + 1}`,
+          agentName: matchingAgent.name || `LLM ${matchingAgent.index + 1}`,
           taskPrompt: userInput,
         };
       }
@@ -191,12 +201,30 @@ function inferAgentFromContext(
   return null;
 }
 
+// Extract clean task prompt without reference markers
+export function extractCleanTaskPrompt(prompt: string): string {
+  // Check if the prompt contains reference markers like "--- References ---"
+  const referenceMarkerRegex = /--- References ---\s*\[Reference \d+\]/;
+
+  if (referenceMarkerRegex.test(prompt)) {
+    // Split at the reference marker and take the first part as the main prompt
+    const parts = prompt.split(/--- References ---/);
+    return parts[0].trim();
+  }
+
+  return prompt;
+}
+
 export function buildAgentTaskPrompt(
   originalTask: string,
   chainContext: string,
   agentHistory: string,
   userPrompt: string
 ): string {
+  // Extract clean prompt without reference markers
+  const cleanUserPrompt = extractCleanTaskPrompt(userPrompt);
+  const cleanOriginalTask = extractCleanTaskPrompt(originalTask);
+
   // Simplified prompt that focuses on the task without exposing orchestration
   let prompt = "";
 
@@ -204,13 +232,20 @@ export function buildAgentTaskPrompt(
     prompt += `Context:\n${chainContext}\n\n`;
   }
 
-  prompt += `Task: ${userPrompt}\n\n`;
+  prompt += `Task: ${cleanUserPrompt}\n\n`;
 
-  if (originalTask && originalTask !== userPrompt) {
-    prompt += `Additional details: ${originalTask}\n\n`;
+  if (cleanOriginalTask && cleanOriginalTask !== cleanUserPrompt) {
+    prompt += `Additional details: ${cleanOriginalTask}\n\n`;
   }
 
-  prompt += `Please complete this task directly. Provide a clear, actionable response without mentioning other agents, coordination details, or your position in any workflow. Focus solely on delivering value for this specific request.`;
+  // Add LaTeX formatting instructions
+  prompt += `**Mathematical Content Formatting:**
+When your response contains mathematical expressions, equations, or formulas, use proper LaTeX formatting:
+- Inline math: $x = 5$ or $E = mc^2$
+- Display equations: $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+- Use proper LaTeX syntax for all mathematical content
+
+Please complete this task directly. Provide a clear, actionable response without mentioning other agents, coordination details, or your position in any workflow. Focus solely on delivering value for this specific request.`;
 
   return prompt;
 }
@@ -237,7 +272,7 @@ export function buildSupervisorPrompt(
 `;
 
     agentSteps.forEach((step, index) => {
-      const agentName = step.name || `Agent ${index + 1}`;
+      const agentName = step.name || `LLM ${index + 1}`;
       prompt += `• ${agentName} (${step.model})\n`;
     });
 
@@ -263,11 +298,17 @@ export function buildSupervisorPrompt(
 3. Synthesize agent outputs into a single, polished response
 4. Present the final result conversationally
 
+**Mathematical Content Formatting:**
+When presenting mathematical content, always use proper LaTeX formatting:
+- Inline math: $x = 5$ or $\\frac{a}{b}$
+- Display equations: $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+- Use proper LaTeX syntax for all mathematical expressions
+
 **Internal Agent Status (for your reference only - DO NOT share with user):**
 `;
 
   agentSteps.forEach((step, index) => {
-    const agentName = step.name || `Agent ${index + 1}`;
+    const agentName = step.name || `LLM ${index + 1}`;
     const status = step.isComplete
       ? "Ready"
       : step.isStreaming
@@ -290,6 +331,7 @@ export function buildSupervisorPrompt(
 - Be helpful and conversational, matching the user's tone
 - Keep internal orchestration completely hidden
 - Only show progress if explicitly asked or if the task will take significant time
+- Format all mathematical content using proper LaTeX syntax
 
 Example good response: "I'll analyze your code and create a business strategy for you. Let me work on that..."
 Example bad response: "I'll have @Claude analyze the code first, then @GPT will create the strategy..."

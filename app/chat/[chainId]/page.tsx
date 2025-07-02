@@ -19,7 +19,7 @@ import {
   InputAreaContainer,
   type InputMode,
 } from "../../../components/input/input-area-container";
-import { SupervisorConversation } from "../../../components/supervisor/supervisor-conversation";
+
 import type { Agent } from "../../../components/input/agent-input";
 import { evaluateCondition } from "../../../lib/condition-evaluator";
 import { PerformanceProvider } from "../../../lib/performance-context";
@@ -27,6 +27,7 @@ import Link from "next/link";
 import { ArrowLeft, Bot, MessageSquare } from "lucide-react";
 import { SupervisorInterface } from "../../../components/supervisor/supervisor-interface";
 import { useCopyTracking } from "../../../lib/copy-tracking-context";
+import { useSidebar } from "../../../lib/sidebar-context";
 
 // Parallel execution type definitions
 interface ExecutionGroup {
@@ -51,6 +52,7 @@ interface AgentConversationTurn {
   timestamp: number;
   isStreaming?: boolean;
   isComplete?: boolean;
+  references?: any[];
 }
 
 function ChatPageContent() {
@@ -102,6 +104,12 @@ function ChatPageContent() {
   const updateAgentSkipped = useMutation(api.mutations.updateAgentSkipped);
   const updateAgentStep = useMutation(api.mutations.updateAgentStep);
 
+  // Copy tracking session management
+  const { setSession } = useCopyTracking();
+
+  // Get sidebar state for conditional styling
+  const { isCollapsed: sidebarCollapsed } = useSidebar();
+
   // Verify session exists and user has access
   const session = useQuery(
     api.queries.getChatSession,
@@ -150,6 +158,7 @@ function ChatPageContent() {
               timestamp: turn.timestamp,
               isStreaming: false,
               isComplete: true,
+              references: turn.references || [], // Include references from the conversation history
             }));
         }
       });
@@ -408,12 +417,13 @@ function ChatPageContent() {
 
                   case "agent_chunk":
                     // UPDATED: Handle unified stream with userPrompt included
-                    console.log(
-                      "Agent chunk received for agent:",
-                      data.agentIndex,
-                      "Content:",
-                      data.content
-                    );
+                    console.log("📥 FRONTEND CHUNK RECEIVED:", {
+                      agentIndex: data.agentIndex,
+                      contentLength: data.content?.length || 0,
+                      contentPreview: data.content?.substring(0, 50) || "",
+                      userPrompt: data.userPrompt,
+                      timestamp: Date.now(),
+                    });
 
                     setAgentConversations((prev) => {
                       const updated = { ...prev };
@@ -436,6 +446,14 @@ function ChatPageContent() {
                             updated[data.agentIndex] = [];
                           }
 
+                          console.log(
+                            `🆕 CREATING NEW CONVERSATION TURN for agent ${data.agentIndex}:`,
+                            {
+                              userPrompt: data.userPrompt,
+                              firstChunk: data.content?.substring(0, 50) || "",
+                            }
+                          );
+
                           // Add new conversation turn
                           updated[data.agentIndex].push({
                             userPrompt: data.userPrompt,
@@ -452,12 +470,25 @@ function ChatPageContent() {
 
                       // Otherwise update existing conversation
                       const lastTurnIndex = updated[data.agentIndex].length - 1;
-                      const lastTurn = updated[data.agentIndex][lastTurnIndex];
+                      if (lastTurnIndex >= 0) {
+                        const existingResponse =
+                          updated[data.agentIndex][lastTurnIndex].agentResponse;
+                        const newResponse = existingResponse + data.content;
 
-                      if (lastTurn.isStreaming) {
+                        console.log(
+                          `📝 APPENDING TO EXISTING TURN for agent ${data.agentIndex}:`,
+                          {
+                            existingLength: existingResponse.length,
+                            newChunkLength: data.content?.length || 0,
+                            totalLength: newResponse.length,
+                            chunkPreview: data.content?.substring(0, 50) || "",
+                          }
+                        );
+
                         updated[data.agentIndex][lastTurnIndex] = {
-                          ...lastTurn,
-                          agentResponse: lastTurn.agentResponse + data.content,
+                          ...updated[data.agentIndex][lastTurnIndex],
+                          agentResponse: newResponse,
+                          isStreaming: true,
                         };
                       }
 
@@ -633,7 +664,7 @@ function ChatPageContent() {
     setSupervisorTyping(isTyping);
   };
 
-  // Auto-prompt when chain initialization completes
+  // Auto-prompt when chain initialization completes - SUPERVISOR streams the message
   useEffect(() => {
     if (agentSteps && agentSteps.length > 1 && supervisorTurns) {
       const allCompleted = agentSteps.every(
@@ -658,15 +689,53 @@ function ChatPageContent() {
         !hasAutoPromptedRef.current &&
         !previousChainCompleteRef.current
       ) {
-        console.log("Chain initialization complete - sending auto-prompt");
-        handleSupervisorSend("What would you like to do next?");
+        console.log(
+          "Chain initialization complete - supervisor will auto-prompt"
+        );
+
+        // Generate a turn ID and simulate supervisor streaming the welcome message
+        const autoTurnId = `auto-${Date.now()}`;
+        const welcomeMessage = "What would you like to do next?";
+
+        // Set supervisor status to ready and stream the welcome message
+        setSupervisorStatus("ready");
+        setSupervisorStreamContent((prev) => ({
+          ...prev,
+          [autoTurnId]: "",
+        }));
+
+        // Simulate typing the message character by character
+        let currentIndex = 0;
+        const typeInterval = setInterval(() => {
+          if (currentIndex <= welcomeMessage.length) {
+            setSupervisorStreamContent((prev) => ({
+              ...prev,
+              [autoTurnId]: welcomeMessage.slice(0, currentIndex),
+            }));
+            currentIndex++;
+          } else {
+            clearInterval(typeInterval);
+            // Save the message to the database after typing completes
+            fetch("/api/supervisor-interact", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sessionId: chainId,
+                userInput: "",
+                autoWelcomeMessage: welcomeMessage,
+                isAutoWelcome: true,
+              }),
+            }).catch(console.error);
+          }
+        }, 50); // Type at 50ms per character
+
         hasAutoPromptedRef.current = true;
       }
 
       // Track chain completion state for next render
       previousChainCompleteRef.current = isChainComplete;
     }
-  }, [agentSteps, supervisorTurns, handleSupervisorSend]);
+  }, [agentSteps, supervisorTurns, chainId]);
 
   const buildConversationContext = async (
     sessionId: Id<"chatSessions">,
@@ -1444,9 +1513,6 @@ function ChatPageContent() {
     }
   }, [agentSteps?.length]);
 
-  // Copy tracking session management
-  const { setSession } = useCopyTracking();
-
   // Set current session for copy tracking
   useEffect(() => {
     if (chainId) {
@@ -1472,7 +1538,7 @@ function ChatPageContent() {
   }
 
   return (
-    <div className="flex h-screen bg-black scrollbar-none">
+    <div className="flex h-screen bg-neutral-950 scrollbar-none">
       <Sidebar
         currentSessionId={chainId}
         isMobileOpen={isMobileSidebarOpen}
@@ -1482,7 +1548,11 @@ function ChatPageContent() {
         isOpen={isMobileSidebarOpen}
         onToggle={toggleMobileSidebar}
       />
-      <div className="flex-1 flex flex-col relative w-full scrollbar-none">
+      <div
+        className={`flex-1 flex flex-col relative w-full scrollbar-none bg-gray-950 border-l-2 border-lavender-400/30 shadow-2xl transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+          !sidebarCollapsed ? "mt-4 border-t-2 rounded-tl-2xl" : ""
+        }`}
+      >
         {/* Conditional rendering based on input mode */}
 
         <ChatArea
@@ -1499,6 +1569,7 @@ function ChatPageContent() {
             agentSteps={agentSteps || []}
             onSupervisorSend={handleSupervisorSend}
             onSupervisorTyping={handleSupervisorTyping}
+            onFocusAgent={(agentIndex) => handleFocusAgent(agentIndex)}
             isLoading={isLoading}
             isOpen={supervisorModalOpen}
             onToggle={() => setSupervisorModalOpen(!supervisorModalOpen)}

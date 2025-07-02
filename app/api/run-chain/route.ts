@@ -136,6 +136,7 @@ async function processDatabaseQueue() {
                     thinking: item.data.thinking,
                     tokenUsage: item.data.tokenUsage,
                     estimatedCost: item.data.estimatedCost,
+                    firstTokenLatency: item.data.firstTokenLatency,
                   }
                 );
                 break;
@@ -530,6 +531,7 @@ export async function POST(request: NextRequest) {
                       thinking: fullThinking,
                       tokenUsage: tokenUsage,
                       estimatedCost,
+                      firstTokenLatency: undefined, // Claude doesn't track first token latency the same way
                     },
                     stepId,
                     convex
@@ -812,6 +814,9 @@ export async function POST(request: NextRequest) {
               thinking: fullThinking,
               tokenUsage: tokenUsage,
               estimatedCost,
+              firstTokenLatency: firstTokenTime
+                ? firstTokenTime - streamStartTime
+                : undefined,
             },
             stepId,
             convex

@@ -40,6 +40,8 @@ import { ReferenceStack } from "../ui/ReferenceStack";
 import { ReferencesModal } from "../ui/references-modal";
 import { useCopyTracking } from "../../lib/copy-tracking-context";
 import type { CopyReference } from "../../lib/copy-tracking-context";
+import { CopyReference as CopyReferenceComponent } from "../ui/CopyReference";
+import { extractCleanTaskPrompt } from "../../lib/supervisor-parser";
 
 // Grok Icon Component
 const GrokIcon = ({
@@ -91,9 +93,11 @@ function getModelProviderIcon(model: string) {
 export function CollapsibleAgentExecution({
   mention,
   agentStep,
+  onFocus,
 }: {
   mention: any;
   agentStep: any;
+  onFocus?: (agentIndex: number) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const modelProvider = getModelProviderIcon(agentStep?.model || "");
@@ -163,11 +167,81 @@ export function CollapsibleAgentExecution({
             className="overflow-hidden"
           >
             <div className="px-3 pb-3 space-y-3 border-t border-gray-600/75">
-              {/* Task Prompt */}
+              {/* Task Prompt with References */}
               <div className="pt-3">
-                <div className="text-sm text-gray-400 leading-relaxed">
-                  {mention.taskPrompt}
-                </div>
+                {(() => {
+                  // Extract clean prompt and parse embedded references
+                  const cleanPrompt = extractCleanTaskPrompt(
+                    mention.taskPrompt
+                  );
+
+                  // Parse embedded references if any
+                  const embeddedReferences: any[] = [];
+                  const referencePattern =
+                    /--- References ---\s*(\[Reference \d+\][\s\S]*?)(?=\[Reference \d+\]|$)/g;
+
+                  let match;
+                  while (
+                    (match = referencePattern.exec(mention.taskPrompt)) !== null
+                  ) {
+                    const referenceText = match[1];
+                    const sourceMatch = referenceText.match(
+                      /From (\w+) \(([^)]+)\):/
+                    );
+
+                    if (sourceMatch) {
+                      const sourceType = sourceMatch[2];
+                      const sourceName = sourceMatch[1];
+
+                      // Extract content after the source line
+                      const contentMatch = referenceText.match(
+                        /From[^:]+:\s*([\s\S]+)/
+                      );
+                      const content = contentMatch
+                        ? contentMatch[1].trim()
+                        : referenceText;
+
+                      embeddedReferences.push({
+                        id: `supervisor-modal-embedded-${Date.now()}-${embeddedReferences.length}`,
+                        sourceType: sourceType.includes("code")
+                          ? "code-block"
+                          : sourceType.includes("response")
+                            ? "agent-response"
+                            : "user-prompt",
+                        agentName: sourceName,
+                        content: content,
+                        truncatedPreview:
+                          content.substring(0, 100) +
+                          (content.length > 100 ? "..." : ""),
+                        timestamp: Date.now(),
+                      });
+                    }
+                  }
+
+                  return (
+                    <>
+                      {/* Clean Task Prompt */}
+                      <div className="text-sm text-gray-400 leading-relaxed mb-2">
+                        {cleanPrompt}
+                      </div>
+
+                      {/* Display reference chips if any */}
+                      {embeddedReferences.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-600/30">
+                          {embeddedReferences.map((ref, index) => (
+                            <CopyReferenceComponent
+                              key={ref.id}
+                              reference={ref}
+                              onRemove={undefined} // No remove functionality in supervisor modal
+                              isCompact={true}
+                              showPreview={false}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Original Chain Response - isolated from supervisor interactions */}
@@ -182,17 +256,78 @@ export function CollapsibleAgentExecution({
                     <div className="text-red-400 p-2 bg-red-500/10 rounded border border-red-500/20">
                       Error: {agentStep.error}
                     </div>
-                  ) : agentStep.response ? (
-                    <div className="p-2 bg-gray-800/50 rounded">
-                      {agentStep.response.length > 200
-                        ? `${agentStep.response.slice(0, 200)}...`
-                        : agentStep.response}
-                    </div>
-                  ) : agentStep.streamedContent ? (
-                    <div className="p-2 bg-gray-800/50 rounded">
-                      {agentStep.streamedContent.length > 200
-                        ? `${agentStep.streamedContent.slice(0, 200)}...`
-                        : agentStep.streamedContent}
+                  ) : agentStep.response || agentStep.streamedContent ? (
+                    <div className="group/response">
+                      <div
+                        className="p-2 bg-gray-800/50 rounded max-w-2xl mx-auto"
+                        data-response-content="true"
+                        data-source-type="agent-response"
+                      >
+                        <MarkdownRenderer
+                          content={
+                            agentStep.response ||
+                            agentStep.streamedContent ||
+                            ""
+                          }
+                          isStreaming={agentStep.isStreaming}
+                          className="break-words overflow-wrap-anywhere"
+                          agentIndex={agentStep.index}
+                          agentName={mention.agentName}
+                          agentModel={agentStep.model}
+                          sessionId={agentStep.sessionId}
+                        />
+                      </div>
+                      {/* Action Buttons with Source Context */}
+                      {!agentStep.isStreaming &&
+                        (agentStep.response || agentStep.streamedContent) && (
+                          <div className="flex justify-between items-center mt-2 opacity-0 group-hover/response:opacity-100 transition-opacity duration-200">
+                            {/* Focus Button */}
+                            <button
+                              onClick={() => onFocus?.(mention.agentIndex)}
+                              className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-gray-400 hover:text-lavender-400 hover:bg-gray-700/50 rounded-md transition-colors"
+                              title="Focus on this agent"
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <circle
+                                  cx="12"
+                                  cy="12"
+                                  r="3"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                />
+                                <path
+                                  d="M12 1v6m0 8v6m11-7h-6m-8 0H1"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                />
+                              </svg>
+                              Focus
+                            </button>
+
+                            {/* Copy Button */}
+                            <CopyButton
+                              text={
+                                agentStep.response ||
+                                agentStep.streamedContent ||
+                                ""
+                              }
+                              size="sm"
+                              sourceContext={{
+                                sourceType: "agent-response",
+                                agentIndex: agentStep.index,
+                                agentName: mention.agentName,
+                                agentModel: agentStep.model,
+                                sessionId: agentStep.sessionId,
+                              }}
+                            />
+                          </div>
+                        )}
                     </div>
                   ) : agentStep.isStreaming ? (
                     <div className="flex items-center gap-3 text-gray-400 p-2">
@@ -215,6 +350,7 @@ interface SupervisorInterfaceProps {
   agentSteps: any[];
   onSupervisorSend: (prompt: string) => void;
   onSupervisorTyping?: (isTyping: boolean) => void;
+  onFocusAgent?: (agentIndex: number) => void;
   isLoading?: boolean;
   isOpen: boolean;
   onToggle: () => void;
@@ -236,6 +372,7 @@ export function SupervisorInterface({
   agentSteps,
   onSupervisorSend,
   onSupervisorTyping,
+  onFocusAgent,
   isLoading = false,
   isOpen,
   onToggle,
@@ -271,6 +408,34 @@ export function SupervisorInterface({
   // Hover state for better UX
   const [isHovering, setIsHovering] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic text state for supervisor label
+  const [hoverContext, setHoverContext] = useState<string>("supervisor");
+
+  // Helper function to get display text based on hover context
+  const getDisplayText = () => {
+    switch (hoverContext) {
+      case "metrics":
+        return "Show metrics";
+      case "attach":
+        return "Attach file";
+      case "expand":
+        return isOpen ? "Close" : "Expand";
+      case "send":
+        return "Send";
+      default:
+        return "Supervisor";
+    }
+  };
+
+  // Hover handlers for dynamic text
+  const handleHoverContext = (context: string) => {
+    setHoverContext(context);
+  };
+
+  const handleHoverContextReset = () => {
+    setHoverContext("supervisor");
+  };
 
   // Get sidebar state for positioning
   const { sidebarWidth } = useSidebar();
@@ -528,9 +693,9 @@ export function SupervisorInterface({
   const getStatusText = () => {
     switch (supervisorStatus) {
       case "thinking":
-        return "Supervisor thinking...";
+        return "Supervising...";
       case "orchestrating":
-        return "Orchestrating agents...";
+        return "Orchestrating...";
       case "ready":
         return "Ready";
       default:
@@ -545,7 +710,7 @@ export function SupervisorInterface({
       case "orchestrating":
         return "text-blue-400";
       case "ready":
-        return "text-emerald-400";
+        return "text-lavender-400";
       default:
         return "text-gray-400";
     }
@@ -682,24 +847,36 @@ export function SupervisorInterface({
         {/* Supervisor Modal/Indicator with enhanced resize functionality */}
         <motion.div
           className={`
-        relative w-[90%] lg:w-full bg-gray-800 mb-2 group border border-gray-600/50 rounded-3xl 
+        relative w-[90%] lg:w-full bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 group rounded-xl mb-2 lg:mb-0 lg:rounded-b-none 
         shadow-2xl shadow-gray-950/50
-        transition-all duration-300 ease-in-out md:max-w-4xl
+        md:max-w-4xl
         ${isMaximized ? "max-w-full h-full flex flex-col" : "flex flex-col"}
-        ${
-          isOpen
-            ? isMaximized
-              ? "opacity-100"
-              : "opacity-100"
-            : "max-h-16 opacity-95 hover:opacity-100 hover:bg-gray-700/60"
-        }
         ${isDragging ? "select-none" : ""}
       `}
-          style={
-            isOpen && !isMaximized
-              ? { height: `${modalHeight}px`, maxHeight: `${modalHeight}px` }
-              : {}
-          }
+          animate={{
+            height:
+              isOpen && !isMaximized
+                ? `${modalHeight}px`
+                : isMaximized
+                  ? "100%"
+                  : "4rem",
+            maxHeight:
+              isOpen && !isMaximized
+                ? `${modalHeight}px`
+                : isMaximized
+                  ? "100%"
+                  : "2.5rem",
+            opacity: isOpen ? 1 : 0.95,
+          }}
+          whileHover={{
+            opacity: isOpen ? 1 : 1,
+          }}
+          transition={{
+            duration: 0.4,
+            ease: [0.25, 0.46, 0.45, 0.94], // Custom cubic-bezier for smoother animation
+            backgroundColor: { duration: 0.2 },
+            opacity: { duration: 0.3 },
+          }}
           initial={false}
         >
           {/* Resize Handle - appears when modal is open but not maximized */}
@@ -735,9 +912,23 @@ export function SupervisorInterface({
             <div className="flex items-center gap-3">
               <Unlink className="w-4 h-4 text-lavender-400 group-hover:hidden" />
               <Link2 className="w-4 h-4 text-lavender-400 hidden group-hover:block -rotate-45" />
-              <span className="text-xs text-lavender-400 font-medium">
-                Supervisor
-              </span>
+              <div className="relative overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={hoverContext}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{
+                      duration: 0.1,
+                      ease: [0.25, 0.46, 0.45, 0.94],
+                    }}
+                    className="text-xs text-lavender-400 font-medium block"
+                  >
+                    {getDisplayText()}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <span className={`text-xs ${getStatusColor()}`}>
@@ -759,6 +950,8 @@ export function SupervisorInterface({
                   {!isMaximized ? (
                     <button
                       onClick={onToggle}
+                      onMouseEnter={() => handleHoverContext("expand")}
+                      onMouseLeave={handleHoverContextReset}
                       className="p-1.5 hover:bg-gray-800/50 rounded transition-colors"
                       title="Collapse"
                     >
@@ -767,50 +960,84 @@ export function SupervisorInterface({
                   ) : null}
                 </>
               ) : (
-                <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-emerald-400 transition-colors" />
+                <div
+                  onMouseEnter={() => handleHoverContext("expand")}
+                  onMouseLeave={handleHoverContextReset}
+                >
+                  <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-emerald-400 transition-colors" />
+                </div>
               )}
             </div>
           </div>
 
           {/* Modal Content - responsive and resizable */}
-          <div
-            className={`
-            overflow-hidden transition-all duration-300 ease-in-out
-            ${
-              isOpen
-                ? isMaximized
-                  ? "flex-1 opacity-100"
-                  : "flex-1 opacity-100"
-                : "max-h-0 opacity-0"
-            }
-          `}
-          >
-            <div
-              className={`
-              overflow-y-auto scrollbar-thin scrollbar-dark
-              transition-transform duration-300 ease-in-out max-w-3xl mx-auto scrollbar-none
-              ${isOpen ? "translate-y-0" : "-translate-y-4"}
-              ${isMaximized ? "h-full" : ""}
-            `}
-              style={
-                isOpen && !isMaximized
-                  ? { height: `${modalHeight - 60}px` } // Account for header height
-                  : {}
-              }
-            >
-              <SupervisorConversationContent
-                supervisorTurns={supervisorTurns}
-                supervisorStreamContent={supervisorStreamContent}
-                agentSteps={agentSteps}
-              />
-            </div>
-          </div>
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                className="overflow-hidden flex-1"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{
+                  opacity: 1,
+                  height: isMaximized ? "100%" : "auto",
+                }}
+                exit={{
+                  opacity: 0,
+                  height: 0,
+                  transition: {
+                    duration: 0.3,
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                    opacity: { duration: 0.2 },
+                  },
+                }}
+                transition={{
+                  duration: 0.4,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                  opacity: { duration: 0.3, delay: 0.1 },
+                }}
+              >
+                <motion.div
+                  className={`
+                  overflow-y-auto scrollbar-thin scrollbar-dark
+                  max-w-3xl mx-auto scrollbar-none
+                  ${isMaximized ? "h-full" : ""}
+                `}
+                  style={
+                    isOpen && !isMaximized
+                      ? { height: `${modalHeight - 60}px` } // Account for header height
+                      : {}
+                  }
+                  initial={{ y: -8, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{
+                    y: -8,
+                    opacity: 0,
+                    transition: {
+                      duration: 0.25,
+                      ease: [0.25, 0.46, 0.45, 0.94],
+                    },
+                  }}
+                  transition={{
+                    duration: 0.4,
+                    ease: [0.25, 0.46, 0.45, 0.94],
+                    delay: 0.1,
+                  }}
+                >
+                  <SupervisorConversationContent
+                    supervisorTurns={supervisorTurns}
+                    supervisorStreamContent={supervisorStreamContent}
+                    agentSteps={agentSteps}
+                    onFocusAgent={onFocusAgent}
+                  />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         {/* Supervisor Chat Input */}
         <motion.div
           className="
-          relative w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 border-x-0 md:border-x border-b-0 md:border-b rounded-3xl rounded-b-none md:rounded-b-3xl
+          relative w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 border-x-0 md:border-x border-b-0 md:border-b rounded-t-3xl lg:rounded-t-none md:rounded-b-3xl
           transition-all duration-300 ease-in-out md:max-w-4xl"
           initial={false}
         >
@@ -857,6 +1084,8 @@ export function SupervisorInterface({
               {/* Performance toggle button */}
               <button
                 onClick={togglePerformance}
+                onMouseEnter={() => handleHoverContext("metrics")}
+                onMouseLeave={handleHoverContextReset}
                 className={`flex items-center justify-center p-2 rounded-md transition-all ${
                   showDetailedPerformance
                     ? "text-lavender-400 bg-lavender-500/20 hover:bg-lavender-500/30"
@@ -891,18 +1120,29 @@ export function SupervisorInterface({
 
             <div className="flex items-center gap-2">
               {/* Image attachment and modality icons */}
-              <ModalityIcons
-                selectedModel="gpt-4o" // Default to a model that supports images
-                onImagesChange={setImages}
-                onWebSearchToggle={() => {}} // Supervisor doesn't need web search toggle
-                isWebSearchEnabled={false}
-                images={images}
-              />
+              <div
+                onMouseEnter={() => handleHoverContext("attach")}
+                onMouseLeave={handleHoverContextReset}
+              >
+                <ModalityIcons
+                  selectedModel="gpt-4o" // Default to a model that supports images
+                  onImagesChange={setImages}
+                  onWebSearchToggle={() => {}} // Supervisor doesn't need web search toggle
+                  isWebSearchEnabled={false}
+                  images={images}
+                />
+              </div>
 
               {/* Send button */}
               <button
                 onClick={handleSend}
                 disabled={!prompt.trim() || isLoading}
+                onMouseEnter={() => {
+                  if (prompt.trim() && !isLoading) {
+                    handleHoverContext("send");
+                  }
+                }}
+                onMouseLeave={handleHoverContextReset}
                 className={`flex items-center gap-2 p-2 rounded-full transition-all ${
                   prompt.trim() && !isLoading
                     ? "bg-lavender-500 hover:bg-lavender-600 text-white shadow-lg hover:shadow-lavender-500/25 hover:scale-105"

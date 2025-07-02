@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { ChevronUp } from "lucide-react";
+import { ChevronUp, BookOpen, Save } from "lucide-react";
 import { AgentInput, type Agent } from "./agent-input";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -23,6 +23,8 @@ import {
   GitCompareArrows,
 } from "lucide-react";
 import { IoGitBranchOutline } from "react-icons/io5";
+import { SaveChainModal } from "../chains/save-chain-modal";
+import { SavedChainsModal } from "../chains/saved-chains-modal";
 
 // Type alias for connection types to match Agent interface
 type EnabledConnectionType =
@@ -511,6 +513,10 @@ export function InitialChainInput({
     null
   );
 
+  // Saved chains modal state
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showBrowseModal, setShowBrowseModal] = useState(false);
+
   // Track previous agent count to detect add/remove operations
   const prevAgentCountRef = useRef(agents.length);
   const prevAgentIdsRef = useRef(agents.map((a) => a.id).join(","));
@@ -652,6 +658,28 @@ export function InitialChainInput({
     }
   };
 
+  // Check if there's a current chain configuration (any non-empty prompts)
+  const hasCurrentChain = agents.some((agent) => agent.prompt.trim() !== "");
+
+  const handleSaveChain = () => {
+    setShowSaveModal(true);
+  };
+
+  const handleBrowseChains = () => {
+    setShowBrowseModal(true);
+  };
+
+  const handleLoadChain = (loadedAgents: Agent[]) => {
+    setAgents(loadedAgents);
+    // Reset mobile state - the useEffect will handle setting the expanded state
+    hideTooltip();
+  };
+
+  const handleSaveSuccess = () => {
+    // Could show a success toast here if desired
+    console.log("Chain saved successfully");
+  };
+
   const handleSendChain = () => {
     const validAgents = agents.filter((agent) => agent.prompt.trim() !== "");
     if (validAgents.length > 0) {
@@ -727,7 +755,47 @@ export function InitialChainInput({
         ...getContainerStyle(),
       }}
     >
-      <div className="w-full flex justify-center">
+      {/* Saved Chains Action Buttons - positioned above the input area */}
+      {hasCurrentChain && (
+        <div className="w-full flex justify-center mb-2">
+          <div className="flex items-center gap-2 px-4">
+            <button
+              onClick={handleSaveChain}
+              className="flex items-center gap-2 px-3 py-1.5 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-lg text-lavender-400 hover:text-lavender-300 transition-all text-xs backdrop-blur-sm"
+              title="Save current chain configuration"
+            >
+              <Save size={14} />
+              <span className="hidden sm:inline">Save Chain</span>
+            </button>
+            <button
+              onClick={handleBrowseChains}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-gray-500/50 rounded-lg text-gray-400 hover:text-gray-300 transition-all text-xs backdrop-blur-sm"
+              title="Browse saved chains"
+            >
+              <BookOpen size={14} />
+              <span className="hidden sm:inline">Browse Saved</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Browse button for when there's no current chain */}
+      {!hasCurrentChain && (
+        <div className="w-full flex justify-center mb-2">
+          <div className="px-4">
+            <button
+              onClick={handleBrowseChains}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-gray-500/50 rounded-lg text-gray-400 hover:text-gray-300 transition-all text-xs backdrop-blur-sm"
+              title="Browse saved chains"
+            >
+              <BookOpen size={14} />
+              <span>Load Saved Chain</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="w-full flex justify-center ">
         <div className="w-full flex items-end justify-center lg:mb-2">
           <div className={layoutClasses.outerContainer}>
             <div className={layoutClasses.innerContainer}>
@@ -737,7 +805,7 @@ export function InitialChainInput({
                   <div key={agent.id} className={layoutClasses.agentWrapper}>
                     {/* Agent Card using AgentInput component */}
                     <div
-                      className={`${getAgentContainerClasses()} backdrop-blur-sm ${agents.length > 1 ? "lg:px-4" : ""} ${
+                      className={`${getAgentContainerClasses()} ${agents.length > 1 ? "lg:px-4" : ""} ${
                         queuedAgents.some((qa) => qa.id === agent.id)
                           ? "border-lavender-400/50"
                           : ""
@@ -857,6 +925,21 @@ export function InitialChainInput({
           </div>,
           document.body
         )}
+
+      {/* Saved Chains Modals */}
+      <SaveChainModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        agents={agents}
+        onSaveSuccess={handleSaveSuccess}
+      />
+
+      <SavedChainsModal
+        isOpen={showBrowseModal}
+        onClose={() => setShowBrowseModal(false)}
+        onLoadChain={handleLoadChain}
+        hasCurrentChain={hasCurrentChain}
+      />
     </div>
   );
 }

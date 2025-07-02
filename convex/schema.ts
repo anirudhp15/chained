@@ -206,6 +206,7 @@ export default defineSchema({
     executionDuration: v.optional(v.number()), // milliseconds
     tokensPerSecond: v.optional(v.number()),
     estimatedCost: v.optional(v.number()), // in USD
+    firstTokenLatency: v.optional(v.number()), // milliseconds to first token
 
     // Chain execution fields
     connectionType: v.optional(
@@ -314,6 +315,26 @@ export default defineSchema({
         agentResponse: v.string(), // Agent's response
         timestamp: v.number(),
         triggeredBy: v.optional(v.string()), // "user" | "supervisor"
+        references: v.optional(
+          v.array(
+            v.object({
+              id: v.string(),
+              sourceType: v.union(
+                v.literal("user-prompt"),
+                v.literal("agent-response"),
+                v.literal("code-block"),
+                v.literal("supervisor-response")
+              ),
+              agentIndex: v.optional(v.number()),
+              agentName: v.optional(v.string()),
+              agentModel: v.optional(v.string()),
+              content: v.string(),
+              truncatedPreview: v.string(),
+              timestamp: v.number(),
+              sessionId: v.optional(v.string()),
+            })
+          )
+        ),
       })
     ),
     lastUpdated: v.number(),
@@ -415,4 +436,107 @@ export default defineSchema({
     .index("by_created", ["createdAt"])
     .index("by_priority", ["priority"])
     .index("by_clerk_user", ["clerkUserId"]),
+
+  // Webhooks for handling Stripe events
+  webhooks: defineTable({
+    webhookId: v.string(),
+    event: v.string(),
+    data: v.any(),
+    processed: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_webhook_id", ["webhookId"])
+    .index("by_processed", ["processed"]),
+
+  // Saved chain configurations
+  savedChains: defineTable({
+    userId: v.id("users"),
+    name: v.string(),
+    description: v.optional(v.string()),
+    agents: v.array(
+      v.object({
+        id: v.string(),
+        model: v.string(),
+        prompt: v.string(),
+        name: v.optional(v.string()),
+        connection: v.optional(
+          v.object({
+            type: v.union(
+              v.literal("direct"),
+              v.literal("conditional"),
+              v.literal("parallel"),
+              v.literal("collaborative")
+            ),
+            condition: v.optional(v.string()),
+            sourceAgentId: v.optional(v.string()),
+          })
+        ),
+        images: v.optional(
+          v.array(
+            v.object({
+              url: v.string(),
+              filename: v.string(),
+              size: v.number(),
+              mimeType: v.string(),
+            })
+          )
+        ),
+        audioBlob: v.optional(v.any()),
+        audioDuration: v.optional(v.number()),
+        audioTranscription: v.optional(v.string()),
+        webSearchData: v.optional(
+          v.object({
+            query: v.string(),
+            results: v.array(
+              v.object({
+                title: v.string(),
+                url: v.string(),
+                snippet: v.string(),
+              })
+            ),
+          })
+        ),
+        webSearchEnabled: v.optional(v.boolean()),
+        grokOptions: v.optional(
+          v.object({
+            realTimeData: v.optional(v.boolean()),
+            thinkingMode: v.optional(v.boolean()),
+          })
+        ),
+        claudeOptions: v.optional(
+          v.object({
+            enableTools: v.optional(v.boolean()),
+            toolSet: v.optional(
+              v.union(
+                v.literal("webSearch"),
+                v.literal("fileAnalysis"),
+                v.literal("computerUse"),
+                v.literal("full")
+              )
+            ),
+            fileAttachments: v.optional(
+              v.array(
+                v.object({
+                  name: v.string(),
+                  content: v.string(),
+                  mimeType: v.string(),
+                })
+              )
+            ),
+          })
+        ),
+        // LLM parameters
+        temperature: v.optional(v.number()),
+        top_p: v.optional(v.number()),
+        max_tokens: v.optional(v.number()),
+        frequency_penalty: v.optional(v.number()),
+        presence_penalty: v.optional(v.number()),
+      })
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_created", ["userId", "createdAt"])
+    .index("by_user_name", ["userId", "name"]),
 });

@@ -16,6 +16,7 @@ import { MobileSidebarToggle } from "../../components/MobileSidebarToggle";
 import { WelcomeScreen } from "../../components/chat/welcome-screen";
 import { InputAreaContainer } from "@/components/input/input-area-container";
 import { PerformanceProvider } from "../../lib/performance-context";
+import { useSidebar } from "../../lib/sidebar-context";
 import Beams from "@/components/Backgrounds/Beams/Beams";
 import type { Agent } from "../../components/input/agent-input";
 
@@ -23,7 +24,7 @@ import type { Agent } from "../../components/input/agent-input";
 const BeamsBackground = () => {
   return (
     <motion.div
-      className="fixed inset-0 z-0"
+      className="absolute inset-0 z-0 rounded-tl-2xl overflow-hidden "
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{
@@ -55,6 +56,7 @@ function ChatLandingContent() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [queuedAgents, setQueuedAgents] = useState<Agent[]>([]);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const { isCollapsed } = useSidebar();
 
   // Only show sidebar if there are chats to display
   const shouldShowSidebar = recentChats && recentChats.length > 0;
@@ -103,10 +105,7 @@ function ChatLandingContent() {
   };
 
   return (
-    <div className="flex h-auto bg-gray-950 relative overflow-hidden scrollbar-none">
-      {/* Beams Background */}
-      <BeamsBackground />
-
+    <div className="flex h-auto bg-neutral-950 relative overflow-hidden scrollbar-none">
       {/* Only render sidebar if there are chats */}
       {shouldShowSidebar && (
         <Sidebar
@@ -122,10 +121,14 @@ function ChatLandingContent() {
           onToggle={toggleMobileSidebar}
         />
       )}
-      <div className="flex-1 flex flex-col relative w-full">
+      <div
+        className={`flex-1 flex flex-col relative w-full transition-all border-l-2 border-lavender-400/30 duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${!isCollapsed ? "mt-4 ml-2  rounded-tl-2xl  border-t-2 shadow-2xl" : "rounded-tl-none"}`}
+      >
         {/* Welcome Screen - only show if no preset agents are loaded */}
         {!presetAgents && (
-          <div className="flex-1 flex items-center justify-center w-full bg-gray-950/25">
+          <div className="flex-1 flex items-center justify-center w-full ">
+            {/* Beams Background */}
+            <BeamsBackground />
             <WelcomeScreen onLoadPreset={handleLoadPreset} />
           </div>
         )}

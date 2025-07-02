@@ -379,15 +379,14 @@ export const getUserStats = query({
   },
 });
 
-// Get user preferences
+// Get user preferences (or create default ones)
 export const getUserPreferences = query({
   args: {},
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return null;
-    }
+    if (!identity) return null;
 
+    // Get user ID
     const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q) =>
@@ -395,29 +394,26 @@ export const getUserPreferences = query({
       )
       .first();
 
-    if (!user) {
-      return null;
-    }
+    if (!user) return null;
 
-    const preferences = await ctx.db
+    // Get preferences or return defaults
+    const prefs = await ctx.db
       .query("userPreferences")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .first();
 
-    // Return default preferences if none exist
     return (
-      preferences || {
+      prefs || {
         theme: "dark",
         language: "en",
-        timezone: "UTC",
         emailNotifications: true,
         pushNotifications: true,
-        weeklyDigest: true,
-        defaultModel: "gpt-4",
-        maxTokensPerRequest: 4000,
+        weeklyDigest: false,
+        defaultModel: "gpt-4o",
+        maxTokensPerRequest: 8000,
         temperature: 0.7,
         autoSaveChats: true,
-        dataRetention: 90,
+        dataRetention: 30,
         shareUsageData: false,
       }
     );
@@ -652,5 +648,339 @@ export const getAllAgentConversations = query({
       .query("agentConversations")
       .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
       .collect();
+  },
+});
+
+// Add a new query to get chat sessions with unique models
+export const getChatSessionsWithModels = query({
+  args: {},
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .first();
+
+    if (!user) {
+      return [];
+    }
+
+    const sessions = await ctx.db
+      .query("chatSessions")
+      .withIndex("by_user_created", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .collect();
+
+    // For each session, get the unique models used
+    const sessionsWithModels = await Promise.all(
+      sessions.map(async (session) => {
+        const agentSteps = await ctx.db
+          .query("agentSteps")
+          .withIndex("by_session", (q) => q.eq("sessionId", session._id))
+          .collect();
+
+        // Get unique models from agent steps
+        const uniqueModels = Array.from(
+          new Set(agentSteps.map((step) => step.model))
+        ).filter(Boolean); // Filter out any null/undefined models
+
+        return {
+          ...session,
+          models: uniqueModels,
+        };
+      })
+    );
+
+    return sessionsWithModels;
+  },
+});
+
+// Enhanced query for chains page with comprehensive session information
+export const getChatSessionsDetailed = query({
+  args: {},
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .first();
+
+    if (!user) {
+      return [];
+    }
+
+    const sessions = await ctx.db
+      .query("chatSessions")
+      .withIndex("by_user_created", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .collect();
+
+    // For each session, get comprehensive information
+    const detailedSessions = await Promise.all(
+      sessions.map(async (session) => {
+        const agentSteps = await ctx.db
+          .query("agentSteps")
+          .withIndex("by_session", (q) => q.eq("sessionId", session._id))
+          .order("asc")
+          .collect();
+
+        // Get unique models and providers
+        const uniqueModels = Array.from(
+          new Set(agentSteps.map((step) => step.model))
+        ).filter(Boolean);
+
+        const uniqueProviders = Array.from(
+          new Set(agentSteps.map((step) => step.provider))
+        ).filter(Boolean);
+
+        // Get unique connection types
+        const connectionTypes = Array.from(
+          new Set(
+            agentSteps
+              .map((step) => step.connectionType)
+              .filter(
+                (
+                  type
+                ): type is
+                  | "direct"
+                  | "conditional"
+                  | "parallel"
+                  | "collaborative"
+                  | "supervisor" => type !== undefined
+              )
+          )
+        );
+
+        // Calculate total statistics
+        const totalTokens = agentSteps.reduce(
+          (sum, step) => sum + (step.tokenUsage?.totalTokens || 0),
+          0
+        );
+
+        const totalCost = agentSteps.reduce(
+          (sum, step) => sum + (step.estimatedCost || 0),
+          0
+        );
+
+        const totalDuration = agentSteps.reduce(
+          (sum, step) => sum + (step.executionDuration || 0),
+          0
+        );
+
+        // Check for multimodal features
+        const hasFileAttachments = agentSteps.some(
+          (step) => step.attachmentIds && step.attachmentIds.length > 0
+        );
+
+        const hasWebSearch = agentSteps.some(
+          (step) => step.webSearchResults && step.webSearchResults.length > 0
+        );
+
+        const hasAudioTranscription = agentSteps.some(
+          (step) => step.audioTranscription
+        );
+
+        // Get agent count and complexity
+        const agentCount = agentSteps.length;
+        const hasConditionalLogic = connectionTypes.includes("conditional");
+        const hasParallelExecution = connectionTypes.includes("parallel");
+        const hasCollaboration = connectionTypes.includes("collaborative");
+        const hasSupervisorMode = connectionTypes.includes("supervisor");
+
+        return {
+          ...session,
+          models: uniqueModels,
+          providers: uniqueProviders,
+          connectionTypes,
+          agentCount,
+          totalTokens,
+          totalCost,
+          totalDuration,
+          hasFileAttachments,
+          hasWebSearch,
+          hasAudioTranscription,
+          hasConditionalLogic,
+          hasParallelExecution,
+          hasCollaboration,
+          hasSupervisorMode,
+          complexity: calculateChainComplexity({
+            agentCount,
+            connectionTypes,
+            hasFileAttachments,
+            hasWebSearch,
+            hasAudioTranscription,
+          }),
+        };
+      })
+    );
+
+    return detailedSessions;
+  },
+});
+
+// Helper function to calculate chain complexity
+function calculateChainComplexity({
+  agentCount,
+  connectionTypes,
+  hasFileAttachments,
+  hasWebSearch,
+  hasAudioTranscription,
+}: {
+  agentCount: number;
+  connectionTypes: string[];
+  hasFileAttachments: boolean;
+  hasWebSearch: boolean;
+  hasAudioTranscription: boolean;
+}): "simple" | "moderate" | "complex" | "advanced" {
+  let score = 0;
+
+  // Base complexity from agent count
+  if (agentCount >= 5) score += 3;
+  else if (agentCount >= 3) score += 2;
+  else if (agentCount >= 2) score += 1;
+
+  // Connection complexity
+  if (connectionTypes.includes("conditional")) score += 2;
+  if (connectionTypes.includes("parallel")) score += 2;
+  if (connectionTypes.includes("collaborative")) score += 1;
+  if (connectionTypes.includes("supervisor")) score += 1;
+
+  // Multimodal features
+  if (hasFileAttachments) score += 1;
+  if (hasWebSearch) score += 1;
+  if (hasAudioTranscription) score += 1;
+
+  if (score >= 7) return "advanced";
+  if (score >= 4) return "complex";
+  if (score >= 2) return "moderate";
+  return "simple";
+}
+
+// Saved Chains Queries
+
+// Get all saved chains for the current user
+export const getSavedChains = query({
+  args: {
+    searchQuery: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    // Get user ID
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .first();
+
+    if (!user) return [];
+
+    // Get all saved chains for this user
+    let chains = await ctx.db
+      .query("savedChains")
+      .withIndex("by_user_created", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .collect();
+
+    // Apply search filter if provided
+    if (args.searchQuery && args.searchQuery.trim() !== "") {
+      const searchLower = args.searchQuery.toLowerCase().trim();
+      chains = chains.filter((chain) => {
+        // Search in chain name
+        if (chain.name.toLowerCase().includes(searchLower)) return true;
+
+        // Search in description
+        if (
+          chain.description &&
+          chain.description.toLowerCase().includes(searchLower)
+        )
+          return true;
+
+        // Search in agent names and prompts
+        const searchInAgents = chain.agents.some((agent) => {
+          if (agent.name && agent.name.toLowerCase().includes(searchLower))
+            return true;
+          if (agent.prompt.toLowerCase().includes(searchLower)) return true;
+          if (agent.model.toLowerCase().includes(searchLower)) return true;
+          return false;
+        });
+
+        return searchInAgents;
+      });
+    }
+
+    return chains;
+  },
+});
+
+// Get a specific saved chain by ID
+export const getSavedChain = query({
+  args: {
+    chainId: v.id("savedChains"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    // Get user ID
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .first();
+
+    if (!user) return null;
+
+    // Get the specific chain
+    const chain = await ctx.db.get(args.chainId);
+
+    // Verify user owns the chain
+    if (!chain || chain.userId !== user._id) {
+      return null;
+    }
+
+    return chain;
+  },
+});
+
+// Get saved chains count for the current user (for paywall checks)
+export const getSavedChainsCount = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return 0;
+
+    // Get user ID
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .first();
+
+    if (!user) return 0;
+
+    // Count saved chains
+    const chains = await ctx.db
+      .query("savedChains")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    return chains.length;
   },
 });
