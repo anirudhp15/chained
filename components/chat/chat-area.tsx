@@ -1896,7 +1896,7 @@ export function ChatArea({
             <div
               key={agent._id}
               className={`agent-container flex flex-col overflow-hidden relative transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                index > 0 ? "border-l-2 border-lavender-400/30" : ""
+                index > 0 ? "lg:border-l-2 border-lavender-400/30" : ""
               } ${isFocused ? "bg-lavender-600/10" : ""}`}
               style={{
                 minWidth: 0, // Allow shrinking below content width

@@ -1539,7 +1539,7 @@ function ChatPageContent() {
 
   return (
     <div
-      className="flex h-screen bg-neutral-950 scrollbar-none"
+      className="flex h-screen bg-lavender-400/10 lg:bg-neutral-950 scrollbar-none"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <Sidebar

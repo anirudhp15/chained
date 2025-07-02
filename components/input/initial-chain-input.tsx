@@ -603,10 +603,10 @@ export function InitialChainInput({
           typeof window !== "undefined" && window.innerWidth >= 768
             ? "max(0.5rem, env(safe-area-inset-bottom))"
             : "0px",
-        marginBottom:
-          typeof window !== "undefined" && window.innerWidth < 768
-            ? "env(safe-area-inset-bottom)"
-            : "0px",
+        // marginBottom:
+        //   typeof window !== "undefined" && window.innerWidth < 768
+        //     ? "env(safe-area-inset-bottom)"
+        //     : "0px",
         ...getContainerStyle(),
       }}
     >

@@ -7,6 +7,7 @@ import { ChainProgress } from "../performance/chain-progress";
 import { CopyButton } from "../ui/CopyButton";
 import { CopyReference } from "../ui/CopyReference";
 import { CollapsibleAgentExecution } from "./supervisor-interface";
+import ShinyText from "../TextAnimations/ShinyText/ShinyText";
 
 // Helper function to generate complete content for copying
 function generateCompleteContent(
@@ -116,13 +117,16 @@ export function SupervisorConversationContent({
 
   if (showInitialAgentExecutions) {
     const initialContent = (
-      <div className="space-y-4">
+      <div className="space-y-4 px-2">
         {/* Initial LLM Executions */}
         <div className="space-y-3">
           <div className="group/message-bubble">
             <div className="flex items-center gap-2 py-3 text-gray-400">
               <div className="w-2 h-2 bg-lavender-400 rounded-full"></div>
-              <span className="text-xs font-medium">Chain Initialization</span>
+              <ShinyText
+                text="Chain Initialization"
+                className="text-xs font-medium"
+              />
             </div>
 
             <div className="space-y-2">
