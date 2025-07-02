@@ -148,11 +148,15 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
       // Check if user has beta access stored in a cookie or if they have valid access
       const betaAccess = req.cookies.get("chained_beta_access");
 
+      // TEMPORARILY DISABLED: Allow all authenticated users access
+      // TODO: Re-enable beta access protection when needed
+      /*
       if (!betaAccess) {
         // Redirect to landing page if no beta access
         const url = new URL("/", req.url);
         return NextResponse.redirect(url);
       }
+      */
     }
   }
 
