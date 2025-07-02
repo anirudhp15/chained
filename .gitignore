@@ -38,11 +38,12 @@ next-env.d.ts
 # Video files - Keep demo video for deployment, exclude others
 # The demo video will be included in Git for Vercel deployment
 # Add new large videos to this list to exclude them
-# public/videos/*.mp4
-# public/videos/*.webm
-# public/videos/*.mov
-# public/videos/*.avi
-# !public/videos/chained_demo.mp4
-# !public/videos/chained_demo_v2.mp4
+public/videos/*.mp4
+public/videos/*.webm
+public/videos/*.mov
+public/videos/*.avi
+!public/videos/chained_demo.mp4
+!public/videos/chained_demo_v2.mp4
+public/videos/chained_demo_v3.mp4
 
 .env.local
