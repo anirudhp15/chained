@@ -19,7 +19,7 @@ const getClerkDomain = () => {
 export default {
   providers: [
     {
-      domain: "https://clerk.chained.chat",
+      domain: getClerkDomain(),
       applicationID: "convex",
     },
   ],
