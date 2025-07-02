@@ -822,7 +822,7 @@ export function AgentInput({
       />
 
       {/* Bottom controls - absolutely positioned */}
-      <div className=" flex flex-row lg:items-center justify-between p-2 lg:p-3 overflow-hidden gap-1.5 lg:gap-2">
+      <div className=" flex flex-row lg:items-center justify-between p-2 pb-6 lg:p-3 overflow-hidden gap-1.5 lg:gap-2">
         <div className="block lg:hidden">
           {/* Modality Icons */}
           <div className="flex items-center gap-1">
