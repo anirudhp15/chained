@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import {
   ArrowRight,
   Zap,
@@ -377,9 +378,11 @@ export default function LandingPage() {
   const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
   const [showAccessGate, setShowAccessGate] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const router = useRouter();
   const { scrollY } = useScroll();
+  const { isSignedIn, isLoaded } = useAuth();
 
   // Analytics hooks
   const { trackLandingPageEvent, trackPerformance, identifyUser } =
@@ -422,6 +425,26 @@ export default function LandingPage() {
     }
   }, [trackLandingPageEvent, trackPerformance, trackScrollMilestones]);
 
+  // Auto-redirect authenticated users to chat
+  useEffect(() => {
+    if (isLoaded && isSignedIn && mounted) {
+      console.log("Authenticated user detected, redirecting to /chat");
+      setIsRedirecting(true);
+
+      // Track the redirect for analytics
+      trackLandingPageEvent.userJourney("authenticated_user_redirect", {
+        from: "landing_page",
+        to: "/chat",
+        has_beta_access: hasBetaAccess(),
+      });
+
+      // Small delay to ensure smooth transition
+      setTimeout(() => {
+        router.push("/chat");
+      }, 100);
+    }
+  }, [isLoaded, isSignedIn, mounted, router, trackLandingPageEvent]);
+
   const handleFeatureInfo = (featureId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedFeature(featureId);
@@ -432,6 +455,14 @@ export default function LandingPage() {
   };
 
   const handleAccessRequest = () => {
+    // If user is signed in, they should have been auto-redirected already
+    // This is a fallback for edge cases
+    if (isSignedIn) {
+      trackLandingPageEvent.heroCtaClicked("Continue Building", "navigation");
+      router.push("/chat");
+      return;
+    }
+
     if (hasAccess) {
       trackLandingPageEvent.heroCtaClicked("Continue Building", "navigation");
       router.push("/chat");
@@ -453,8 +484,30 @@ export default function LandingPage() {
     ? FEATURE_DETAILS.find((f) => f.id === selectedFeature)
     : null;
 
-  if (!mounted) {
-    return null;
+  // Show loading state while checking authentication or redirecting
+  if (!mounted || !isLoaded || isRedirecting) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lavender-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">
+            {isRedirecting ? "Redirecting to chat..." : "Loading..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is signed in, they should be redirected (this is a fallback)
+  if (isSignedIn) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lavender-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Redirecting to chat...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -550,12 +603,14 @@ export default function LandingPage() {
                     onClick={handleAccessRequest}
                     className="inline-flex items-center bg-lavender-600/20 border border-lavender-600/50 hover:bg-lavender-600/30 text-lavender-400 px-2 py-1 text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-lavender-500/25 group rounded-xl"
                   >
-                    {hasAccess ? "Continue Building" : "Get Access"}
+                    {isSignedIn || hasAccess
+                      ? "Continue Building"
+                      : "Get Access"}
                   </button>
                 </motion.div>
 
                 {/* Beta Access Bypass for users who already have validated codes */}
-                {!hasAccess && (
+                {!hasAccess && !isSignedIn && (
                   <Link
                     href="/beta-access"
                     className="hidden md:inline-flex items-center text-gray-400 hover:text-lavender-400 px-2 py-1 text-sm font-medium transition-all duration-300 group"
