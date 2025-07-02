@@ -173,34 +173,37 @@ const CODING_PRESETS: PresetChain[] = [
     ],
   },
   {
-    id: "code-security-optimization",
-    title: "Code Security",
+    id: "vibe-coding",
+    title: "Vibe Coding",
     description:
-      "Comprehensive code audit with performance and security improvements",
+      "Identify niche industry pain points and build a complete web app solution",
     icon: Bug,
     iconColor: "text-green-400",
     bgGradient: "from-green-500/10 to-emerald-500/10",
     agents: [
       {
-        model: "claude-sonnet-4-20250514",
+        model: "gpt-4o",
         prompt:
-          "Perform thorough security audit of the provided codebase. Identify vulnerabilities including SQL injection, XSS, CSRF, authentication flaws, and insecure dependencies. Check for secrets in code, improper access controls, and data exposure risks. Prioritize findings by severity.",
+          "Find pain points in a target niche industry and identify specific problems they face. Come up with a web app solution that directly addresses these pain points.",
         connection: undefined,
       },
       {
-        model: "gpt-4o",
+        model: "claude-sonnet-4-20250514",
         prompt:
-          "Analyze code performance and architecture. Identify bottlenecks, memory leaks, inefficient algorithms, and scalability issues. Review database queries, API response times, and frontend rendering performance. Suggest specific optimizations with expected impact metrics.",
-        connection: { type: "direct" },
+          "Based on the identified pain point, compose a comprehensive PRD for an MVP web app in Markdown format. Include features, user stories, and success metrics.",
+        connection: { type: "parallel" },
       },
       {
         model: "claude-sonnet-4-20250514",
         prompt:
-          "Implement security fixes and performance optimizations. Provide refactored code with security vulnerabilities patched, performance improvements implemented, and code quality enhanced. Include updated tests and documentation for all changes made.",
-        connection: {
-          type: "conditional",
-          condition: "contains('vulnerability') or contains('performance')",
-        },
+          "Compose an architecture document in Markdown detailing the minimum technical architecture necessary for the web app. Include tech stack, database design, and system components.",
+        connection: { type: "parallel" },
+      },
+      {
+        model: "claude-sonnet-4-20250514",
+        prompt:
+          "Create a to-do list in Markdown with checkboxes tracking all tasks needed for the minimum MVP. Organize by development phases and priority.",
+        connection: { type: "parallel" },
       },
     ],
   },
@@ -208,7 +211,7 @@ const CODING_PRESETS: PresetChain[] = [
     id: "api-design-implementation",
     title: "API Design",
     description:
-      "Design and build production-ready APIs with comprehensive documentation",
+      "Design and build prod-ready APIs with comprehensive documentation",
     icon: Database,
     iconColor: "text-green-400",
     bgGradient: "from-green-500/10 to-emerald-500/10",
