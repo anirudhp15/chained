@@ -7,7 +7,7 @@ import {
   Unauthenticated,
 } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { SignInButton } from "@clerk/nextjs";
+import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 import {
   Search,
   X,
@@ -32,7 +32,6 @@ import {
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import type { Id } from "../../convex/_generated/dataModel";
-import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "../../components/chat/sidebar";
 import { MobileSidebarToggle } from "../../components/MobileSidebarToggle";
@@ -999,6 +998,8 @@ function ChainsContent() {
 }
 
 export default function ChainsPage() {
+  const { user } = useUser();
+
   return (
     <>
       <Unauthenticated>
@@ -1010,11 +1011,36 @@ export default function ChainsPage() {
             <p className="text-gray-400 mb-6">
               Please sign in to access your chain history
             </p>
-            <SignInButton mode="modal">
-              <button className="bg-lavender-500 hover:bg-lavender-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
-                Sign In
-              </button>
-            </SignInButton>
+
+            {/* Debug info */}
+            {user && (
+              <div className="mb-4 p-3 bg-yellow-900/50 border border-yellow-600/50 rounded-lg">
+                <p className="text-yellow-400 text-sm mb-2">
+                  Debug: Clerk shows you're signed in as{" "}
+                  {user.emailAddresses?.[0]?.emailAddress}
+                </p>
+                <p className="text-yellow-400 text-xs">
+                  But Convex authentication is not working. Try signing out and
+                  back in.
+                </p>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3">
+              <SignInButton mode="modal">
+                <button className="bg-lavender-500 hover:bg-lavender-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                  Sign In
+                </button>
+              </SignInButton>
+
+              {user && (
+                <SignOutButton>
+                  <button className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                    Sign Out & Reset
+                  </button>
+                </SignOutButton>
+              )}
+            </div>
           </div>
         </div>
       </Unauthenticated>

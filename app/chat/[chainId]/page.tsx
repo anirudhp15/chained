@@ -9,7 +9,7 @@ import {
   Authenticated,
   Unauthenticated,
 } from "convex/react";
-import { SignInButton } from "@clerk/nextjs";
+import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Sidebar } from "../../../components/chat/sidebar";
@@ -1636,6 +1636,8 @@ function ChatPageContent() {
 }
 
 export default function ChainPage() {
+  const { user } = useUser();
+
   return (
     <>
       <Unauthenticated>
@@ -1647,11 +1649,36 @@ export default function ChainPage() {
             <p className="text-gray-400 mb-6">
               Please sign in to access the chat functionality
             </p>
-            <SignInButton mode="modal">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg">
-                Sign In
-              </button>
-            </SignInButton>
+
+            {/* Debug info */}
+            {user && (
+              <div className="mb-4 p-3 bg-yellow-900/50 border border-yellow-600/50 rounded-lg">
+                <p className="text-yellow-400 text-sm mb-2">
+                  Debug: Clerk shows you're signed in as{" "}
+                  {user.emailAddresses?.[0]?.emailAddress}
+                </p>
+                <p className="text-yellow-400 text-xs">
+                  But Convex authentication is not working. Try signing out and
+                  back in.
+                </p>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3">
+              <SignInButton mode="modal">
+                <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg">
+                  Sign In
+                </button>
+              </SignInButton>
+
+              {user && (
+                <SignOutButton>
+                  <button className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg">
+                    Sign Out & Reset
+                  </button>
+                </SignOutButton>
+              )}
+            </div>
           </div>
         </div>
       </Unauthenticated>
