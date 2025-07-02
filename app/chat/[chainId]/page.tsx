@@ -1538,7 +1538,10 @@ function ChatPageContent() {
   }
 
   return (
-    <div className="flex h-screen bg-neutral-950 scrollbar-none">
+    <div
+      className="flex h-screen bg-neutral-950 scrollbar-none"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
       <Sidebar
         currentSessionId={chainId}
         isMobileOpen={isMobileSidebarOpen}

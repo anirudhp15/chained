@@ -35,8 +35,8 @@ interface NodePillProps {
   onTouchStart?: () => void;
   // Indicates if this agent can be collapsed (false for last agent)
   isCollapsible?: boolean;
-  // Connection configuration for mobile
-  showMobileConnection?: boolean;
+  // Connection configuration for all screen sizes
+  showConnection?: boolean;
   sourceAgentName?: string;
 }
 
@@ -296,7 +296,7 @@ export function NodePill({
   onLongPressEnd,
   onTouchStart,
   isCollapsible,
-  showMobileConnection = false,
+  showConnection = false,
   sourceAgentName,
 }: NodePillProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -463,8 +463,8 @@ export function NodePill({
                 </>
               )}
 
-              {/* Mobile Connection Button - only show on mobile and if showMobileConnection is true */}
-              {isMobile && showMobileConnection && !isEditing && (
+              {/* Mobile Connection Button - only show on mobile and if showConnection is true */}
+              {isMobile && showConnection && !isEditing && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -488,6 +488,35 @@ export function NodePill({
                     // show truncated connection condition
                     <span className="text-xs text-gray-400">
                       {agent.connection?.condition?.substring(0, 10)}
+                    </span>
+                  )}
+                </button>
+              )}
+
+              {/* Desktop Connection Button - only show on desktop and if showConnection is true */}
+              {!isMobile && showConnection && !isEditing && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowConnectionModal(true);
+                  }}
+                  className={`lg:opacity-50 lg:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 flex items-center gap-1 hover:bg-gray-700/50 rounded hover:${currentConnection?.bgColor} hover:${currentConnection?.borderColor}`}
+                  title={`Connection: ${currentConnectionType === "parallel" ? "Parallel" : currentConnection?.label + "ly from " + sourceAgentName}`}
+                >
+                  {currentConnection && (
+                    <currentConnection.Icon
+                      size={12}
+                      className={`${currentConnection.color} ${currentConnection.iconRotate || ""}`}
+                    />
+                  )}
+                  <span
+                    className={`text-xs font-medium ${currentConnection?.color}`}
+                  >
+                    {getConnectionDisplayText()}
+                  </span>
+                  {currentConnectionType === "conditional" && (
+                    <span className="text-xs text-gray-400">
+                      {agent.connection?.condition?.substring(0, 8)}...
                     </span>
                   )}
                 </button>
@@ -576,9 +605,8 @@ export function NodePill({
         </div>
       </div>
 
-      {/* Mobile Connection Configuration Modal */}
+      {/* Connection Configuration Modal */}
       {showConnectionModal &&
-        isMobile &&
         createPortal(
           <>
             <div

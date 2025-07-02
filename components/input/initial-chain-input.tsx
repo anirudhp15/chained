@@ -325,156 +325,6 @@ const ConnectionIcon = ({ connectionType }: { connectionType?: string }) => {
   }
 };
 
-// Desktop Connection Selector Component
-const DesktopConnectionSelector = ({
-  agent,
-  onUpdate,
-  index,
-}: {
-  agent: Agent;
-  onUpdate: (agent: Agent) => void;
-  index: number;
-}) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [buttonPosition, setButtonPosition] = useState<DOMRect | null>(null);
-  const [showConditionInput, setShowConditionInput] = useState(false);
-
-  const currentConnectionType = agent.connection?.type || "direct";
-  const currentConnection = CONNECTION_TYPES.find(
-    (c) => c.type === currentConnectionType
-  );
-  const CurrentConnectionIcon = currentConnection?.Icon;
-
-  const handleConnectionTypeChange = (type: EnabledConnectionType) => {
-    const baseConnection = {
-      type,
-      sourceAgentId: agent.connection?.sourceAgentId,
-    };
-    const newConnection =
-      type === "conditional"
-        ? { ...baseConnection, condition: agent.connection?.condition || "" }
-        : baseConnection;
-
-    onUpdate({ ...agent, connection: newConnection });
-    setShowConditionInput(type === "conditional");
-    setIsDropdownOpen(false);
-  };
-
-  const handleConditionChange = (condition: string) => {
-    onUpdate({
-      ...agent,
-      connection: { ...agent.connection, type: "conditional", condition },
-    });
-  };
-
-  const handlePresetSelect = (preset: (typeof CONDITION_PRESETS)[0]) => {
-    handleConditionChange(preset.condition);
-    setShowConditionInput(false);
-  };
-
-  const getModalPosition = (buttonRect?: DOMRect) => {
-    return {
-      top: `${(buttonRect?.top || 0) + window.scrollY - 8}px`,
-      left: `${Math.max(16, Math.min(buttonRect?.left || 0, window.innerWidth - 200))}px`,
-      transform: "translateY(-100%)",
-    };
-  };
-
-  const STYLES = {
-    modal:
-      "fixed bg-gray-800/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl z-[999999] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200",
-    backdrop: "fixed inset-0 z-[999999] bg-black/20",
-    input:
-      "bg-gray-800/90 border border-gray-600/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-400/50",
-  };
-
-  return (
-    <div className="hidden md:flex items-center justify-center relative mb-36">
-      {/* Tilted Interactive Connection Button */}
-      <button
-        onClick={(e) => {
-          setButtonPosition(e.currentTarget.getBoundingClientRect());
-          setIsDropdownOpen(!isDropdownOpen);
-        }}
-        className="relative z-10 w-8 h-8  flex items-center justify-center transform rotate-45 backdrop-blur-sm transition-all group bg-gray-800/90 hover:bg-gray-700/90 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg"
-        title={`Connection: ${currentConnection?.label}`}
-      >
-        <div className="transform -rotate-45">
-          {CurrentConnectionIcon && (
-            <CurrentConnectionIcon
-              size={20}
-              className={`${currentConnection?.color || "text-gray-400"} ${currentConnection?.iconRotate || ""} group-hover:scale-110 transition-transform`}
-            />
-          )}
-        </div>
-      </button>
-
-      {/* Connection Type Dropdown */}
-      {isDropdownOpen &&
-        createPortal(
-          <>
-            <div
-              className={STYLES.backdrop}
-              onClick={() => setIsDropdownOpen(false)}
-            />
-            <div
-              className={`${STYLES.modal} min-w-48 w-max max-w-[90vw]`}
-              style={getModalPosition(buttonPosition || undefined)}
-            >
-              {CONNECTION_TYPES.map((type) => {
-                const TypeIcon = type.Icon;
-                const isSelected = currentConnectionType === type.type;
-                return (
-                  <button
-                    key={type.type}
-                    onClick={() =>
-                      !type.disabled && handleConnectionTypeChange(type.type)
-                    }
-                    disabled={type.disabled}
-                    className={`w-full px-3 py-2 text-left bg-gray-800/50 hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed first:rounded-t-lg last:rounded-b-lg flex items-center gap-3 transition-colors text-xs relative ${
-                      isSelected
-                        ? "bg-lavender-500/10 text-lavender-400"
-                        : "text-white"
-                    } ${type.disabled ? "bg-gray-800/50" : ""}`}
-                  >
-                    <span
-                      className={`${type.color} ${type.iconRotate || ""} ${type.disabled ? "opacity-50" : ""}`}
-                    >
-                      <TypeIcon size={14} />
-                    </span>
-                    <div className="flex-1">
-                      <div
-                        className={`font-medium flex items-center gap-2 ${isSelected ? "text-lavender-400" : ""}`}
-                      >
-                        {type.label}
-                        {type.disabled && (
-                          <span className="text-xs px-2 py-0.5 bg-gray-700/50 border border-gray-600/30 rounded-full text-gray-400">
-                            Coming Soon
-                          </span>
-                        )}
-                        {isSelected && !type.disabled && (
-                          <span className="ml-2 text-xs opacity-60">
-                            Selected
-                          </span>
-                        )}
-                      </div>
-                      <div
-                        className={`text-gray-400 text-xs ${type.disabled ? "opacity-70" : ""}`}
-                      >
-                        {type.description}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </>,
-          document.body
-        )}
-    </div>
-  );
-};
-
 interface InitialChainInputProps {
   onSendChain: (agents: Agent[]) => void;
   isLoading?: boolean;
@@ -722,7 +572,7 @@ export function InitialChainInput({
     if (agents.length === 1) {
       // Single agent: centered with max-width constraint
       return {
-        outerContainer: "w-full flex justify-center px-4",
+        outerContainer: "w-full flex justify-center",
         innerContainer: "w-full max-w-4xl",
         flexContainer:
           "flex flex-col lg:flex-row lg:items-end lg:justify-center w-full",
@@ -734,7 +584,8 @@ export function InitialChainInput({
       return {
         outerContainer: "w-full",
         innerContainer: "w-full",
-        flexContainer: "flex flex-col lg:flex-row lg:items-end lg:gap-4 w-full",
+        flexContainer:
+          "flex flex-col lg:flex-row lg:items-end lg:gap-2 w-full lg:px-4",
         agentWrapper:
           "flex relative flex-col lg:flex-row lg:items-stretch flex-1",
       };
@@ -748,10 +599,11 @@ export function InitialChainInput({
     <div
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{
-        paddingBottom:
+        paddingBottom: "0px",
+        marginBottom:
           typeof window !== "undefined" && window.innerWidth < 1024
             ? "env(safe-area-inset-bottom)"
-            : "max(0.5rem, env(safe-area-inset-bottom))",
+            : "0.5rem",
         ...getContainerStyle(),
       }}
     >
@@ -805,7 +657,7 @@ export function InitialChainInput({
                   <div key={agent.id} className={layoutClasses.agentWrapper}>
                     {/* Agent Card using AgentInput component */}
                     <div
-                      className={`${getAgentContainerClasses()} ${agents.length > 1 ? "lg:px-4" : ""} ${
+                      className={`${getAgentContainerClasses()} ${agents.length > 1 ? "" : ""} ${
                         queuedAgents.some((qa) => qa.id === agent.id)
                           ? "border-lavender-400/50"
                           : ""
@@ -845,8 +697,8 @@ export function InitialChainInput({
                           onTouchStart={hideTooltip}
                           // Indicate if this agent can be collapsed (not the last one)
                           isCollapsible={index !== agents.length - 1}
-                          // Show mobile connection for non-first agents
-                          showMobileConnection={index > 0}
+                          // Show connection for non-first agents on both mobile and desktop
+                          showConnection={index > 0}
                           // Pass source agent name for connection display
                           sourceAgentName={
                             index > 0
@@ -880,21 +732,6 @@ export function InitialChainInput({
                         </div>
                       )}
                     </div>
-
-                    {/* Desktop: Interactive Connection Selector - positioned absolutely */}
-                    {agents.length > 1 && index < agents.length - 1 && (
-                      <div className="hidden lg:block absolute top-8 -right-[24px] z-10">
-                        <div className="flex items-center justify-center">
-                          <DesktopConnectionSelector
-                            agent={agents[index + 1]}
-                            onUpdate={(updatedAgent) =>
-                              updateAgent(index + 1, updatedAgent)
-                            }
-                            index={index + 1}
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>

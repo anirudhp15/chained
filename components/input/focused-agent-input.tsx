@@ -103,8 +103,12 @@ export function FocusedAgentInput({
       style={{
         paddingBottom:
           typeof window !== "undefined" && window.innerWidth < 1024
-            ? "env(safe-area-inset-bottom)"
+            ? "0px"
             : "8px",
+        marginBottom:
+          typeof window !== "undefined" && window.innerWidth < 1024
+            ? "env(safe-area-inset-bottom)"
+            : "0px",
         ...getContainerStyle(),
       }}
     >
