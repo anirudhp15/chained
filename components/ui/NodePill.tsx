@@ -434,6 +434,22 @@ export function NodePill({
           <div className="flex items-center justify-between">
             {/* Left: Node Name */}
             <div className="flex items-center gap-1">
+              {/* Desktop: Pencil icon on hover, Mobile: Always visible */}
+              {!isEditing && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditing(true);
+                    // onToggleExpansion?.();
+                  }}
+                  className="transition-all duration-75 p-1 hover:bg-gray-700/50 rounded"
+                >
+                  <Pencil
+                    size={12}
+                    className="text-gray-400 hover:text-lavender-400"
+                  />
+                </button>
+              )}
               {isEditing ? (
                 <>
                   {/* <div className="w-2 h-2 bg-lavender-400/50 rounded-full"></div> */}
@@ -555,23 +571,6 @@ export function NodePill({
                   Prompts
                 </span>
               </button>
-
-              {/* Desktop: Pencil icon on hover, Mobile: Always visible */}
-              {!isEditing && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditing(true);
-                    // onToggleExpansion?.();
-                  }}
-                  className="lg:opacity-0 lg:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 hover:bg-gray-700/50 rounded"
-                >
-                  <Pencil
-                    size={12}
-                    className="text-gray-400 hover:text-lavender-400"
-                  />
-                </button>
-              )}
 
               {/* Close Agent Button - only show if canRemove */}
               {canRemove && onRemove && (

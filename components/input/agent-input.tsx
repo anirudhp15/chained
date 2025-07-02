@@ -19,6 +19,7 @@ import {
   BarChart3,
   ArrowUp,
   LoaderCircle,
+  ExternalLink,
 } from "lucide-react";
 import { SiOpenai, SiClaude } from "react-icons/si";
 import { UploadedImage } from "../modality/ImageUpload";
@@ -431,6 +432,9 @@ export function AgentInput({
     condition?: DOMRect | null;
   }>({});
   const [showConditionInput, setShowConditionInput] = useState(false);
+  const [isTextExpanded, setIsTextExpanded] = useState(false);
+  const [autoCollapseTimeout, setAutoCollapseTimeout] =
+    useState<NodeJS.Timeout | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -528,12 +532,42 @@ export function AgentInput({
       if (!target.closest("[data-dropdown]")) {
         setIsModelDropdownOpen(false);
         setShowConditionInput(false);
+        setIsTextExpanded(false);
+        // Clear auto-collapse timer when clicking outside
+        if (autoCollapseTimeout) {
+          clearTimeout(autoCollapseTimeout);
+          setAutoCollapseTimeout(null);
+        }
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [autoCollapseTimeout]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoCollapseTimeout) {
+        clearTimeout(autoCollapseTimeout);
+      }
+    };
+  }, [autoCollapseTimeout]);
+
+  // Debug modal state changes
+  useEffect(() => {
+    console.log(
+      "Modal state changed - isModelDropdownOpen:",
+      isModelDropdownOpen
+    );
+  }, [isModelDropdownOpen]);
+
+  useEffect(() => {
+    console.log(
+      "Text expansion state changed - isTextExpanded:",
+      isTextExpanded
+    );
+  }, [isTextExpanded]);
 
   // Connection handling functions
   const handleConditionChange = (condition: string) => {
@@ -577,32 +611,90 @@ export function AgentInput({
     };
   };
 
+  const startAutoCollapseTimer = () => {
+    // Clear existing timeout
+    if (autoCollapseTimeout) {
+      clearTimeout(autoCollapseTimeout);
+    }
+
+    // Set new 5-second timeout to auto-collapse
+    const timeout = setTimeout(() => {
+      setIsTextExpanded(false);
+      setAutoCollapseTimeout(null);
+    }, 5000);
+
+    setAutoCollapseTimeout(timeout);
+  };
+
+  const handleModelSelectorClick = (e: React.MouseEvent) => {
+    console.log(
+      "Model selector clicked, isTextExpanded:",
+      isTextExpanded,
+      "isModelDropdownOpen:",
+      isModelDropdownOpen
+    );
+
+    if (isTextExpanded) {
+      // Text is already expanded, second click opens modal
+      console.log("Opening modal...");
+      setButtonPosition("model", e.currentTarget.getBoundingClientRect());
+      setIsModelDropdownOpen(true); // Always set to true on second click
+      // Clear auto-collapse timer since modal is opening
+      if (autoCollapseTimeout) {
+        clearTimeout(autoCollapseTimeout);
+        setAutoCollapseTimeout(null);
+      }
+    } else {
+      // First click - expand text and start auto-collapse timer
+      console.log("Expanding text...");
+      setIsTextExpanded(true);
+      startAutoCollapseTimer();
+    }
+  };
+
   const renderModelSelector = () => (
-    <div className="relative">
+    <div className="relative" data-dropdown>
       <button
-        onClick={(e) => {
-          setButtonPosition("model", e.currentTarget.getBoundingClientRect());
-          setIsModelDropdownOpen(!isModelDropdownOpen);
-        }}
-        className={`flex items-center ${STYLES.gap} p-2 rounded-2xl group bg-gray-700/50 text-gray-500`}
+        onClick={handleModelSelectorClick}
+        className={`flex items-center p-2 rounded-2xl group bg-gray-700/50 text-gray-500 transition-all duration-300 ease-out hover:cursor-pointer overflow-hidden ${
+          isTextExpanded ? "pr-3" : ""
+        }`}
+        data-dropdown
       >
         {currentProvider && (
           <currentProvider.icon
-            size={12}
+            size={16}
             className={`${STYLES.iconSize} ${currentProvider.iconColor} flex-shrink-0`}
           />
         )}
-        <span className="font-medium truncate inline transition-all duration-200 max-w-16 md:max-w-24 text-xs">
-          {selectedModel?.label}
-        </span>
+        <div
+          className={`flex items-center transition-all duration-300 ease-out ${
+            isTextExpanded
+              ? "ml-2 max-w-32 opacity-100"
+              : "ml-0 max-w-0 opacity-0"
+          }`}
+        >
+          <span className="font-medium truncate whitespace-nowrap text-xs">
+            {selectedModel?.label}
+          </span>
+          {isTextExpanded && (
+            <ExternalLink
+              size={16}
+              className="ml-1.5 flex-shrink-0 text-gray-400 transition-opacity duration-300"
+            />
+          )}
+        </div>
       </button>
 
       {isModelDropdownOpen &&
         createPortal(
-          <div className="fixed inset-0 z-[99999]">
+          <div className="fixed inset-0 z-[99999]" style={{ zIndex: 999999 }}>
             <div
               className="fixed inset-0 bg-black/30"
-              onClick={() => setIsModelDropdownOpen(false)}
+              onClick={() => {
+                setIsModelDropdownOpen(false);
+                setIsTextExpanded(false);
+              }}
             />
             <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 border border-gray-600 rounded-lg shadow-xl w-[90vw] md:w-96 max-h-[80vh] z-[999999] flex flex-col overflow-hidden">
               {/* Header with Search */}
@@ -615,7 +707,10 @@ export function AgentInput({
                   </h3>
                   <div className="flex gap-1 ml-auto">
                     <button
-                      onClick={() => setIsModelDropdownOpen(false)}
+                      onClick={() => {
+                        setIsModelDropdownOpen(false);
+                        setIsTextExpanded(false);
+                      }}
                       className={`p-1 text-gray-400 hover:text-white ${STYLES.hoverButton}`}
                     >
                       <X size={12} />
@@ -671,6 +766,7 @@ export function AgentInput({
                               e.stopPropagation();
                               onUpdate({ ...agent, model: model.value });
                               setIsModelDropdownOpen(false);
+                              setIsTextExpanded(false);
                             }}
                             className={`w-full px-3 py-2 text-left ${STYLES.textResponsive} transition-colors hover:bg-gray-700/50 ${
                               isSelected
@@ -816,7 +912,7 @@ export function AgentInput({
       />
 
       {/* Bottom controls - absolutely positioned */}
-      <div className=" flex flex-row lg:items-center justify-between pb-12 p-3 overflow-hidden gap-1.5 lg:gap-2">
+      <div className=" flex flex-row lg:items-center justify-between pb-12 p-3 lg:pb-3 overflow-hidden gap-1.5 lg:gap-2">
         <div className="block lg:hidden">
           {/* Modality Icons */}
           <div className="flex items-center gap-1">
