@@ -193,7 +193,7 @@ const MODEL_PROVIDERS: ModelProviders = {
       // Flagship Models
       {
         value: "gpt-4o",
-        label: "GPT-4o",
+        label: "ChatGPT-4o",
         modalities: ["text", "vision", "audio", "code"],
         description: "Flagship multimodal model with real-time capabilities",
         capabilities: [
@@ -204,7 +204,7 @@ const MODEL_PROVIDERS: ModelProviders = {
       },
       {
         value: "gpt-4o-mini",
-        label: "GPT-4o Mini",
+        label: "ChatGPT-4o Mini",
         modalities: ["text", "vision", "fast"],
         description: "Fast and cost-effective multimodal model",
         capabilities: ["Quick responses", "Vision analysis", "Cost-efficient"],
@@ -213,7 +213,7 @@ const MODEL_PROVIDERS: ModelProviders = {
       // Latest Models
       {
         value: "gpt-4.5-preview",
-        label: "GPT-4.5 Preview",
+        label: "ChatGPT-4.5 Preview",
         modalities: ["text", "vision", "code"],
         description: "Latest preview model with cutting-edge capabilities",
         capabilities: [
@@ -224,7 +224,7 @@ const MODEL_PROVIDERS: ModelProviders = {
       },
       {
         value: "gpt-4.1",
-        label: "GPT-4.1",
+        label: "ChatGPT-4.1",
         modalities: ["text", "vision", "code"],
         description: "Enhanced GPT-4 with improved capabilities",
         capabilities: [
@@ -584,7 +584,7 @@ export function AgentInput({
           setButtonPosition("model", e.currentTarget.getBoundingClientRect());
           setIsModelDropdownOpen(!isModelDropdownOpen);
         }}
-        className={`flex items-center ${STYLES.gap} ${STYLES.padding} rounded-2xl group ${STYLES.button}`}
+        className={`flex items-center ${STYLES.gap} p-2 rounded-2xl group bg-gray-700/50 text-gray-500`}
       >
         {currentProvider && (
           <currentProvider.icon
@@ -595,12 +595,6 @@ export function AgentInput({
         <span className="font-medium truncate inline transition-all duration-200 max-w-16 md:max-w-24 text-xs">
           {selectedModel?.label}
         </span>
-        <ChevronDown
-          size={10}
-          className={`${STYLES.iconSizeSmall} text-gray-400 flex-shrink-0 transition-transform duration-200 ${
-            isModelDropdownOpen ? "rotate-180" : ""
-          }`}
-        />
       </button>
 
       {isModelDropdownOpen &&
@@ -817,12 +811,12 @@ export function AgentInput({
           setTimeout(adjustTextareaHeight, 0);
         }}
         placeholder="Ask anything"
-        className={`w-full p-4 h-auto ${isLastAgent ? "rounded-t-3xl" : "rounded-t-3xl"} min-h-12 max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-base lg:text-sm overflow-y-auto`}
+        className={`w-full p-4 h-auto ${isLastAgent ? "rounded-t-3xl" : "rounded-t-3xl"} min-h-16 max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-xs md:text-sm lg:text-base overflow-y-auto`}
         ref={textareaRef}
       />
 
       {/* Bottom controls - absolutely positioned */}
-      <div className=" flex flex-row lg:items-center justify-between p-2 pb-6 lg:p-3 overflow-hidden gap-1.5 lg:gap-2">
+      <div className=" flex flex-row lg:items-center justify-between pb-12 p-3 overflow-hidden gap-1.5 lg:gap-2">
         <div className="block lg:hidden">
           {/* Modality Icons */}
           <div className="flex items-center gap-1">
