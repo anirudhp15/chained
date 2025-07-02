@@ -597,7 +597,7 @@ export function InitialChainInput({
   // Regular Chain Mode Input - Mobile Responsive Layout
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-gray-600/25 backdrop-blur-lg"
       style={{
         paddingBottom: "0px",
         marginBottom:
