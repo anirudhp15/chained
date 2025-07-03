@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     siteName: "ChainedChat",
     images: [
       {
-        url: "/cc_logo.png",
+        url: "/cc_logo_dark.png",
         width: 1200,
         height: 630,
         alt: "ChainedChat - Orchestrate multiple LLMs in a single chat interface",
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     title: "ChainedChat - Orchestrate multiple LLMs in a single chat interface",
     description: "Orchestrate multiple LLMs in a single chat interface",
     creator: "@anipotts",
-    images: ["/cc_logo.png"],
+    images: ["/cc_logo_dark.png"],
   },
   robots: {
     index: true,
@@ -87,16 +87,16 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/cc_logo.png", sizes: "16x16", type: "image/png" },
-      { url: "/cc_logo.png", sizes: "32x32", type: "image/png" },
-      { url: "/cc_logo.png", sizes: "any" },
+      { url: "/cc_logo_dark.png", sizes: "16x16", type: "image/png" },
+      { url: "/cc_logo_dark.png", sizes: "32x32", type: "image/png" },
+      { url: "/cc_logo_dark.png", sizes: "any" },
     ],
-    shortcut: "/cc_logo.png",
-    apple: [{ url: "/cc_logo.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/cc_logo_dark.png",
+    apple: [{ url: "/cc_logo_dark.png", sizes: "180x180", type: "image/png" }],
     other: [
       {
         rel: "mask-icon",
-        url: "/cc_logo.png",
+        url: "/cc_logo_dark.png",
         color: "#030712",
       },
     ],
