@@ -532,7 +532,7 @@ export default function LandingPage() {
       <div className="min-h-screen bg-black relative overflow-hidden">
         {/* Beams Background */}
         <motion.div
-          className="fixed inset-0 z-0"
+          className="fixed inset-0 z-5"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{
@@ -554,9 +554,9 @@ export default function LandingPage() {
         </motion.div>
 
         {/* Navigation */}
-        <header className="fixed top-0 left-0 right-0 z-50 w-full pt-[env(safe-area-inset-top)] supports-[padding:max(0px)]:pt-[max(env(safe-area-inset-top),1rem)] safe-area-top">
-          <motion.div className="transition-all duration-300 ease-out lg:border-y lg:border-x p-2 lg:border-gray-800/50 lg:bg-gray-950/80  lg:mt-4 lg:max-w-7xl lg:mx-auto lg:rounded-3xl">
-            <div className="flex  items-center justify-between px-4">
+        <header className="fixed top-0 left-0 right-0 z-50 w-full pt-[env(safe-area-inset-top)] supports-[padding:max(0px)]:pt-[max(env(safe-area-inset-top),1rem)] safe-area-top lg:pt-0">
+          <motion.div className="transition-all duration-300 ease-out lg:border-y lg:border-x p-2 lg:border-gray-800/50 lg:bg-gray-950/80">
+            <div className="flex  items-center justify-between px-4 lg:max-w-7xl lg:mx-auto">
               <Link href="/" className="flex items-center space-x-2 group">
                 <div className="relative group/logo hidden md:block">
                   <Link2 className="h-6 w-6 text-lavender-400 group-hover/logo:hidden transition-all duration-200 group-hover:-rotate-45 block" />
@@ -710,7 +710,7 @@ export default function LandingPage() {
                 {/* Hero Badge */}
                 <div className="inline-flex items-center px-4 py-2 rounded-full bg-gray-900/50 border border-gray-700/50 text-sm text-gray-300 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                   <Sparkles className="h-4 w-4 text-lavender-400 mr-2" />
-                  <span>Chain LLMs Together</span>
+                  <span>Beta Live Now</span>
                   <div className="ml-2 w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
                 </div>
 
@@ -833,7 +833,7 @@ export default function LandingPage() {
         {/* Features Section */}
         <section
           id="features"
-          className="relative z-10 px-4 sm:px-6 py-20 sm:py-32"
+          className="relative z-10 px-4 sm:px-6 py-32 sm:py-40"
         >
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
@@ -1059,14 +1059,13 @@ export default function LandingPage() {
           )}
 
         {/* Demo Section */}
-        <section
+        {/* <section
           id="demo"
           className="relative z-10 px-4 sm:px-6 py-20 sm:py-32"
         >
           <div className="max-w-7xl mx-auto">
             <div className="border border-gray-700/50 rounded-3xl bg-gray-900/30 backdrop-blur-2xl p-12 lg:p-16 relative overflow-hidden">
               <div className="grid lg:grid-cols-2 gap-0 lg:gap-16 items-center ">
-                {/* Header - Left side on desktop, top on mobile */}
                 <div className="text-left animate-in fade-in slide-in-from-left-8 duration-700">
                   <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
                     See It In Action
@@ -1076,7 +1075,6 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                {/* Card Swap Demo - Right side on desktop, bottom on mobile */}
                 <div className="relative h-[200px] md:h-[400px] flex items-center justify-start lg:justify-end animate-in fade-in slide-in-from-right-8 duration-700 delay-300">
                   <div className="w-full">
                     <CardSwap
@@ -1159,10 +1157,10 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* Final CTA Section */}
-        <section className="relative z-10 px-4 sm:px-6 py-20 sm:py-32">
+        {/* <section className="relative z-10 px-4 sm:px-6 py-20 sm:py-32">
           <div className="max-w-4xl mx-auto text-center">
             <div className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 backdrop-blur-xl border border-gray-700/50 rounded-3xl p-8 sm:p-12 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-lavender-500/10 to-purple-500/10"></div>
@@ -1189,7 +1187,7 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* Footer */}
         <footer className="relative z-10 p-8 xl:p-16 xl:pb-8 bg-gradient-to-b from-gray-950/80 to-transparent max-w-7xl mx-auto rounded-t-3xl  border border-x-0 lg:border-x border-gray-800/50 border-b-0">

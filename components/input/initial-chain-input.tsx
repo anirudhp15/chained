@@ -610,7 +610,7 @@ export function InitialChainInput({
         ...getContainerStyle(),
       }}
     >
-      <div className="w-full flex flex-col items-center justify-end transition-all duration-300 ease-in-out h-full md:max-w-4xl">
+      <div className="w-full flex flex-col items-center justify-end transition-all duration-300 ease-in-out h-full">
         {/* Saved Chains Action Buttons - positioned above the input area */}
         {hasCurrentChain && (
           <div className="w-full flex justify-center mb-2">
