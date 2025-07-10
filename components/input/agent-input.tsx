@@ -910,13 +910,14 @@ export function AgentInput({
         onFocus={() => setIsTextareaFocused(true)}
         onBlur={() => setIsTextareaFocused(false)}
         placeholder="Ask anything"
-        className={`w-full p-4 h-auto ${isLastAgent ? "rounded-t-3xl" : "rounded-t-3xl"} min-h-8 max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-xs lg:text-base overflow-y-auto`}
+        className={`w-full p-4 h-auto ${isLastAgent ? "rounded-t-3xl" : "rounded-t-3xl"} min-h-8 max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all overflow-y-auto`}
+        style={{ fontSize: "16px" }}
         ref={textareaRef}
       />
 
       {/* Bottom controls - absolutely positioned */}
       <div
-        className={`flex flex-row lg:items-center justify-between ${isTextareaFocused ? "pb-4" : "pb-8"} p-4 lg:pb-4 overflow-hidden gap-1.5 lg:gap-2`}
+        className={`flex flex-row lg:items-center justify-between ${isTextareaFocused && isLastAgent ? "pb-4" : "pb-8"} p-4 lg:pb-4 overflow-hidden gap-1.5 lg:gap-2`}
       >
         <div className="block lg:hidden">
           {/* Modality Icons */}

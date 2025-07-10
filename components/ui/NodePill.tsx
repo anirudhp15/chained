@@ -410,10 +410,10 @@ export function NodePill({
       >
         {/* Base Pill */}
         <div
-          className={`bg-gray-900/75 backdrop-blur-sm mx-auto lg:border border-gray-600/50 rounded-xl lg:rounded-3xl px-4 py-2 transition-all duration-200 hover:bg-gray-800/90 hover:border-lavender-400/20 w-full max-w-4xl group shadow-lg shadow-gray-950/50 animate-in fade-in slide-in-from-bottom-4 lg:slide-in-from-bottom-8 ease-out ${isExpanded ? "bg-gray-800/90 border-lavender-400/30" : ""} ${
+          className={`bg-gray-900/75 backdrop-blur-sm mx-auto lg:border border-gray-600/50 rounded-xl lg:rounded-3xl px-2 lg:px-4 py-2 transition-all duration-200 hover:bg-gray-800/90 hover:border-lavender-400/20 w-full max-w-4xl group shadow-lg shadow-gray-950/50 animate-in fade-in slide-in-from-bottom-4 lg:slide-in-from-bottom-8 ease-out ${isExpanded ? "bg-gray-800/90 border-lavender-400/30" : ""} ${
             // Add visual indication for non-collapsible (last) agents on mobile
             isMobile && !isCollapsible
-              ? "border-green-400/20 bg-green-900/10"
+              ? "border-green-400/20 bg-slate-800/90"
               : ""
           }`}
           onClick={

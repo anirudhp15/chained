@@ -597,184 +597,213 @@ export function InitialChainInput({
 
   // Regular Chain Mode Input - Mobile Responsive Layout
   return (
-    <div
-      className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center justify-end"
-      style={{
-        paddingBottom:
-          typeof window !== "undefined" && window.innerWidth >= 768
-            ? "max(0.5rem, env(safe-area-inset-bottom))"
-            : "0px",
-        // marginBottom:
-        //   typeof window !== "undefined" && window.innerWidth < 768
-        //     ? "env(safe-area-inset-bottom)"
-        //     : "0px",
-        ...getContainerStyle(),
-      }}
-    >
-      <div className="w-full flex flex-col items-center justify-end transition-all duration-300 ease-in-out h-full">
-        {/* Save/Browse Controls - positioned above templates */}
-        <div className="w-full flex justify-center mb-2">
-          <div className="flex items-center gap-2 px-4">
-            {hasCurrentChain && (
-              <button
-                onClick={handleSaveChain}
-                className="flex items-center gap-2 px-3 py-1.5 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-lg text-lavender-400 hover:text-lavender-300 transition-all text-xs backdrop-blur-sm"
-                title="Save current chain configuration"
-              >
-                <Save size={14} />
-                <span className="hidden sm:inline">Save Chain</span>
-              </button>
-            )}
+    <>
+      {/* Mobile Save/Browse Controls - Fixed in top right corner */}
+      <div
+        className="lg:hidden fixed z-30 flex items-center gap-1"
+        style={{
+          top: `calc(env(safe-area-inset-top) + 1rem)`,
+          right: "1rem",
+        }}
+      >
+        {hasCurrentChain && (
+          <>
             <button
-              onClick={handleBrowseChains}
-              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-gray-500/50 rounded-lg text-gray-400 hover:text-gray-300 transition-all text-xs backdrop-blur-sm"
-              title="Browse saved chains"
+              onClick={handleSaveChain}
+              className="p-2 bg-gray-900/80 hover:bg-gray-800/80 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-400 transition-all duration-200 hover:scale-110 shadow-lg backdrop-blur-sm"
+              title="Save current chain"
             >
-              <BookOpen size={14} />
-              <span className="hidden sm:inline">
-                {hasCurrentChain ? "Browse Saved" : "Load Saved Chain"}
-              </span>
-              <span className="sm:hidden">Browse</span>
+              <Save size={16} />
             </button>
+          </>
+        )}
+        <button
+          onClick={handleBrowseChains}
+          className="p-2 bg-gray-900/80 hover:bg-gray-800/80 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-400 transition-all duration-200 hover:scale-110 shadow-lg backdrop-blur-sm"
+          title="Browse saved chains"
+        >
+          <BookOpen size={16} />
+        </button>
+      </div>
+
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center justify-end"
+        style={{
+          paddingBottom:
+            typeof window !== "undefined" && window.innerWidth >= 768
+              ? "max(0.5rem, env(safe-area-inset-bottom))"
+              : "0px",
+          ...getContainerStyle(),
+        }}
+      >
+        <div className="w-full flex flex-col items-center justify-end transition-all duration-300 ease-in-out h-full">
+          {/* Desktop Save/Browse Controls - positioned above templates */}
+          <div className="hidden lg:flex w-full justify-center mb-2">
+            <div className="flex items-center gap-2 px-4">
+              {hasCurrentChain && (
+                <button
+                  onClick={handleSaveChain}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-lg text-lavender-400 hover:text-lavender-300 transition-all text-xs backdrop-blur-sm"
+                  title="Save current chain configuration"
+                >
+                  <Save size={14} />
+                  <span className="hidden sm:inline">Save Chain</span>
+                </button>
+              )}
+              <button
+                onClick={handleBrowseChains}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-gray-500/50 rounded-lg text-gray-400 hover:text-gray-300 transition-all text-xs backdrop-blur-sm"
+                title="Browse saved chains"
+              >
+                <BookOpen size={14} />
+                <span className="hidden sm:inline">
+                  {hasCurrentChain ? "Browse Saved" : "Load Saved Chain"}
+                </span>
+                <span className="sm:hidden">Browse</span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Prompt Templates - Desktop Only */}
-        <div className="hidden lg:flex w-full justify-center mb-2">
-          <PromptTemplates onLoadTemplate={handleLoadChain} />
-        </div>
+          {/* Prompt Templates - Desktop Only */}
+          <div className="hidden lg:flex w-full justify-center mb-2">
+            <PromptTemplates onLoadTemplate={handleLoadChain} />
+          </div>
 
-        <div className="w-full flex justify-center ">
-          <div className="w-full flex items-end justify-center lg:mb-2">
-            <div className={layoutClasses.outerContainer}>
-              <div className={layoutClasses.innerContainer}>
-                {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
-                <div className={layoutClasses.flexContainer}>
-                  {agents.map((agent, index) => (
-                    <div key={agent.id} className={layoutClasses.agentWrapper}>
-                      {/* Agent Card using AgentInput component */}
+          <div className="w-full flex justify-center ">
+            <div className="w-full flex items-end justify-center lg:mb-2">
+              <div className={layoutClasses.outerContainer}>
+                <div className={layoutClasses.innerContainer}>
+                  {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
+                  <div className={layoutClasses.flexContainer}>
+                    {agents.map((agent, index) => (
                       <div
-                        className={`${getAgentContainerClasses()} ${agents.length > 1 ? "" : ""} ${
-                          queuedAgents.some((qa) => qa.id === agent.id)
-                            ? "border-lavender-400/50"
-                            : ""
-                        } `}
+                        key={agent.id}
+                        className={layoutClasses.agentWrapper}
                       >
+                        {/* Agent Card using AgentInput component */}
                         <div
-                          className={`${
-                            animatingAgentId === agent.id
-                              ? "animate-in slide-in-from-bottom-4 lg:slide-in-from-right-8 fade-in duration-300 ease-out"
+                          className={`${getAgentContainerClasses()} ${agents.length > 1 ? "" : ""} ${
+                            queuedAgents.some((qa) => qa.id === agent.id)
+                              ? "border-lavender-400/50"
                               : ""
-                          }`}
+                          } `}
                         >
-                          <NodePill
+                          <div
+                            className={`${
+                              animatingAgentId === agent.id
+                                ? "animate-in slide-in-from-bottom-4 lg:slide-in-from-right-8 fade-in duration-300 ease-out"
+                                : ""
+                            }`}
+                          >
+                            <NodePill
+                              agent={agent}
+                              onUpdate={(updatedAgent) =>
+                                updateAgent(index, updatedAgent)
+                              }
+                              index={index}
+                              canAddAgent={agents.length < MAX_AGENTS_PER_CHAIN}
+                              onAddAgent={
+                                agents.length < MAX_AGENTS_PER_CHAIN
+                                  ? addAgent
+                                  : undefined
+                              }
+                              isLastAgent={index === agents.length - 1}
+                              onRemove={() => removeAgent(index)}
+                              canRemove={canRemove}
+                              // Mobile-specific props
+                              isExpanded={expandedAgents.has(agent.id)}
+                              onToggleExpansion={() =>
+                                toggleAgentExpansion(agent.id)
+                              }
+                              onLongPressStart={(e: React.TouchEvent) =>
+                                handleLongPressStart(agent.id, e)
+                              }
+                              onLongPressEnd={handleLongPressEnd}
+                              onTouchStart={hideTooltip}
+                              // Indicate if this agent can be collapsed (not the last one)
+                              isCollapsible={index !== agents.length - 1}
+                              // Show connection for non-first agents on both mobile and desktop
+                              showConnection={index > 0}
+                              // Pass source agent name for connection display
+                              sourceAgentName={
+                                index > 0
+                                  ? agents[index - 1]?.name || `Node ${index}`
+                                  : undefined
+                              }
+                            />
+                          </div>
+                          <AgentInput
                             agent={agent}
                             onUpdate={(updatedAgent) =>
                               updateAgent(index, updatedAgent)
                             }
                             index={index}
-                            canAddAgent={agents.length < MAX_AGENTS_PER_CHAIN}
-                            onAddAgent={
-                              agents.length < MAX_AGENTS_PER_CHAIN
-                                ? addAgent
-                                : undefined
-                            }
                             isLastAgent={index === agents.length - 1}
-                            onRemove={() => removeAgent(index)}
-                            canRemove={canRemove}
-                            // Mobile-specific props
-                            isExpanded={expandedAgents.has(agent.id)}
-                            onToggleExpansion={() =>
-                              toggleAgentExpansion(agent.id)
-                            }
-                            onLongPressStart={(e: React.TouchEvent) =>
-                              handleLongPressStart(agent.id, e)
-                            }
-                            onLongPressEnd={handleLongPressEnd}
-                            onTouchStart={hideTooltip}
-                            // Indicate if this agent can be collapsed (not the last one)
-                            isCollapsible={index !== agents.length - 1}
-                            // Show connection for non-first agents on both mobile and desktop
-                            showConnection={index > 0}
-                            // Pass source agent name for connection display
-                            sourceAgentName={
-                              index > 0
-                                ? agents[index - 1]?.name || `Node ${index}`
+                            onSendChain={
+                              index === agents.length - 1
+                                ? handleSendChain
                                 : undefined
                             }
+                            canSend={canSend}
+                            isLoading={isLoading || isStreaming}
+                            // Mobile-specific props
+                            isMobileCollapsed={!expandedAgents.has(agent.id)}
                           />
-                        </div>
-                        <AgentInput
-                          agent={agent}
-                          onUpdate={(updatedAgent) =>
-                            updateAgent(index, updatedAgent)
-                          }
-                          index={index}
-                          isLastAgent={index === agents.length - 1}
-                          onSendChain={
-                            index === agents.length - 1
-                              ? handleSendChain
-                              : undefined
-                          }
-                          canSend={canSend}
-                          isLoading={isLoading || isStreaming}
-                          // Mobile-specific props
-                          isMobileCollapsed={!expandedAgents.has(agent.id)}
-                        />
 
-                        {/* Queued Agent Indicator */}
-                        {queuedAgents.some((qa) => qa.id === agent.id) && (
-                          <div className="text-xs text-lavender-400/60 text-center mt-0.5 lg:mt-1">
-                            Queued...
-                          </div>
-                        )}
+                          {/* Queued Agent Indicator */}
+                          {queuedAgents.some((qa) => qa.id === agent.id) && (
+                            <div className="text-xs text-lavender-400/60 text-center mt-0.5 lg:mt-1">
+                              Queued...
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Mobile Long-Press Tooltip */}
+          {showTooltip &&
+            createPortal(
+              <div
+                className="fixed z-[9999] bg-gray-900/95 backdrop-blur-sm border border-gray-600/50 rounded-lg p-3 max-w-xs shadow-xl animate-in fade-in slide-in-from-top-2 duration-200"
+                style={{
+                  left: showTooltip.position.x - 150, // Center the tooltip
+                  top: showTooltip.position.y - 80,
+                  transform: "translateX(-50%)",
+                }}
+                onClick={hideTooltip}
+              >
+                <div className="text-sm text-white mb-2">
+                  {agents.find((a) => a.id === showTooltip.agentId)?.prompt ||
+                    "No prompt yet"}
+                </div>
+                <div className="text-xs text-gray-400 text-center">
+                  Click to edit
+                </div>
+              </div>,
+              document.body
+            )}
+
+          {/* Saved Chains Modals */}
+          <SaveChainModal
+            isOpen={showSaveModal}
+            onClose={() => setShowSaveModal(false)}
+            agents={agents}
+            onSaveSuccess={handleSaveSuccess}
+          />
+
+          <SavedChainsModal
+            isOpen={showBrowseModal}
+            onClose={() => setShowBrowseModal(false)}
+            onLoadChain={handleLoadChain}
+            hasCurrentChain={hasCurrentChain}
+          />
         </div>
-
-        {/* Mobile Long-Press Tooltip */}
-        {showTooltip &&
-          createPortal(
-            <div
-              className="fixed z-[9999] bg-gray-900/95 backdrop-blur-sm border border-gray-600/50 rounded-lg p-3 max-w-xs shadow-xl animate-in fade-in slide-in-from-top-2 duration-200"
-              style={{
-                left: showTooltip.position.x - 150, // Center the tooltip
-                top: showTooltip.position.y - 80,
-                transform: "translateX(-50%)",
-              }}
-              onClick={hideTooltip}
-            >
-              <div className="text-sm text-white mb-2">
-                {agents.find((a) => a.id === showTooltip.agentId)?.prompt ||
-                  "No prompt yet"}
-              </div>
-              <div className="text-xs text-gray-400 text-center">
-                Click to edit
-              </div>
-            </div>,
-            document.body
-          )}
-
-        {/* Saved Chains Modals */}
-        <SaveChainModal
-          isOpen={showSaveModal}
-          onClose={() => setShowSaveModal(false)}
-          agents={agents}
-          onSaveSuccess={handleSaveSuccess}
-        />
-
-        <SavedChainsModal
-          isOpen={showBrowseModal}
-          onClose={() => setShowBrowseModal(false)}
-          onLoadChain={handleLoadChain}
-          hasCurrentChain={hasCurrentChain}
-        />
       </div>
-    </div>
+    </>
   );
 }
