@@ -1085,7 +1085,7 @@ export function Sidebar({
         </div>
 
         {/* Mobile Account Section */}
-        <div className="border-t border-gray-800/50 p-4 bg-[#17181D] backdrop-blur-sm">
+        <div className="border-t border-gray-800/50 p-4 pb-8 bg-[#17181D] backdrop-blur-sm">
           <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50 backdrop-blur-sm">
             <UserButton
               appearance={{
