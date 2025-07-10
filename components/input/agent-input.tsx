@@ -20,12 +20,19 @@ import {
   ArrowUp,
   LoaderCircle,
   ExternalLink,
+  SquareArrowOutUpRight,
 } from "lucide-react";
 import { SiOpenai, SiClaude } from "react-icons/si";
 import { UploadedImage } from "../modality/ImageUpload";
 import { WebSearchData } from "../modality/WebSearch";
 import { ModalityIcons } from "../modality/ModalityIcons";
-import { CONDITION_PRESETS } from "@/lib/constants";
+import {
+  CONDITION_PRESETS,
+  MODEL_PROVIDERS,
+  getProviderKey,
+  type ModelProviders,
+  type ModelConfig,
+} from "@/lib/constants";
 import { ToolButton } from "../ui/ToolButton";
 import { usePerformance } from "@/lib/performance-context";
 import { generateSmartAgentName } from "@/lib/utils";
@@ -84,26 +91,6 @@ interface AgentInputProps {
   allAgents?: Agent[];
 }
 
-// Grok Icon Component
-const GrokIcon = ({
-  size = 16,
-  className = "",
-}: {
-  size?: number;
-  className?: string;
-}) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width={size}
-    height={size}
-    fill="currentColor"
-    viewBox="0 0 24 24"
-    className={className}
-  >
-    <path d="m19.25 5.08-9.52 9.67 6.64-4.96c.33-.24.79-.15.95.23.82 1.99.45 4.39-1.17 6.03-1.63 1.64-3.89 2.01-5.96 1.18l-2.26 1.06c3.24 2.24 7.18 1.69 9.64-.8 1.95-1.97 2.56-4.66 1.99-7.09-.82-3.56.2-4.98 2.29-7.89L22 2.3zM9.72 14.75h.01zM8.35 15.96c-2.33-2.25-1.92-5.72.06-7.73 1.47-1.48 3.87-2.09 5.97-1.2l2.25-1.05c-.41-.3-.93-.62-1.52-.84a7.45 7.45 0 0 0-8.13 1.65c-2.11 2.14-2.78 5.42-1.63 8.22.85 2.09-.54 3.57-1.95 5.07-.5.53-1 1.06-1.4 1.62z" />
-  </svg>
-);
-
 // Modality Icons Component
 const ModalityIcon = ({
   type,
@@ -127,273 +114,6 @@ const ModalityIcon = ({
 
   const IconComponent = icons[type as keyof typeof icons];
   return IconComponent ? <IconComponent {...iconProps} /> : null;
-};
-
-// Define provider type
-type ModelProvider = {
-  name: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  iconColor: string;
-  bgColor: string;
-  models: Array<{
-    value: string;
-    label: string;
-    modalities: string[];
-    description?: string;
-    capabilities?: string[];
-  }>;
-};
-
-type ModelProviders = {
-  openai: ModelProvider;
-  anthropic: ModelProvider;
-  xai: ModelProvider;
-};
-
-// Connection types configuration
-
-const MODEL_PROVIDERS: ModelProviders = {
-  openai: {
-    name: "OpenAI",
-    icon: SiOpenai,
-    iconColor: "text-white",
-    bgColor: "bg-[#000000]",
-    models: [
-      // Reasoning Models (High Priority)
-      {
-        value: "o1",
-        label: "o1",
-        modalities: ["text", "reasoning"],
-        description: "Most advanced reasoning model for complex problems",
-        capabilities: [
-          "Advanced reasoning",
-          "Mathematical analysis",
-          "Complex problem solving",
-        ],
-      },
-      {
-        value: "o1-mini",
-        label: "o1 Mini",
-        modalities: ["text", "reasoning", "fast"],
-        description: "Cost-effective reasoning model",
-        capabilities: [
-          "Logical reasoning",
-          "Cost-efficient",
-          "Faster responses",
-        ],
-      },
-      {
-        value: "o1-pro",
-        label: "o1 Pro",
-        modalities: ["text", "reasoning"],
-        description: "Premium reasoning model with enhanced capabilities",
-        capabilities: [
-          "Premium reasoning",
-          "Extended thinking",
-          "Complex analysis",
-        ],
-      },
-
-      // Flagship Models
-      {
-        value: "gpt-4o",
-        label: "ChatGPT 4o",
-        modalities: ["text", "vision", "audio", "code"],
-        description: "Flagship multimodal model with real-time capabilities",
-        capabilities: [
-          "Real-time reasoning",
-          "Voice interaction",
-          "Image analysis",
-        ],
-      },
-      {
-        value: "gpt-4o-mini",
-        label: "ChatGPT 4o Mini",
-        modalities: ["text", "vision", "fast"],
-        description: "Fast and cost-effective multimodal model",
-        capabilities: ["Quick responses", "Vision analysis", "Cost-efficient"],
-      },
-
-      // Latest Models
-      {
-        value: "gpt-4.5-preview",
-        label: "ChatGPT 4.5 Preview",
-        modalities: ["text", "vision", "code"],
-        description: "Latest preview model with cutting-edge capabilities",
-        capabilities: [
-          "Latest features",
-          "Enhanced performance",
-          "Advanced reasoning",
-        ],
-      },
-      {
-        value: "gpt-4.1",
-        label: "ChatGPT 4.1",
-        modalities: ["text", "vision", "code"],
-        description: "Enhanced GPT-4 with improved capabilities",
-        capabilities: [
-          "Improved reasoning",
-          "Better code generation",
-          "Enhanced accuracy",
-        ],
-      },
-
-      // Specialized Models
-      {
-        value: "o3-mini-2025-01-31",
-        label: "o3 Mini",
-        modalities: ["text", "reasoning"],
-        description: "Next-generation reasoning model",
-        capabilities: [
-          "Advanced reasoning",
-          "Efficient processing",
-          "Mathematical expertise",
-        ],
-      },
-      {
-        value: "o4-mini-2025-04-16",
-        label: "o4 Mini",
-        modalities: ["text", "reasoning", "fast"],
-        description: "Latest generation reasoning model",
-        capabilities: [
-          "State-of-the-art reasoning",
-          "Optimized performance",
-          "Complex analysis",
-        ],
-      },
-    ],
-  },
-
-  anthropic: {
-    name: "Anthropic",
-    icon: SiClaude,
-    iconColor: "text-[#da7756]",
-    bgColor: "bg-[#000000]",
-    models: [
-      // Claude 4 Series (Latest)
-      {
-        value: "claude-sonnet-4-20250514",
-        label: "Claude Sonnet 4",
-        modalities: ["text", "vision", "code", "reasoning"],
-        description: "High-performance model with exceptional reasoning",
-        capabilities: [
-          "Advanced coding",
-          "Complex reasoning",
-          "Vision analysis",
-        ],
-      },
-      {
-        value: "claude-opus-4-20250514",
-        label: "Claude Opus 4",
-        modalities: ["text", "vision", "code", "reasoning"],
-        description: "Most capable and intelligent Claude model",
-        capabilities: [
-          "Superior reasoning",
-          "Advanced analysis",
-          "Complex problem solving",
-        ],
-      },
-
-      // Claude 3.7 Series
-      {
-        value: "claude-3-7-sonnet-20250219",
-        label: "Claude Sonnet 3.7",
-        modalities: ["text", "vision", "reasoning"],
-        description: "Enhanced model with extended thinking capabilities",
-        capabilities: [
-          "Extended thinking",
-          "Deep analysis",
-          "Thoughtful responses",
-        ],
-      },
-
-      // Claude 3.5 Series (Proven)
-      {
-        value: "claude-3-5-sonnet-20241022",
-        label: "Claude 3.5 Sonnet",
-        modalities: ["text", "vision", "code", "reasoning"],
-        description: "Proven high-performance model for complex tasks",
-        capabilities: ["Code generation", "Vision analysis", "Tool use"],
-      },
-      {
-        value: "claude-3-5-haiku-20241022",
-        label: "Claude 3.5 Haiku",
-        modalities: ["text", "vision", "fast"],
-        description: "Fast and efficient model for quick tasks",
-        capabilities: [
-          "Rapid responses",
-          "Cost-effective",
-          "Reliable performance",
-        ],
-      },
-    ],
-  },
-
-  xai: {
-    name: "xAI",
-    icon: GrokIcon,
-    iconColor: "text-white",
-    bgColor: "bg-[#000000]",
-    models: [
-      // Grok 3 Series (Latest)
-      {
-        value: "grok-3",
-        label: "Grok 3",
-        modalities: ["text", "reasoning", "web"],
-        description: "Flagship model with real-time data access",
-        capabilities: [
-          "Real-time data",
-          "Market analysis",
-          "Deep domain knowledge",
-        ],
-      },
-      {
-        value: "grok-3-mini",
-        label: "Grok 3 Mini",
-        modalities: ["text", "reasoning"],
-        description: "Lightweight model with strong reasoning",
-        capabilities: [
-          "Cost-effective",
-          "Quick reasoning",
-          "Reliable analysis",
-        ],
-      },
-      {
-        value: "grok-3-fast",
-        label: "Grok 3 Fast",
-        modalities: ["text", "fast"],
-        description: "Optimized for speed and real-time applications",
-        capabilities: ["High speed", "Real-time processing", "Low latency"],
-      },
-      {
-        value: "grok-3-mini-fast",
-        label: "Grok 3 Mini Fast",
-        modalities: ["text", "fast"],
-        description: "Balance of speed and cost-effectiveness",
-        capabilities: ["Fast responses", "Cost-efficient", "Reliable"],
-      },
-
-      // Grok 2 Series (Multimodal)
-      {
-        value: "grok-2-vision-1212",
-        label: "Grok 2 Vision",
-        modalities: ["vision", "image"],
-        description: "Advanced image understanding and analysis",
-        capabilities: [
-          "Visual analysis",
-          "Image processing",
-          "Multimodal reasoning",
-        ],
-      },
-      {
-        value: "grok-2-1212",
-        label: "Grok 2",
-        modalities: ["text", "reasoning"],
-        description: "Proven model for text analysis and reasoning",
-        capabilities: ["Text analysis", "Logical reasoning", "Problem solving"],
-      },
-    ],
-  },
 };
 
 // Style constants
@@ -447,6 +167,8 @@ export function AgentInput({
   const [autoCollapseTimeout, setAutoCollapseTimeout] =
     useState<NodeJS.Timeout | null>(null);
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [focusedModelIndex, setFocusedModelIndex] = useState(-1);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -464,24 +186,6 @@ export function AgentInput({
     } else {
       setTempName(nodeName);
     }
-  };
-
-  const getProviderKey = (modelValue: string): keyof ModelProviders => {
-    if (
-      modelValue.includes("gpt") ||
-      modelValue.includes("o1") ||
-      modelValue.includes("o3") ||
-      modelValue.includes("o4")
-    ) {
-      return "openai";
-    }
-    if (modelValue.includes("claude")) {
-      return "anthropic";
-    }
-    if (modelValue.includes("grok")) {
-      return "xai";
-    }
-    return "openai"; // Default fallback
   };
 
   const currentProvider = (() => {
@@ -545,6 +249,8 @@ export function AgentInput({
         setIsModelDropdownOpen(false);
         setShowConditionInput(false);
         setIsTextExpanded(false);
+        setSearchQuery("");
+        setFocusedModelIndex(-1);
         // Clear auto-collapse timer when clicking outside
         if (autoCollapseTimeout) {
           clearTimeout(autoCollapseTimeout);
@@ -556,6 +262,23 @@ export function AgentInput({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [autoCollapseTimeout]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isModelDropdownOpen) {
+        setIsModelDropdownOpen(false);
+        setIsTextExpanded(false);
+        setSearchQuery("");
+        setFocusedModelIndex(-1);
+      }
+    };
+
+    if (isModelDropdownOpen) {
+      document.addEventListener("keydown", handleEscKey);
+      return () => document.removeEventListener("keydown", handleEscKey);
+    }
+  }, [isModelDropdownOpen]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -665,10 +388,10 @@ export function AgentInput({
   };
 
   const renderModelSelector = () => (
-    <div className="relative" data-dropdown>
+    <div className="relative hover:cursor-pointer" data-dropdown>
       <button
         onClick={handleModelSelectorClick}
-        className={`flex items-center p-2 rounded-2xl group bg-gray-700/50 text-gray-500 transition-all duration-300 ease-out hover:cursor-pointer overflow-hidden ${
+        className={`flex items-center p-2 rounded-2xl group bg-gray-700/50 group hover:bg-gray-700/80 text-gray-500 transition-all duration-300 ease-out  overflow-hidden ${
           isTextExpanded ? "pr-3" : ""
         }`}
         data-dropdown
@@ -686,13 +409,13 @@ export function AgentInput({
               : "ml-0 max-w-0 opacity-0"
           }`}
         >
-          <span className="font-medium truncate whitespace-nowrap text-xs">
+          <span className="font-medium truncate group-hover:text-lavender-400 whitespace-nowrap text-xs">
             {selectedModel?.label}
           </span>
           {isTextExpanded && (
-            <ExternalLink
+            <SquareArrowOutUpRight
               size={16}
-              className="ml-1.5 flex-shrink-0 text-gray-400 transition-opacity duration-300"
+              className="ml-1.5 flex-shrink-0 text-gray-500 group-hover:text-lavender-400 "
             />
           )}
         </div>
@@ -702,157 +425,348 @@ export function AgentInput({
         createPortal(
           <div className="fixed inset-0 z-[99999]" style={{ zIndex: 999999 }}>
             <div
-              className="fixed inset-0 bg-black/30"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
               onClick={() => {
                 setIsModelDropdownOpen(false);
                 setIsTextExpanded(false);
+                setSearchQuery("");
+                setFocusedModelIndex(-1);
               }}
             />
-            <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 border border-gray-600 rounded-lg shadow-xl w-[90vw] md:w-96 max-h-[80vh] z-[999999] flex flex-col overflow-hidden">
+            <div className="fixed inset-x-4 top-[50%] md:inset-x-auto md:left-1/2 md:right-auto transform -translate-y-1/2 md:-translate-x-1/2 bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl w-auto md:w-[28rem] max-h-[85vh] md:max-h-[800px] z-[999999] flex flex-col overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200">
               {/* Header with Search */}
-              <div className="p-3 border-b border-gray-700/50 bg-gray-800/30">
-                <div className={`flex items-center ${STYLES.gap} mb-2`}>
-                  <h3
-                    className={`${STYLES.textResponsive} font-medium text-white`}
-                  >
-                    Select Model
+              <div className="p-4 md:p-5 border-b border-gray-700/30 bg-gradient-to-b from-gray-800/50 to-transparent">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base md:text-lg font-semibold text-white">
+                    Select AI Model
                   </h3>
-                  <div className="flex gap-1 ml-auto">
-                    <button
-                      onClick={() => {
-                        setIsModelDropdownOpen(false);
-                        setIsTextExpanded(false);
-                      }}
-                      className={`p-1 text-gray-400 hover:text-white ${STYLES.hoverButton}`}
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {
+                      setIsModelDropdownOpen(false);
+                      setIsTextExpanded(false);
+                      setSearchQuery("");
+                      setFocusedModelIndex(-1);
+                    }}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/50 transition-all"
+                  >
+                    <X size={18} />
+                  </button>
                 </div>
                 <div className="relative">
                   <Search
-                    size={14}
-                    className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={16}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
                   />
                   <input
                     type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setFocusedModelIndex(-1);
+                    }}
+                    onKeyDown={(e) => {
+                      const allModels = Object.values(MODEL_PROVIDERS).flatMap(
+                        (p) => p.models
+                      );
+                      const filteredModels = allModels.filter(
+                        (m) =>
+                          m.label
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase()) ||
+                          m.value
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase())
+                      );
+
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setFocusedModelIndex((prev) =>
+                          prev < filteredModels.length - 1 ? prev + 1 : 0
+                        );
+                      } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setFocusedModelIndex((prev) =>
+                          prev > 0 ? prev - 1 : filteredModels.length - 1
+                        );
+                      } else if (e.key === "Enter" && focusedModelIndex >= 0) {
+                        e.preventDefault();
+                        const selectedModel = filteredModels[focusedModelIndex];
+                        if (selectedModel) {
+                          onUpdate({ ...agent, model: selectedModel.value });
+                          setIsModelDropdownOpen(false);
+                          setIsTextExpanded(false);
+                          setSearchQuery("");
+                          setFocusedModelIndex(-1);
+                        }
+                      }
+                    }}
                     placeholder="Search models..."
-                    className={`w-full pl-8 pr-3 py-1.5 rounded text-xs focus:ring-1 ${STYLES.input}`}
-                    style={{ fontSize: "16px" }}
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-800/50 border border-gray-700/50 rounded-xl text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lavender-500/50 focus:border-transparent transition-all"
+                    autoFocus
                   />
                 </div>
-              </div>
 
-              {/* Models List */}
-              <div className="flex-1 overflow-y-auto">
-                {Object.entries(MODEL_PROVIDERS).map(([key, provider]) => (
-                  <div
-                    key={key}
-                    className="border-b border-gray-700/50 last:border-0"
-                  >
-                    {/* Provider Header */}
-                    <div
-                      className={`flex items-center ${STYLES.gap} px-3 py-2 text-gray-400 bg-gray-800/30 sticky top-0`}
-                    >
-                      <provider.icon size={14} className={provider.iconColor} />
-                      <span className={`${STYLES.textResponsive} font-medium`}>
-                        {provider.name}
-                      </span>
-                    </div>
-
-                    {/* Models List */}
-                    <div className="py-1">
-                      {provider.models.map((model) => {
-                        // Handle selection state properly - if agent.model is empty and this is gpt-4o, show as fallback
-                        const isActuallySelected = agent.model === model.value;
-                        const isFallbackShown =
-                          (!agent.model || agent.model.trim() === "") &&
-                          model.value === "gpt-4o";
-                        const isSelected = isActuallySelected;
+                {/* Top Models Bar (Desktop Only) */}
+                {searchQuery === "" && (
+                  <div className="hidden md:flex items-center justify-between gap-2 py-2 pt-8">
+                    <span className="text-xs text-gray-400 font-medium">
+                      Popular:
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {[
+                        {
+                          value: "o4-mini-2025-04-16",
+                          label: "o4 Mini",
+                          provider: "openai",
+                        },
+                        { value: "grok-3", label: "Grok 3", provider: "xai" },
+                        {
+                          value: "claude-3-7-sonnet-20250219",
+                          label: "Claude 3.7",
+                          provider: "anthropic",
+                        },
+                      ].map((topModel) => {
+                        const isTopModelSelected =
+                          agent.model === topModel.value;
+                        const provider =
+                          MODEL_PROVIDERS[
+                            topModel.provider as keyof ModelProviders
+                          ];
 
                         return (
                           <button
-                            key={model.value}
-                            onMouseDown={(e) => {
+                            key={topModel.value}
+                            type="button"
+                            onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              onUpdate({ ...agent, model: model.value });
+                              onUpdate({ ...agent, model: topModel.value });
                               setIsModelDropdownOpen(false);
                               setIsTextExpanded(false);
+                              setSearchQuery("");
+                              setFocusedModelIndex(-1);
                             }}
-                            className={`w-full px-3 py-2 text-left ${STYLES.textResponsive} transition-colors hover:bg-gray-700/50 ${
-                              isSelected
-                                ? "bg-lavender-500/10 text-lavender-400"
-                                : isFallbackShown
-                                  ? "bg-blue-500/10 text-blue-400"
-                                  : "text-white"
+                            className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                              isTopModelSelected
+                                ? "bg-lavender-500/20 text-lavender-400 border border-lavender-500/30"
+                                : "bg-gray-700/40 text-gray-300 hover:bg-gray-700/60 hover:text-white border border-transparent"
                             }`}
                           >
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1 min-w-0">
-                                <div
-                                  className={`flex items-center ${STYLES.gap}`}
-                                >
-                                  <span className="font-medium truncate">
-                                    {model.label}
-                                  </span>
-                                  {isSelected && (
-                                    <span className="text-lavender-400 text-xs">
-                                      Selected
-                                    </span>
-                                  )}
-                                  {isFallbackShown && !isSelected && (
-                                    <span className="text-blue-400 text-xs">
-                                      Default
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Modality Icons */}
-                              <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                                {model.modalities.map((modality) => (
-                                  <div
-                                    key={modality}
-                                    className="relative group/tooltip"
-                                    title={
-                                      modality.charAt(0).toUpperCase() +
-                                      modality.slice(1)
-                                    }
-                                  >
-                                    <ModalityIcon
-                                      type={modality}
-                                      className="text-gray-400 hover:text-white transition-colors"
-                                    />
-                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-60">
-                                      {modality.charAt(0).toUpperCase() +
-                                        modality.slice(1)}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            {model.capabilities && (
-                              <div className="mt-1 flex flex-wrap gap-1">
-                                {model.capabilities
-                                  .slice(0, 3)
-                                  .map((capability, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="text-xs px-1.5 py-0.5 bg-gray-700/50 text-gray-300 rounded"
-                                    >
-                                      {capability}
-                                    </span>
-                                  ))}
-                              </div>
-                            )}
+                            <provider.icon
+                              size={12}
+                              className={provider.iconColor}
+                            />
+                            <span className="group-hover:text-lavender-400 whitespace-nowrap">
+                              {topModel.label}
+                            </span>
                           </button>
                         );
                       })}
                     </div>
                   </div>
-                ))}
+                )}
+              </div>
+
+              {/* Models List */}
+              <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-gray-800/50 scrollbar-thumb-gray-700/50">
+                {(() => {
+                  const filteredProviders = Object.entries(MODEL_PROVIDERS)
+                    .map(([key, provider]) => ({
+                      key,
+                      provider,
+                      models: provider.models.filter(
+                        (model: ModelConfig) =>
+                          searchQuery === "" ||
+                          model.label
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase()) ||
+                          model.value
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase()) ||
+                          model.description
+                            ?.toLowerCase()
+                            .includes(searchQuery.toLowerCase()) ||
+                          model.capabilities?.some((cap: string) =>
+                            cap
+                              .toLowerCase()
+                              .includes(searchQuery.toLowerCase())
+                          )
+                      ),
+                    }))
+                    .filter(({ models }) => models.length > 0);
+
+                  let globalIndex = 0;
+
+                  if (filteredProviders.length === 0) {
+                    return (
+                      <div className="p-8 text-center">
+                        <div className="text-gray-400 mb-2">
+                          No models found
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Try a different search term
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return filteredProviders.map(({ key, provider, models }) => (
+                    <div
+                      key={key}
+                      className="border-b border-gray-800/30 last:border-0"
+                    >
+                      {/* Provider Header */}
+                      <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/90 backdrop-blur-xl sticky top-0 z-10">
+                        <provider.icon
+                          size={16}
+                          className={provider.iconColor}
+                        />
+                        <span className="text-sm font-medium text-gray-300">
+                          {provider.name}
+                        </span>
+                        <span className="text-xs text-gray-500 ml-auto">
+                          {models.length} model{models.length !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+
+                      {/* Models List */}
+                      <div className="py-1">
+                        {models.map((model: ModelConfig) => {
+                          const isActuallySelected =
+                            agent.model === model.value;
+                          const isFallbackShown =
+                            (!agent.model || agent.model.trim() === "") &&
+                            model.value === "gpt-4o";
+                          const isSelected = isActuallySelected;
+                          const isFocused = globalIndex === focusedModelIndex;
+                          const currentIndex = globalIndex++;
+
+                          return (
+                            <button
+                              key={model.value}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onUpdate({ ...agent, model: model.value });
+                                setIsModelDropdownOpen(false);
+                                setIsTextExpanded(false);
+                                setSearchQuery("");
+                                setFocusedModelIndex(-1);
+                              }}
+                              onMouseEnter={() =>
+                                setFocusedModelIndex(currentIndex)
+                              }
+                              className={`w-full px-4 md:px-5 py-3 text-left transition-all cursor-pointer ${
+                                isSelected
+                                  ? "bg-lavender-500/15 text-lavender-400 border-l-2 border-lavender-500"
+                                  : isFallbackShown
+                                    ? "bg-blue-500/10 text-blue-400"
+                                    : isFocused
+                                      ? "bg-gray-700/40 text-white"
+                                      : "text-gray-200 hover:bg-gray-700/30 hover:text-white"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="font-medium">
+                                      {model.label}
+                                    </span>
+                                    {isSelected && (
+                                      <span className="text-xs px-2 py-0.5 bg-lavender-500/20 rounded-full">
+                                        Active
+                                      </span>
+                                    )}
+                                    {isFallbackShown && !isSelected && (
+                                      <span className="text-xs px-2 py-0.5 bg-blue-500/20 rounded-full">
+                                        Default
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {model.description && (
+                                    <p className="text-xs text-gray-400 mb-2 pr-2">
+                                      {model.description}
+                                    </p>
+                                  )}
+
+                                  {model.capabilities && (
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {model.capabilities
+                                        .slice(0, 3)
+                                        .map(
+                                          (capability: string, idx: number) => (
+                                            <span
+                                              key={idx}
+                                              className="text-xs px-2 py-0.5 bg-gray-700/40 text-gray-300 rounded-md"
+                                            >
+                                              {capability}
+                                            </span>
+                                          )
+                                        )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Modality Icons */}
+                                <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+                                  {model.modalities.map((modality: string) => (
+                                    <div
+                                      key={modality}
+                                      className="relative group/tooltip"
+                                    >
+                                      <div className="p-1.5 rounded-lg bg-gray-700/30 transition-colors group-hover/tooltip:bg-gray-700/50">
+                                        <ModalityIcon
+                                          type={modality}
+                                          className="text-gray-400 group-hover/tooltip:text-white transition-colors"
+                                        />
+                                      </div>
+                                      <div className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 shadow-lg">
+                                        {modality.charAt(0).toUpperCase() +
+                                          modality.slice(1)}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+
+              {/* Footer */}
+              <div className="p-3 md:p-4 border-t border-gray-700/30 bg-gradient-to-t from-gray-800/50 to-transparent">
+                <div className="flex items-center justify-between text-xs text-gray-400">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1.5">
+                      <kbd className="px-1.5 py-0.5 bg-gray-700/50 rounded text-gray-300">
+                        ↑↓
+                      </kbd>
+                      Navigate
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <kbd className="px-1.5 py-0.5 bg-gray-700/50 rounded text-gray-300">
+                        Enter
+                      </kbd>
+                      Select
+                    </span>
+                  </div>
+                  <span className="flex items-center gap-1.5">
+                    <kbd className="px-1.5 py-0.5 bg-gray-700/50 rounded text-gray-300">
+                      Esc
+                    </kbd>
+                    Close
+                  </span>
+                </div>
               </div>
             </div>
           </div>,

@@ -40,85 +40,16 @@ import { SavedChainsTab } from "../../components/chains/saved-chains-tab";
 
 // Import LLM icons from agent-input.tsx
 import { SiOpenai, SiClaude } from "react-icons/si";
+import {
+  MODEL_PROVIDERS,
+  getProviderKey,
+  type ModelProviders,
+} from "../../lib/constants";
 
 interface ChainGroup {
   title: string;
   chains: any[];
 }
-
-// Grok Icon Component (same as in sidebar.tsx)
-const GrokIcon = ({
-  size = 16,
-  className = "",
-}: {
-  size?: number;
-  className?: string;
-}) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width={size}
-    height={size}
-    fill="currentColor"
-    viewBox="0 0 24 24"
-    className={className}
-  >
-    <path d="m19.25 5.08-9.52 9.67 6.64-4.96c.33-.24.79-.15.95.23.82 1.99.45 4.39-1.17 6.03-1.63 1.64-3.89 2.01-5.96 1.18l-2.26 1.06c3.24 2.24 7.18 1.69 9.64-.8 1.95-1.97 2.56-4.66 1.99-7.09-.82-3.56.2-4.98 2.29-7.89L22 2.3zM9.72 14.75h.01zM8.35 15.96c-2.33-2.25-1.92-5.72.06-7.73 1.47-1.48 3.87-2.09 5.97-1.2l2.25-1.05c-.41-.3-.93-.62-1.52-.84a7.45 7.45 0 0 0-8.13 1.65c-2.11 2.14-2.78 5.42-1.63 8.22.85 2.09-.54 3.57-1.95 5.07-.5.53-1 1.06-1.4 1.62z" />
-  </svg>
-);
-
-// Model provider configuration (same as sidebar.tsx)
-type ModelProvider = {
-  name: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  iconColor: string;
-  bgColor: string;
-};
-
-type ModelProviders = {
-  openai: ModelProvider;
-  anthropic: ModelProvider;
-  xai: ModelProvider;
-};
-
-const MODEL_PROVIDERS: ModelProviders = {
-  openai: {
-    name: "OpenAI",
-    icon: SiOpenai,
-    iconColor: "text-white",
-    bgColor: "bg-[#000000]",
-  },
-  anthropic: {
-    name: "Anthropic",
-    icon: SiClaude,
-    iconColor: "text-[#da7756]",
-    bgColor: "bg-[#000000]",
-  },
-  xai: {
-    name: "xAI",
-    icon: GrokIcon,
-    iconColor: "text-white",
-    bgColor: "bg-[#000000]",
-  },
-};
-
-// Function to get provider from model name
-const getProviderKey = (modelValue: string): keyof ModelProviders => {
-  if (
-    modelValue.includes("gpt") ||
-    modelValue.includes("o1") ||
-    modelValue.includes("o3") ||
-    modelValue.includes("o4")
-  ) {
-    return "openai";
-  }
-  if (modelValue.includes("claude")) {
-    return "anthropic";
-  }
-  if (modelValue.includes("grok")) {
-    return "xai";
-  }
-  return "openai"; // Default fallback
-};
 
 // Component to render overlapping model logos
 const ModelLogos = ({ models }: { models: string[] }) => {

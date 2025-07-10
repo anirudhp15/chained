@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { MAX_AGENTS_PER_CHAIN } from "./constants";
+import { MAX_AGENTS_PER_CHAIN, getAllowedModels } from "./constants";
 
 export interface ValidationResult {
   success: boolean;
@@ -148,37 +148,7 @@ export class ApiValidator {
 
   // Validate model selection
   static validateModel(model: string): ValidationResult {
-    const allowedModels = [
-      // OpenAI models
-      "gpt-4o",
-      "gpt-4o-mini",
-      "gpt-4-turbo",
-      "gpt-3.5-turbo",
-      "o1-preview",
-      "o1-mini",
-      "o1",
-      "o3-mini-2025-01-31",
-      "o3",
-      "o4-mini-2025-04-16",
-      "o4",
-
-      // Anthropic models
-      "claude-3-5-sonnet-20241022",
-      "claude-3-5-haiku-20241022",
-      "claude-3-opus-20240229",
-      "claude-sonnet-4-20250514",
-      "claude-opus-4-20250514",
-      "claude-3-7-sonnet-20250219",
-
-      // xAI/Grok models
-      "grok-beta",
-      "grok-2-1212",
-      "grok-2-vision-1212",
-      "grok-3",
-      "grok-3-mini",
-      "grok-3-fast",
-      "grok-3-mini-fast",
-    ];
+    const allowedModels = getAllowedModels();
 
     if (!model || typeof model !== "string") {
       return {

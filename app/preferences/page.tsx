@@ -28,6 +28,11 @@ import {
   Clock,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  MODEL_PROVIDERS,
+  getAllowedModels,
+  type ModelConfig,
+} from "@/lib/constants";
 
 interface PreferenceSection {
   id: string;
@@ -95,7 +100,7 @@ export default function PreferencesPage() {
       const newFormData = {
         theme: (preferences.theme || "dark") as "dark" | "light" | "system",
         language: preferences.language || "en",
-        timezone: preferences.timezone || "UTC",
+        timezone: (preferences as any).timezone || "UTC",
         emailNotifications: preferences.emailNotifications ?? true,
         pushNotifications: preferences.pushNotifications ?? true,
         weeklyDigest: preferences.weeklyDigest ?? true,
@@ -291,11 +296,13 @@ export default function PreferencesPage() {
           onChange={(e) => updateFormData("defaultModel", e.target.value)}
           className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-lavender-500 focus:outline-none"
         >
-          <option value="gpt-4">GPT-4</option>
-          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-          <option value="claude-3-opus">Claude 3 Opus</option>
-          <option value="claude-3-sonnet">Claude 3 Sonnet</option>
-          <option value="gemini-pro">Gemini Pro</option>
+          {Object.values(MODEL_PROVIDERS).map((provider) =>
+            provider.models.map((model: ModelConfig) => (
+              <option key={model.value} value={model.value}>
+                {model.label}
+              </option>
+            ))
+          )}
         </select>
       </div>
 

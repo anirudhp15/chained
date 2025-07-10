@@ -1,5 +1,198 @@
 import { GitCommitHorizontal, GitFork, GitCompareArrows } from "lucide-react";
 import { IoGitBranchOutline } from "react-icons/io5";
+import { SiOpenai, SiClaude } from "react-icons/si";
+import { GrokIcon } from "./grok-icon";
+import React from "react";
+
+// Model Provider Types
+export interface ModelConfig {
+  value: string;
+  label: string;
+  modalities: string[];
+  description?: string;
+  capabilities?: string[];
+}
+
+export interface ModelProvider {
+  name: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  iconColor: string;
+  bgColor: string;
+  models: ModelConfig[];
+}
+
+export interface ModelProviders {
+  openai: ModelProvider;
+  anthropic: ModelProvider;
+  xai: ModelProvider;
+}
+
+// Centralized Model Providers Configuration
+export const MODEL_PROVIDERS: ModelProviders = {
+  openai: {
+    name: "OpenAI",
+    icon: SiOpenai,
+    iconColor: "text-white",
+    bgColor: "bg-[#000000]",
+    models: [
+      // Flagship Models (Sweet Spot)
+      {
+        value: "gpt-4o",
+        label: "ChatGPT 4o",
+        modalities: ["text", "vision", "audio", "code"],
+        description: "Flagship multimodal model with real-time capabilities",
+        capabilities: [
+          "Real-time reasoning",
+          "Voice interaction",
+          "Image analysis",
+        ],
+      },
+      {
+        value: "gpt-4o-mini",
+        label: "ChatGPT 4o Mini",
+        modalities: ["text", "vision", "fast"],
+        description: "Fast and cost-effective multimodal model",
+        capabilities: ["Quick responses", "Vision analysis", "Cost-efficient"],
+      },
+
+      // GPT 4.1 Series
+      {
+        value: "gpt-4.1",
+        label: "ChatGPT 4.1",
+        modalities: ["text", "vision", "code"],
+        description: "Enhanced GPT-4 with improved capabilities",
+        capabilities: [
+          "Improved reasoning",
+          "Better code generation",
+          "Enhanced accuracy",
+        ],
+      },
+    ],
+  },
+
+  anthropic: {
+    name: "Anthropic",
+    icon: SiClaude,
+    iconColor: "text-[#da7756]",
+    bgColor: "bg-[#000000]",
+    models: [
+      // Claude 4 Series (Latest Sweet Spot)
+      {
+        value: "claude-sonnet-4-20250514",
+        label: "Claude Sonnet 4",
+        modalities: ["text", "vision", "code"],
+        description: "High-performance model with exceptional capabilities",
+        capabilities: [
+          "Advanced coding",
+          "Complex analysis",
+          "Vision analysis",
+        ],
+      },
+
+      // Claude 3.7 Series
+      {
+        value: "claude-3-7-sonnet-20250219",
+        label: "Claude Sonnet 3.7",
+        modalities: ["text", "vision", "code"],
+        description: "Enhanced model with extended thinking capabilities",
+        capabilities: [
+          "Extended thinking",
+          "Deep analysis",
+          "Thoughtful responses",
+        ],
+      },
+
+      // Claude 3.5 Series (Proven Workhorses)
+      {
+        value: "claude-3-5-sonnet-20241022",
+        label: "Claude 3.5 Sonnet",
+        modalities: ["text", "vision", "code"],
+        description: "Proven high-performance model for complex tasks",
+        capabilities: ["Code generation", "Vision analysis", "Tool use"],
+      },
+      {
+        value: "claude-3-5-haiku-20241022",
+        label: "Claude 3.5 Haiku",
+        modalities: ["text", "vision", "fast"],
+        description: "Fast and efficient model for quick tasks",
+        capabilities: [
+          "Rapid responses",
+          "Cost-effective",
+          "Reliable performance",
+        ],
+      },
+    ],
+  },
+
+  xai: {
+    name: "xAI",
+    icon: GrokIcon,
+    iconColor: "text-white",
+    bgColor: "bg-[#000000]",
+    models: [
+      // Grok 4 Series (Latest)
+      {
+        value: "grok-4",
+        label: "Grok 4",
+        modalities: ["text", "vision", "web"],
+        description: "Latest flagship model with real-time data access",
+        capabilities: [
+          "Real-time data",
+          "Market analysis",
+          "Deep domain knowledge",
+        ],
+      },
+
+      // Grok 3 Series
+      {
+        value: "grok-3",
+        label: "Grok 3",
+        modalities: ["text", "vision", "web"],
+        description: "Flagship model with real-time data access",
+        capabilities: ["Real-time data", "Market analysis", "Web browsing"],
+      },
+      {
+        value: "grok-3-mini-fast",
+        label: "Grok 3 Mini Fast",
+        modalities: ["text", "fast"],
+        description: "Balance of speed and cost-effectiveness",
+        capabilities: ["Fast responses", "Cost-efficient", "Reliable"],
+      },
+    ],
+  },
+};
+
+// Helper function to get provider from model name
+export const getProviderKey = (modelValue: string): keyof ModelProviders => {
+  if (
+    modelValue.includes("gpt") ||
+    modelValue.includes("o1") ||
+    modelValue.includes("o3") ||
+    modelValue.includes("o4")
+  ) {
+    return "openai";
+  }
+  if (modelValue.includes("claude")) {
+    return "anthropic";
+  }
+  if (modelValue.includes("grok")) {
+    return "xai";
+  }
+  return "openai"; // Default fallback
+};
+
+// Helper function to get all allowed model values (for API validation)
+export const getAllowedModels = (): string[] => {
+  return Object.values(MODEL_PROVIDERS).flatMap((provider: ModelProvider) =>
+    provider.models.map((model: ModelConfig) => model.value)
+  );
+};
+
+// Helper function to check if a model supports reasoning (for future use)
+export const isReasoningModel = (model: string): boolean => {
+  // Preserved for future reasoning model support
+  return model.includes("o1") || model.includes("o3") || model.includes("o4");
+};
 
 // Chain configuration
 export const MAX_AGENTS_PER_CHAIN = 4;

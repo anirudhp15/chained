@@ -294,12 +294,12 @@ export function PromptTemplates({ onLoadTemplate }: PromptTemplatesProps) {
                 className="group relative bg-gray-800/30 hover:bg-gray-800/50 border border-gray-700/40 hover:border-gray-600/60 rounded-md p-2 transition-all duration-200 text-left"
               >
                 {/* Info Button */}
-                <button
+                <div
                   onClick={(e) => handleInfoClick(template, e)}
-                  className="absolute top-1 right-1 p-0.5 opacity-0 group-hover:opacity-100 bg-gray-700/70 hover:bg-gray-600/70 rounded text-gray-400 hover:text-white transition-all duration-200 z-10"
+                  className="absolute top-1 right-1 p-0.5 opacity-0 group-hover:opacity-100 bg-gray-700/70 hover:bg-gray-600/70 rounded text-gray-400 hover:text-white transition-all duration-200 z-10 cursor-pointer"
                 >
                   <Info size={10} />
-                </button>
+                </div>
 
                 {/* Template Content */}
                 <div className="space-y-1.5">

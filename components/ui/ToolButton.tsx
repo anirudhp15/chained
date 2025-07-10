@@ -123,8 +123,8 @@ export function ToolButton({
           onMouseLeave={handleMouseLeave}
           className={`group relative p-1.5 md:p-2 rounded-lg transition-all duration-200 ${
             isActive
-              ? "bg-lavender-500/20 text-lavender-400 border border-lavender-400/30 hover:bg-lavender-500/30 hover:border-lavender-400/50"
-              : "bg-gray-700/50 text-gray-400 border border-gray-600/50 hover:bg-gray-700/70 hover:text-gray-300 hover:border-gray-500/70"
+              ? " text-lavender-400"
+              : " text-gray-400 hover:text-gray-300 "
           } ${className}`}
           title={`${getProviderName()} Tools`}
         >
