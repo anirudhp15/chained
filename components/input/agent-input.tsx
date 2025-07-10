@@ -907,12 +907,12 @@ export function AgentInput({
           setTimeout(adjustTextareaHeight, 0);
         }}
         placeholder="Ask anything"
-        className={`w-full p-4 h-auto ${isLastAgent ? "rounded-t-3xl" : "rounded-t-3xl"} min-h-16 max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-xs md:text-sm lg:text-base overflow-y-auto`}
+        className={`w-full p-4 h-auto ${isLastAgent ? "rounded-t-3xl" : "rounded-t-3xl"} min-h-12 max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all text-xs md:text-sm lg:text-base overflow-y-auto`}
         ref={textareaRef}
       />
 
       {/* Bottom controls - absolutely positioned */}
-      <div className=" flex flex-row lg:items-center justify-between pb-12 p-3 lg:pb-3 overflow-hidden gap-1.5 lg:gap-2">
+      <div className=" flex flex-row lg:items-center justify-between pb-12 p-4 lg:pb-4 overflow-hidden gap-1.5 lg:gap-2">
         <div className="block lg:hidden">
           {/* Modality Icons */}
           <div className="flex items-center gap-1">
