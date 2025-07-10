@@ -898,7 +898,7 @@ export function AgentInput({
 
   return (
     <div
-      className={`relative flex flex-col ${isLastAgent ? "mx-0 mb-0" : "mx-2 mb-2"} lg:mx-0 lg:mb-0 ${isLastAgent ? "rounded-t-3xl lg:rounded-3xl border-y-0 border-x-0 lg:border-y lg:border-x" : "rounded-3xl"} border border-gray-600/50 bg-gray-600/25 backdrop-blur-lg hover:backdrop-blur-xl hover:border-lavender-400/20 animate-none`}
+      className={`relative flex flex-col ${isLastAgent ? "mx-0 mb-0" : "mx-2 mb-2"} lg:mx-0 lg:mb-0 ${isLastAgent ? "rounded-t-3xl lg:rounded-3xl border-y-0 border-x-0 lg:border-y lg:border-x" : "rounded-3xl"} border border-gray-600/50 bg-slate-800/90 backdrop-blur-lg hover:backdrop-blur-xl hover:border-lavender-400/20 animate-none`}
     >
       <textarea
         value={agent.prompt}
@@ -917,7 +917,7 @@ export function AgentInput({
 
       {/* Bottom controls - absolutely positioned */}
       <div
-        className={`flex flex-row lg:items-center justify-between ${isTextareaFocused && !isLastAgent ? "pb-4" : "pb-8"} p-4 lg:pb-4 overflow-hidden gap-1.5 lg:gap-2`}
+        className={`flex flex-row lg:items-center justify-between ${isTextareaFocused || !isLastAgent ? "pb-4" : "pb-8"} p-4 lg:pb-4 overflow-hidden gap-1.5 lg:gap-2`}
       >
         <div className="block lg:hidden">
           {/* Modality Icons */}

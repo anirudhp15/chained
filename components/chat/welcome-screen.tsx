@@ -339,7 +339,7 @@ const COLUMN_THEMES: ColumnTheme[] = [
     presets: RESEARCH_PRESETS,
   },
   {
-    title: "Coding",
+    title: "Code",
     icon: Code,
     iconColor: "text-lavender-400",
     presets: CODING_PRESETS,
@@ -437,7 +437,7 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
                       className={clsx(
                         "flex items-center justify-center gap-1 md:gap-3",
                         "px-2 sm:px-3 md:px-6 py-2.5 md:py-3",
-                        "bg-slate-800/50 lg:border border-gray-600/50 rounded-xl",
+                        "bg-gray-900/75 lg:border border-gray-600/50 rounded-xl",
                         "text-gray-300 hover:text-lavender-400",
                         "hover:bg-gray-700/70 hover:border-lavender-400/50",
                         "backdrop-blur-sm transition-all duration-200 hover:scale-105",

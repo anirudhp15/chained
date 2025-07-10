@@ -610,7 +610,7 @@ export function InitialChainInput({
           <>
             <button
               onClick={handleSaveChain}
-              className="p-2 bg-gray-900/80 hover:bg-gray-800/80 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-400 transition-all duration-200 hover:scale-110 shadow-lg backdrop-blur-sm"
+              className="p-2  text-lavender-400/80 hover:text-lavender-400 transition-all duration-200 hover:scale-110 shadow-lg backdrop-blur-sm"
               title="Save current chain"
             >
               <Save size={16} />
@@ -619,7 +619,7 @@ export function InitialChainInput({
         )}
         <button
           onClick={handleBrowseChains}
-          className="p-2 bg-gray-900/80 hover:bg-gray-800/80 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-400 transition-all duration-200 hover:scale-110 shadow-lg backdrop-blur-sm"
+          className="p-2  text-gray-400 hover:text-lavender-400 transition-all duration-200 hover:scale-110 shadow-lg backdrop-blur-sm"
           title="Browse saved chains"
         >
           <BookOpen size={16} />

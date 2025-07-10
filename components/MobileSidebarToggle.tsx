@@ -28,7 +28,7 @@ export function MobileSidebarToggle({
       ) : (
         <Link2
           size={20}
-          className="transition-transform duration-200 ease-out hover:-rotate-45"
+          className="transition-transform duration-200 -rotate-45 ease-out"
         />
       )}
     </button>

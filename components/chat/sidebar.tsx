@@ -425,7 +425,7 @@ export function Sidebar({
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-[999] lg:hidden"
           onClick={onMobileToggle}
         />
       )}
@@ -915,7 +915,7 @@ export function Sidebar({
               <span className="mr-2 text-lavender-400">
                 <Link2
                   size={20}
-                  className="group-hover:-rotate-45 transition-transform duration-200 ease-out"
+                  className="-rotate-45 transition-transform duration-200 ease-out"
                 />
               </span>
               Ch<span className="text-lavender-400">ai</span>ned
