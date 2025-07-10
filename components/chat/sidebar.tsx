@@ -904,7 +904,12 @@ export function Sidebar({
         }`}
       >
         {/* Mobile Header */}
-        <div className="border-b border-gray-700/50 flex items-center justify-between p-4 bg-[#17181D] backdrop-blur-sm">
+        <div
+          className="border-b border-gray-700/50 flex items-center justify-between px-4 pb-4 bg-[#17181D] backdrop-blur-sm"
+          style={{
+            paddingTop: `calc(env(safe-area-inset-top) + 1rem)`,
+          }}
+        >
           <Link href="/" onClick={onMobileToggle}>
             <h1 className="text-lg group font-semibold text-lavender-400 flex items-center hover:text-white transition-colors duration-200">
               <span className="mr-2 text-lavender-400">
