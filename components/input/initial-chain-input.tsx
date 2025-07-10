@@ -640,7 +640,7 @@ export function InitialChainInput({
         </div>
 
         {/* Prompt Templates - Desktop Only */}
-        <div className="hidden w-full justify-center mb-2">
+        <div className="hidden lg:flex w-full justify-center mb-2">
           <PromptTemplates onLoadTemplate={handleLoadChain} />
         </div>
 
