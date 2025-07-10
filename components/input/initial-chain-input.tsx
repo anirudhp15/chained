@@ -11,6 +11,7 @@ import {
   MAX_AGENTS_PER_CHAIN,
 } from "@/lib/constants";
 import { useSidebar } from "@/lib/sidebar-context";
+import { generateSmartAgentName } from "@/lib/utils";
 import { NodePill } from "../ui/NodePill";
 import {
   Plus,
@@ -730,9 +731,18 @@ export function InitialChainInput({
                               // Pass source agent name for connection display
                               sourceAgentName={
                                 index > 0
-                                  ? agents[index - 1]?.name || `Node ${index}`
+                                  ? agents[index - 1]?.name ||
+                                    (agents[index - 1]?.model
+                                      ? generateSmartAgentName(
+                                          agents[index - 1].model || "gpt-4o",
+                                          agents, // Pass full agents array to get complete context
+                                          agents[index - 1].id
+                                        )
+                                      : `Node ${index}`)
                                   : undefined
                               }
+                              // All agents for smart naming
+                              allAgents={agents}
                             />
                           </div>
                           <AgentInput
@@ -751,6 +761,8 @@ export function InitialChainInput({
                             isLoading={isLoading || isStreaming}
                             // Mobile-specific props
                             isMobileCollapsed={!expandedAgents.has(agent.id)}
+                            // All agents for smart naming
+                            allAgents={agents}
                           />
 
                           {/* Queued Agent Indicator */}

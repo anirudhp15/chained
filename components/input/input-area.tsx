@@ -344,6 +344,8 @@ export function InputArea({
                       }
                       canSend={canSend}
                       isLoading={isLoading || isStreaming}
+                      // All agents for smart naming
+                      allAgents={agents}
                     />
 
                     {/* Queued Agent Indicator */}

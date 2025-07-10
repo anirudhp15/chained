@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { type Agent } from "./agent-input";
 import { ModalityIcons } from "../modality/ModalityIcons";
 import { useSidebar } from "@/lib/sidebar-context";
+import { generateSmartAgentName } from "@/lib/utils";
 import { Pencil, ArrowUp, LoaderCircle } from "lucide-react";
 
 interface FocusedAgentInputProps {
@@ -46,6 +47,13 @@ export function FocusedAgentInput({
     return {};
   };
 
+  // Generate smart default name for focused agent
+  const getDefaultName = (agent: Agent) => {
+    if (agent.name) return agent.name;
+    const effectiveModel = agent.model || "gpt-4o";
+    return generateSmartAgentName(effectiveModel, [], agent.id);
+  };
+
   // Initialize focused agent state when focus mode is activated
   useEffect(() => {
     if (focusedAgent) {
@@ -54,13 +62,15 @@ export function FocusedAgentInput({
         prompt: "", // Start with empty prompt for new input
       };
       setFocusedAgentState(newState);
-      setTempName(newState.name || `Node ${focusedAgentIndex + 1}`);
+      setTempName(getDefaultName(newState));
     } else {
       setFocusedAgentState(null);
     }
   }, [focusedAgent, focusedAgentIndex]);
 
-  const nodeName = focusedAgentState?.name || `Node ${focusedAgentIndex + 1}`;
+  const nodeName = focusedAgentState
+    ? getDefaultName(focusedAgentState)
+    : `Node ${focusedAgentIndex + 1}`;
 
   const handleNameSave = () => {
     setIsNameEditing(false);

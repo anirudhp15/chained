@@ -17,6 +17,7 @@ import {
 import { IoGitBranchOutline } from "react-icons/io5";
 import { Agent } from "../input/agent-input";
 import { CONDITION_PRESETS } from "@/lib/constants";
+import { generateSmartAgentName } from "@/lib/utils";
 
 interface NodePillProps {
   agent: Agent;
@@ -38,6 +39,8 @@ interface NodePillProps {
   // Connection configuration for all screen sizes
   showConnection?: boolean;
   sourceAgentName?: string;
+  // All agents in the chain for smart naming
+  allAgents?: Agent[];
 }
 
 // Connection types configuration for mobile
@@ -298,9 +301,17 @@ export function NodePill({
   isCollapsible,
   showConnection = false,
   sourceAgentName,
+  allAgents = [],
 }: NodePillProps) {
+  // Generate smart default name based on model and existing agents
+  const getDefaultName = () => {
+    if (agent.name) return agent.name;
+    const effectiveModel = agent.model || "gpt-4o";
+    return generateSmartAgentName(effectiveModel, allAgents, agent.id);
+  };
+
   const [isEditing, setIsEditing] = useState(false);
-  const [tempName, setTempName] = useState(agent.name || `Node ${index + 1}`);
+  const [tempName, setTempName] = useState(getDefaultName());
   const [showPromptsModal, setShowPromptsModal] = useState(false);
   const [showConnectionModal, setShowConnectionModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -308,9 +319,14 @@ export function NodePill({
   const pillRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
-  const nodeName = agent.name || `Node ${index + 1}`;
+  const nodeName = getDefaultName();
   const modelCategory = getModelCategory(agent.model);
   const promptData = MODEL_PROMPTS[modelCategory];
+
+  // Update tempName when agent name, model, or allAgents change
+  useEffect(() => {
+    setTempName(getDefaultName());
+  }, [agent.name, agent.model, allAgents]);
 
   const handleNameSave = () => {
     setIsEditing(false);

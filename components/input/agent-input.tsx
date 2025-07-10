@@ -28,6 +28,7 @@ import { ModalityIcons } from "../modality/ModalityIcons";
 import { CONDITION_PRESETS } from "@/lib/constants";
 import { ToolButton } from "../ui/ToolButton";
 import { usePerformance } from "@/lib/performance-context";
+import { generateSmartAgentName } from "@/lib/utils";
 
 export interface Agent {
   id: string;
@@ -79,6 +80,8 @@ interface AgentInputProps {
   isLoading?: boolean;
   // Mobile-specific prop
   isMobileCollapsed?: boolean;
+  // All agents in the chain for smart naming
+  allAgents?: Agent[];
 }
 
 // Grok Icon Component
@@ -194,7 +197,7 @@ const MODEL_PROVIDERS: ModelProviders = {
       // Flagship Models
       {
         value: "gpt-4o",
-        label: "ChatGPT-4o",
+        label: "ChatGPT 4o",
         modalities: ["text", "vision", "audio", "code"],
         description: "Flagship multimodal model with real-time capabilities",
         capabilities: [
@@ -205,7 +208,7 @@ const MODEL_PROVIDERS: ModelProviders = {
       },
       {
         value: "gpt-4o-mini",
-        label: "ChatGPT-4o Mini",
+        label: "ChatGPT 4o Mini",
         modalities: ["text", "vision", "fast"],
         description: "Fast and cost-effective multimodal model",
         capabilities: ["Quick responses", "Vision analysis", "Cost-efficient"],
@@ -214,7 +217,7 @@ const MODEL_PROVIDERS: ModelProviders = {
       // Latest Models
       {
         value: "gpt-4.5-preview",
-        label: "ChatGPT-4.5 Preview",
+        label: "ChatGPT 4.5 Preview",
         modalities: ["text", "vision", "code"],
         description: "Latest preview model with cutting-edge capabilities",
         capabilities: [
@@ -225,7 +228,7 @@ const MODEL_PROVIDERS: ModelProviders = {
       },
       {
         value: "gpt-4.1",
-        label: "ChatGPT-4.1",
+        label: "ChatGPT 4.1",
         modalities: ["text", "vision", "code"],
         description: "Enhanced GPT-4 with improved capabilities",
         capabilities: [
@@ -423,10 +426,18 @@ export function AgentInput({
   canSend,
   isLoading,
   isMobileCollapsed,
+  allAgents = [],
 }: AgentInputProps) {
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [isNameEditing, setIsNameEditing] = useState(false);
-  const [tempName, setTempName] = useState(agent.name || `Node ${index + 1}`);
+  // Generate smart default name based on model and existing agents
+  const getDefaultName = () => {
+    if (agent.name) return agent.name;
+    const effectiveModel = agent.model || "gpt-4o";
+    return generateSmartAgentName(effectiveModel, allAgents, agent.id);
+  };
+
+  const [tempName, setTempName] = useState(getDefaultName());
   const [buttonPositions, setButtonPositions] = useState<{
     model?: DOMRect | null;
     condition?: DOMRect | null;
@@ -439,12 +450,12 @@ export function AgentInput({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Update tempName when agent name or index changes
+  // Update tempName when agent name, model, or allAgents change
   useEffect(() => {
-    setTempName(agent.name || `Node ${index + 1}`);
-  }, [agent.name, index]);
+    setTempName(getDefaultName());
+  }, [agent.name, agent.model, allAgents]);
 
-  const nodeName = agent.name || `Node ${index + 1}`;
+  const nodeName = getDefaultName();
 
   const handleNameSave = () => {
     setIsNameEditing(false);
