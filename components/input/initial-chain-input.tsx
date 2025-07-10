@@ -626,6 +626,36 @@ export function InitialChainInput({
         </button>
       </div>
 
+      {/* Desktop Save/Browse Controls - Positioned relative to content area */}
+      <div
+        className="hidden lg:flex absolute z-30 items-center gap-2"
+        style={{
+          top: "1.5rem",
+          right: "1.5rem",
+        }}
+      >
+        {hasCurrentChain && (
+          <button
+            onClick={handleSaveChain}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-900/80 hover:bg-gray-800/80 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-400 transition-all duration-200 hover:scale-105 shadow-lg backdrop-blur-sm"
+            title="Save current chain configuration"
+          >
+            <Save size={16} />
+            <span className="text-sm font-medium">Save Chain</span>
+          </button>
+        )}
+        <button
+          onClick={handleBrowseChains}
+          className="flex items-center gap-2 px-3 py-2 bg-gray-900/80 hover:bg-gray-800/80 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-400 transition-all duration-200 hover:scale-105 shadow-lg backdrop-blur-sm"
+          title="Browse saved chains"
+        >
+          <BookOpen size={16} />
+          <span className="text-sm font-medium">
+            {hasCurrentChain ? "Browse Saved" : "Load Saved Chain"}
+          </span>
+        </button>
+      </div>
+
       <div
         className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center justify-end"
         style={{
@@ -637,35 +667,8 @@ export function InitialChainInput({
         }}
       >
         <div className="w-full flex flex-col items-center justify-end transition-all duration-300 ease-in-out h-full">
-          {/* Desktop Save/Browse Controls - positioned above templates */}
-          <div className="hidden lg:flex w-full justify-center mb-2">
-            <div className="flex items-center gap-2 px-4">
-              {hasCurrentChain && (
-                <button
-                  onClick={handleSaveChain}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-lavender-500/20 hover:bg-lavender-500/30 border border-lavender-400/30 hover:border-lavender-400/50 rounded-lg text-lavender-400 hover:text-lavender-300 transition-all text-xs backdrop-blur-sm"
-                  title="Save current chain configuration"
-                >
-                  <Save size={14} />
-                  <span className="hidden sm:inline">Save Chain</span>
-                </button>
-              )}
-              <button
-                onClick={handleBrowseChains}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-gray-500/50 rounded-lg text-gray-400 hover:text-gray-300 transition-all text-xs backdrop-blur-sm"
-                title="Browse saved chains"
-              >
-                <BookOpen size={14} />
-                <span className="hidden sm:inline">
-                  {hasCurrentChain ? "Browse Saved" : "Load Saved Chain"}
-                </span>
-                <span className="sm:hidden">Browse</span>
-              </button>
-            </div>
-          </div>
-
           {/* Prompt Templates - Desktop Only */}
-          <div className="hidden lg:flex w-full justify-center mb-2">
+          <div className="hidden w-full justify-center mb-2">
             <PromptTemplates onLoadTemplate={handleLoadChain} />
           </div>
 
