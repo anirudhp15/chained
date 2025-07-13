@@ -53,17 +53,26 @@ import Beams from "@/components/Backgrounds/Beams/Beams";
 import StarBorder from "@/components/Animations/StarBorder/StarBorder";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
 import { SiOpenai, SiClaude, SiPerplexity } from "react-icons/si";
-import { DeepSeek, Gemini } from "@lobehub/icons";
+import { DeepSeek } from "@lobehub/icons";
 import { GrokIcon } from "@/lib/grok-icon";
 
-// Wrapper component for Gemini.Color to work with RotatingImages
+// Gemini PNG icon component
 const GeminiColorIcon = ({
   size,
   className,
 }: {
   size?: number;
   className?: string;
-}) => <Gemini.Color size={size} className={className} />;
+}) => (
+  <img
+    src="/images/logos/gemini-color.png"
+    alt="Gemini"
+    width={size || 24}
+    height={size || 24}
+    className={className}
+    style={{ width: size || 24, height: size || 24 }}
+  />
+);
 
 // Feature data structure matching welcome screen pattern
 interface FeatureDetail {
