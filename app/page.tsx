@@ -781,7 +781,7 @@ export default function LandingPage() {
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
                   </button>
 
-                  <button className="group inline-flex items-center justify-center bg-gray-900/50 hover:bg-gray-800/50 text-white lg:px-8 lg:py-4 px-4 py-2 rounded-xl font-medium transition-all duration-300 border border-gray-700/50 hover:border-lavender-500/50 text-xs sm:text-sm lg:text-lg">
+                  <button className="group lg:inline-flex hidden  items-center justify-center bg-gray-900/50 hover:bg-gray-800/50 text-white lg:px-8 lg:py-4 px-4 py-2 rounded-xl font-medium transition-all duration-300 border border-gray-700/50 hover:border-lavender-500/50 text-xs sm:text-sm lg:text-lg">
                     <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
                     Watch Demo
                   </button>
