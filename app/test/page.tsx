@@ -1,6 +1,8 @@
 "use client";
 
 import { MarkdownRenderer } from "../../components/chat/markdown-renderer";
+import { motion } from "framer-motion";
+import Beams from "@/components/Backgrounds/Beams/Beams";
 
 export default function TestPage() {
   const simpleLatexTest = `# LaTeX Debug Test
@@ -41,15 +43,39 @@ $$\\unknown{x} + y$$ - This should handle the unknown command gracefully.
 - Check the browser console for any KaTeX errors`;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-950 text-white p-8 relative overflow-hidden">
+      {/* Fixed Beams Background */}
+      <motion.div
+        className="fixed inset-0 z-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{
+          duration: 3,
+          delay: 0.5,
+          ease: "easeInOut",
+        }}
+      >
+        <Beams
+          beamWidth={2}
+          beamHeight={20}
+          beamNumber={20}
+          lightColor="#c4b5fd"
+          speed={5}
+          noiseIntensity={2}
+          scale={0.15}
+          rotation={20}
+        />
+      </motion.div>
+
+      {/* Content */}
+      <div className="max-w-4xl mx-auto relative z-10">
         <h1 className="text-3xl font-bold mb-6">LaTeX Debug Test</h1>
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
+        <div className="bg-gray-800/80 backdrop-blur-sm rounded-lg p-6 mb-6 border border-gray-700/50">
           <MarkdownRenderer content={simpleLatexTest} />
         </div>
 
         {/* Raw KaTeX test */}
-        <div className="bg-gray-700 rounded-lg p-6">
+        <div className="bg-gray-700/80 backdrop-blur-sm rounded-lg p-6 border border-gray-600/50">
           <h2 className="text-xl font-bold mb-4">Direct KaTeX Test</h2>
           <p className="mb-4">
             If this renders as an equation, KaTeX CSS is loaded:
