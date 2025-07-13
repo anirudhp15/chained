@@ -30,7 +30,7 @@ export interface RotatingImagesRef {
 }
 
 export interface ImageItem {
-  component: React.ComponentType<{ size?: number; className?: string }>;
+  component: React.ComponentType<any>;
   className?: string;
   size?: number;
   badge?: {
@@ -179,7 +179,7 @@ const RotatingImages = forwardRef<RotatingImagesRef, RotatingImagesProps>(
             {currentImage.badge && (
               <span
                 className={cn(
-                  "absolute -top-2 -right-2 bg-amber-500 text-black text-xs px-2 py-1 rounded-full font-semibold whitespace-nowrap shadow-lg",
+                  "absolute -top-4 -right-16 bg-amber-500 text-black text-xs px-2 py-1 rounded-full font-semibold whitespace-nowrap shadow-lg",
                   currentImage.badge.className
                 )}
               >

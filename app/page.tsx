@@ -54,6 +54,7 @@ import StarBorder from "@/components/Animations/StarBorder/StarBorder";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
 import { FaGoogle } from "react-icons/fa";
 import { SiOpenai, SiClaude, SiPerplexity } from "react-icons/si";
+import { DeepSeek } from "@lobehub/icons";
 import { GrokIcon } from "@/lib/grok-icon";
 
 // Feature data structure matching welcome screen pattern
@@ -805,6 +806,14 @@ export default function LandingPage() {
                             text: "Coming Soon",
                           },
                         },
+                        {
+                          component: DeepSeek,
+                          size: 32,
+                          className: "text-[#1E90FF]",
+                          badge: {
+                            text: "Coming Soon",
+                          },
+                        },
                       ]}
                       rotationInterval={1500}
                       mainClassName="inline-block lg:hidden"
@@ -837,6 +846,14 @@ export default function LandingPage() {
                           component: SiPerplexity,
                           size: 48,
                           className: "text-white",
+                          badge: {
+                            text: "Coming Soon",
+                          },
+                        },
+                        {
+                          component: DeepSeek,
+                          size: 48,
+                          className: "text-[#1E90FF]",
                           badge: {
                             text: "Coming Soon",
                           },
