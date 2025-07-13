@@ -772,8 +772,37 @@ export default function LandingPage() {
                 {/* Hero Title */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
                   <div className="flex flex-wrap justify-center items-center gap-3 lg:mb-2 text-2xl sm:text-4xl lg:text-5xl">
-                    <span>Use multiple AI models</span>
+                    <span>Chain together AIs</span>
 
+                    {/* Mobile Icons (32px) */}
+                    <RotatingImages
+                      images={[
+                        {
+                          component: SiClaude,
+                          size: 32,
+                          className: "text-[#da7756]",
+                        },
+                        {
+                          component: SiOpenai,
+                          size: 32,
+                          className: "text-white",
+                        },
+                        {
+                          component: FaGoogle,
+                          size: 32,
+                          className: "text-white",
+                        },
+                        {
+                          component: GrokIcon,
+                          size: 32,
+                          className: "text-white",
+                        },
+                      ]}
+                      rotationInterval={1500}
+                      mainClassName="inline-block lg:hidden"
+                    />
+
+                    {/* Desktop Icons (48px) */}
                     <RotatingImages
                       images={[
                         {
@@ -798,8 +827,7 @@ export default function LandingPage() {
                         },
                       ]}
                       rotationInterval={1500}
-                      className="bg-lavender-600/20 hover:bg-lavender-600/30 border border-lavender-600/50 hover:border-lavender-600/10 px-3 py-2 rounded-lg"
-                      mainClassName="inline-block"
+                      mainClassName="hidden lg:inline-block"
                     />
                   </div>
                   <span className="text-lavender-400 text-3xl sm:text-5xl lg:text-6xl">
@@ -808,7 +836,7 @@ export default function LandingPage() {
                 </h1>
 
                 {/* Hero Subtitle */}
-                <div className="text-lg sm:text-xl mb-8 max-w-4xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
+                <div className="text-lg sm:text-xl font-semibold mb-8 max-w-4xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
                   <ShinyText
                     speed={3}
                     text="The best LLMs, work best together."
