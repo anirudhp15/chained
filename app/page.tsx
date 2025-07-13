@@ -52,7 +52,8 @@ import ShinyText from "@/components/TextAnimations/ShinyText/ShinyText";
 import Beams from "@/components/Backgrounds/Beams/Beams";
 import StarBorder from "@/components/Animations/StarBorder/StarBorder";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
-import { SiOpenai, SiClaude, SiGoogle } from "react-icons/si";
+import { FaGoogle } from "react-icons/fa";
+import { SiOpenai, SiClaude } from "react-icons/si";
 import { GrokIcon } from "@/lib/grok-icon";
 
 // Feature data structure matching welcome screen pattern
@@ -777,22 +778,22 @@ export default function LandingPage() {
                       images={[
                         {
                           component: SiClaude,
-                          size: 32,
+                          size: 48,
                           className: "text-[#da7756]",
                         },
                         {
                           component: SiOpenai,
-                          size: 32,
+                          size: 48,
                           className: "text-white",
                         },
                         {
-                          component: SiGoogle,
-                          size: 32,
+                          component: FaGoogle,
+                          size: 48,
                           className: "text-white",
                         },
                         {
                           component: GrokIcon,
-                          size: 32,
+                          size: 48,
                           className: "text-white",
                         },
                       ]}
