@@ -53,7 +53,6 @@ import Beams from "@/components/Backgrounds/Beams/Beams";
 import StarBorder from "@/components/Animations/StarBorder/StarBorder";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
 import { SiOpenai, SiClaude, SiPerplexity } from "react-icons/si";
-import { DeepSeek } from "@lobehub/icons";
 import { GrokIcon } from "@/lib/grok-icon";
 
 // Gemini PNG icon component
@@ -67,6 +66,24 @@ const GeminiColorIcon = ({
   <img
     src="/images/logos/gemini-color.png"
     alt="Gemini"
+    width={size || 24}
+    height={size || 24}
+    className={className}
+    style={{ width: size || 24, height: size || 24 }}
+  />
+);
+
+// DeepSeek PNG icon component
+const DeepSeekColorIcon = ({
+  size,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) => (
+  <img
+    src="/images/logos/deepseek-color.png"
+    alt="DeepSeek"
     width={size || 24}
     height={size || 24}
     className={className}
@@ -790,7 +807,9 @@ export default function LandingPage() {
                 {/* Hero Title */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
                   <div className="flex flex-wrap justify-center items-center gap-3 lg:mb-2 text-2xl sm:text-4xl lg:text-5xl">
-                    <span>Chain together AIs</span>
+                    <span className="flex items-center">
+                      Chain together AIs
+                    </span>
 
                     {/* Mobile Icons (32px) */}
                     <RotatingImages
@@ -824,9 +843,9 @@ export default function LandingPage() {
                           },
                         },
                         {
-                          component: DeepSeek,
+                          component: DeepSeekColorIcon,
                           size: 32,
-                          className: "text-[#1E90FF]",
+                          className: "",
                           badge: {
                             text: "Coming Soon",
                           },
@@ -868,9 +887,9 @@ export default function LandingPage() {
                           },
                         },
                         {
-                          component: DeepSeek,
+                          component: DeepSeekColorIcon,
                           size: 48,
-                          className: "text-[#1E90FF]",
+                          className: "",
                           badge: {
                             text: "Coming Soon",
                           },
