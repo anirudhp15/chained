@@ -868,7 +868,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
               {FEATURE_DETAILS.map((feature, index) => (
                 <div
                   key={feature.id}
