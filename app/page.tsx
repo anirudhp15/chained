@@ -843,7 +843,7 @@ export default function LandingPage() {
 
                 {/* Hero Title */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-                  <div className="flex flex-wrap justify-center items-center gap-3 lg:mb-2 text-2xl sm:text-4xl lg:text-5xl">
+                  <div className="flex flex-wrap justify-center items-center gap-3 lg:mb-2 text-xl sm:text-4xl lg:text-5xl">
                     <span className="flex items-center">
                       Chain AIs together
                     </span>
