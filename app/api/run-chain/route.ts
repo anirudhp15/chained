@@ -412,6 +412,7 @@ export async function POST(request: NextRequest) {
         return "openai";
       if (model.includes("claude")) return "anthropic";
       if (model.startsWith("grok-") || model.includes("xai")) return "xai";
+      if (model.includes("gemini")) return "google";
       return "unknown";
     };
 
@@ -753,8 +754,9 @@ export async function POST(request: NextRequest) {
                 timestamp: Date.now(),
               });
               controller.enqueue(encoder.encode(`data: ${thinkingData}\n\n`));
-            } else if (chunk.content && !chunk.isComplete) {
-              // STREAM-FIRST: Send token to client IMMEDIATELY
+            } else if (chunk.content && chunk.isComplete !== true) {
+              // STREAM-FIRST: Send token to client IMMEDIATELY (handles both !chunk.isComplete and undefined isComplete)
+
               if (firstTokenTime === null) {
                 firstTokenTime = performance.now();
                 console.log(

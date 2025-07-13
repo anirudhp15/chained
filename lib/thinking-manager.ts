@@ -15,7 +15,7 @@ export interface ThinkingState {
   isActive: boolean;
   fullContent: string;
   startTime: number;
-  provider: "openai" | "anthropic" | "xai";
+  provider: "openai" | "anthropic" | "xai" | "google";
   modelType: "reasoning" | "standard";
 }
 
@@ -31,7 +31,7 @@ export interface ThinkingChunk {
 export interface ThinkingManagerOptions {
   stepId: Id<"agentSteps">;
   convexClient: ConvexHttpClient;
-  provider: "openai" | "anthropic" | "xai";
+  provider: "openai" | "anthropic" | "xai" | "google";
   model: string;
   batchInterval?: number; // milliseconds between database updates
   maxBatchSize?: number; // max items before forced batch update
@@ -40,7 +40,7 @@ export interface ThinkingManagerOptions {
 export class ThinkingManager {
   private stepId: Id<"agentSteps">;
   private convex: ConvexHttpClient;
-  private provider: "openai" | "anthropic" | "xai";
+  private provider: "openai" | "anthropic" | "xai" | "google";
   private model: string;
   private modelType: "reasoning" | "standard";
 
@@ -150,6 +150,16 @@ export class ThinkingManager {
           { content: "Cross-referencing current context...", duration: 8 },
           { content: "Integrating latest market insights...", duration: 6 },
           { content: "Delivering cutting-edge analysis...", duration: 4 },
+        ];
+      case "google":
+        return [
+          { content: "Leveraging Google's knowledge graph...", duration: 10 },
+          { content: "Analyzing with multimodal intelligence...", duration: 8 },
+          { content: "Synthesizing comprehensive insights...", duration: 6 },
+          {
+            content: "Optimizing response with Gemini's capabilities...",
+            duration: 4,
+          },
         ];
       default:
         return [
@@ -415,7 +425,7 @@ export function createThinkingManager(
 // Utility function to determine provider from model
 export function getProviderFromModel(
   model: string
-): "openai" | "anthropic" | "xai" {
+): "openai" | "anthropic" | "xai" | "google" {
   if (
     model.startsWith("gpt-") ||
     model.includes("openai") ||
@@ -432,6 +442,10 @@ export function getProviderFromModel(
 
   if (model.startsWith("grok-") || model.includes("xai")) {
     return "xai";
+  }
+
+  if (model.includes("gemini")) {
+    return "google";
   }
 
   throw new Error(`Unsupported model: ${model}`);

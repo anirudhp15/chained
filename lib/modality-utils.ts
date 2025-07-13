@@ -229,6 +229,38 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     reasoning: true,
     web: false,
   },
+
+  // Google Gemini Series
+  "gemini-2.0-flash-exp": {
+    text: true,
+    vision: true,
+    audio: false,
+    image: false,
+    code: true,
+    fast: true,
+    reasoning: true,
+    web: true,
+  },
+  "gemini-1.5-pro": {
+    text: true,
+    vision: true,
+    audio: false,
+    image: false,
+    code: true,
+    fast: false,
+    reasoning: true,
+    web: true,
+  },
+  "gemini-1.5-flash": {
+    text: true,
+    vision: true,
+    audio: false,
+    image: false,
+    code: true,
+    fast: true,
+    reasoning: false,
+    web: true,
+  },
 };
 
 // Utility functions

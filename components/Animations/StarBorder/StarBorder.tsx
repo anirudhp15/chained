@@ -12,6 +12,7 @@ type StarBorderProps<T extends React.ElementType> =
     color?: string;
     speed?: React.CSSProperties["animationDuration"];
     thickness?: number;
+    variant?: "default" | "video"; // Add variant prop
   };
 
 const StarBorder = <T extends React.ElementType = "button">({
@@ -20,6 +21,7 @@ const StarBorder = <T extends React.ElementType = "button">({
   color = "white",
   speed = "6s",
   thickness = 1,
+  variant = "default", // Default variant
   children,
   ...rest
 }: StarBorderProps<T>) => {
@@ -48,9 +50,17 @@ const StarBorder = <T extends React.ElementType = "button">({
           animationDuration: speed,
         }}
       ></div>
-      <div className="relative z-1 bg-gradient-to-b from-black to-gray-900 border border-gray-800 text-white text-center text-[16px] py-[16px] px-[26px] rounded-[20px]">
-        {children}
-      </div>
+      {variant === "video" ? (
+        // Video variant - minimal styling, let content define appearance
+        <div className="relative z-1 rounded-[20px] overflow-hidden">
+          {children}
+        </div>
+      ) : (
+        // Default variant - original styling for text/button content
+        <div className="relative z-1 bg-gradient-to-b from-black to-gray-900 border border-gray-800 text-white text-center text-[16px] py-[16px] px-[26px] rounded-[20px]">
+          {children}
+        </div>
+      )}
     </Component>
   );
 };

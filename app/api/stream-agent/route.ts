@@ -3,8 +3,10 @@ import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { xai } from "@ai-sdk/xai";
+import { google } from "@ai-sdk/google";
 import { callGrokEnhanced, streamGrokEnhanced } from "@/lib/grok-enhanced";
 import { streamClaudeWithTools, type ClaudeModel } from "@/lib/claude-enhanced";
+import { streamGeminiWithTools, type GeminiModel } from "@/lib/gemini-enhanced";
 import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../convex/_generated/api";
@@ -167,6 +169,71 @@ async function createClaudeStreamingResponse(
   });
 }
 
+// Utility function to convert Gemini AsyncGenerator to streaming response
+async function createGeminiStreamingResponse(
+  stream: AsyncGenerator<StreamChunk, void, unknown>
+) {
+  const encoder = new TextEncoder();
+
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const chunk of stream) {
+          // Convert chunk to AI SDK format
+          let data: string = "";
+
+          if (chunk.type === "thinking") {
+            data = JSON.stringify({
+              type: "text-delta",
+              textDelta: "", // Don't stream thinking content in this format
+            });
+          } else if (chunk.type === "content") {
+            data = JSON.stringify({
+              type: "text-delta",
+              textDelta: chunk.content || "",
+            });
+          } else if (chunk.type === "tool_call") {
+            data = JSON.stringify({
+              type: "tool-call-delta",
+              toolCallId: chunk.toolCall?.name || "",
+              toolName: chunk.toolCall?.name || "",
+              argsTextDelta: JSON.stringify(chunk.toolCall?.input || {}),
+            });
+          } else if (chunk.type === "complete") {
+            data = JSON.stringify({
+              type: "finish",
+              finishReason: "stop",
+              usage: chunk.usage,
+            });
+            controller.enqueue(encoder.encode(`0:${data}\n`));
+            controller.close();
+            return;
+          }
+
+          if (data) {
+            controller.enqueue(encoder.encode(`0:${data}\n`));
+          }
+        }
+      } catch (error) {
+        console.error("Gemini streaming error:", error);
+        const errorData = JSON.stringify({
+          type: "error",
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        controller.enqueue(encoder.encode(`0:${errorData}\n`));
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(readableStream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "x-vercel-ai-data-stream": "v1",
+    },
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const {
@@ -244,8 +311,22 @@ export async function POST(req: NextRequest) {
       const stream = streamClaudeWithTools(messages, {
         model: model as ClaudeModel,
         fileAttachments: claudeOptions.fileAttachments,
+        enableTools: true,
+        stepId: stepId as Id<"agentSteps">,
+        convexClient: authenticatedConvex || undefined,
       });
       return createClaudeStreamingResponse(stream);
+    }
+
+    // Handle Gemini enhanced features with tools
+    if (provider === "google" && webSearchEnabled) {
+      const stream = streamGeminiWithTools(messages, {
+        model: model as GeminiModel,
+        enableTools: true,
+        stepId: stepId as Id<"agentSteps">,
+        convexClient: authenticatedConvex || undefined,
+      });
+      return createGeminiStreamingResponse(stream);
     }
 
     // Default streaming for all providers
@@ -259,6 +340,9 @@ export async function POST(req: NextRequest) {
         break;
       case "xai":
         modelInstance = xai(model);
+        break;
+      case "google":
+        modelInstance = google(model);
         break;
       default:
         throw new Error(`Unsupported provider: ${provider}`);

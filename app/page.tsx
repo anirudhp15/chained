@@ -49,6 +49,7 @@ import CardSwap, { Card } from "@/components/Components/CardSwap/CardSwap";
 import RotatingText from "@/components/TextAnimations/RotatingText/RotatingText";
 import ShinyText from "@/components/TextAnimations/ShinyText/ShinyText";
 import Beams from "@/components/Backgrounds/Beams/Beams";
+import StarBorder from "@/components/Animations/StarBorder/StarBorder";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
 
 // Feature data structure matching welcome screen pattern
@@ -527,12 +528,38 @@ export default function LandingPage() {
             padding-top: 1rem;
           }
         }
+
+        /* Prevent elastic/bounce scrolling and overscroll */
+        html,
+        body {
+          overscroll-behavior: none;
+          overscroll-behavior-y: none;
+          -webkit-overflow-scrolling: auto;
+          scroll-behavior: smooth;
+        }
+
+        /* Additional prevention for iOS Safari */
+        body {
+          position: relative;
+          overflow-x: hidden;
+        }
+
+        /* Prevent pull-to-refresh on mobile */
+        @media (max-width: 768px) {
+          body {
+            overscroll-behavior-y: contain;
+            -webkit-overscroll-behavior-y: contain;
+          }
+        }
       `}</style>
 
-      <div className="min-h-screen bg-black relative overflow-hidden">
+      <div
+        className="min-h-screen bg-black relative overflow-hidden"
+        style={{ overscrollBehavior: "none" }}
+      >
         {/* Beams Background */}
         <motion.div
-          className="fixed inset-0 z-5"
+          className="absolute top-0 left-0 w-full h-screen z-5"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{
@@ -554,8 +581,8 @@ export default function LandingPage() {
         </motion.div>
 
         {/* Navigation */}
-        <header className="fixed top-0 left-0 right-0 z-50 w-full pt-[env(safe-area-inset-top)] supports-[padding:max(0px)]:pt-[max(env(safe-area-inset-top),1rem)] safe-area-top lg:pt-0">
-          <motion.div className="transition-all duration-300 ease-out lg:border-y lg:border-x p-2 lg:border-gray-800/50 lg:bg-gray-950/80">
+        <header className="fixed lg:absolute top-0 left-0 right-0 z-50 w-full pt-[env(safe-area-inset-top)] supports-[padding:max(0px)]:pt-[max(env(safe-area-inset-top),1rem)] safe-area-top lg:pt-4">
+          <motion.div className="transition-all duration-300 ease-out p-2 ">
             <div className="flex  items-center justify-between px-4 lg:max-w-7xl lg:mx-auto">
               <Link href="/" className="flex items-center space-x-2 group">
                 <div className="relative group/logo hidden md:block">
@@ -630,7 +657,7 @@ export default function LandingPage() {
                     }`}
                   >
                     {isMenuOpen ? (
-                      <Unlink className="h-5 w-5 text-black" />
+                      <Unlink className="h-5 w-5 text-white" />
                     ) : (
                       <Link2 className="h-5 w-5 -rotate-45 text-lavender-400" />
                     )}
@@ -653,7 +680,7 @@ export default function LandingPage() {
             {/* Close Button */}
             <button
               onClick={() => setIsMenuOpen(false)}
-              className="fixed top-[calc(0.5rem+env(safe-area-inset-top))] right-6 z-[110] p-2 rounded-lg hover:bg-black/10 transition-colors duration-300"
+              className="fixed top-[calc(1rem+env(safe-area-inset-top))] right-4 z-[110] p-2 rounded-lg hover:bg-black/10 transition-colors duration-300"
             >
               <Unlink className="h-5 w-5 text-black" />
             </button>
@@ -706,75 +733,39 @@ export default function LandingPage() {
         <main className="relative z-10 px-4 sm:px-6 pt-[calc(6rem+env(safe-area-inset-top))] pb-24 sm:pt-[calc(8rem+env(safe-area-inset-top))] sm:pb-32">
           <div className="max-w-8xl mx-auto">
             <div className="text-center max-w-7xl mx-auto">
-              <div className="flex flex-col items-center justify-center min-h-[75vh]">
+              <div className="flex flex-col items-center justify-center">
                 {/* Hero Badge */}
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-gray-900/50 border border-gray-700/50 text-sm text-gray-300 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="inline-flex text-xs items-center lg:px-4 lg:py-2 px-2 py-1 rounded-full bg-gray-900/50 border border-gray-700/50  text-gray-300 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                   <Sparkles className="h-4 w-4 text-lavender-400 mr-2" />
-                  <span>Beta Live Now</span>
+                  <ShinyText text="Beta Live Now" speed={3} />
                   <div className="ml-2 w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
                 </div>
 
                 {/* Hero Title */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-                  <div className="flex flex-wrap justify-center items-center gap-2 lg:gap-4 mb-2 text-2xl sm:text-4xl lg:text-5xl">
-                    <span>Use</span>
+                  <div className="flex flex-wrap justify-center items-center gap-2 lg:gap-4 lg:mb-2 text-2xl sm:text-4xl lg:text-5xl">
+                    <span>Prompt</span>
 
                     <RotatingText
-                      texts={[
-                        "Claude",
-                        "ChatGPT",
-                        "Gemini",
-                        "Grok",
-                        "Perplexity",
-                      ]}
-                      rotationInterval={2500}
-                      className="bg-lavender-500 px-2 rounded-lg"
+                      texts={["Claude", "ChatGPT", "Gemini", "Grok"]}
+                      rotationInterval={1500}
+                      className="bg-lavender-600/20 hover:bg-lavender-600/30 text-lavender-400 border border-lavender-600/50 hover:border-lavender-600/10 px-2 rounded-lg"
                       mainClassName="inline-block"
-                      staggerFrom={"last"}
-                      initial={{ y: "100%" } as any}
-                      animate={{ y: 0 } as any}
-                      exit={{ y: "-120%" } as any}
+                      staggerFrom="last"
                       staggerDuration={0.025}
-                      splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
-                      transition={{
-                        type: "spring",
-                        damping: 30,
-                        stiffness: 400,
-                      }}
-                    />
-                    <span>and</span>
-                    <RotatingText
-                      texts={[
-                        "Perplexity",
-                        "Grok",
-                        "Gemini",
-                        "Claude",
-                        "ChatGPT",
-                      ]}
-                      rotationInterval={3000}
-                      className="bg-lavender-500 px-2 rounded-lg"
-                      mainClassName="inline-block"
-                      staggerFrom={"last"}
-                      initial={{ y: "100%" } as any}
-                      animate={{ y: 0 } as any}
-                      exit={{ y: "-120%" } as any}
-                      staggerDuration={0.025}
-                      splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
-                      transition={{
-                        type: "spring",
-                        damping: 30,
-                        stiffness: 400,
-                      }}
+                      splitLevelClassName="overflow-hidden"
                     />
                   </div>
-                  <span className="text-lavender-500">side by side</span>
+                  <span className="text-lavender-400 text-3xl sm:text-5xl lg:text-6xl">
+                    in one workspace
+                  </span>
                 </h1>
 
                 {/* Hero Subtitle */}
-                <div className="text-lg sm:text-xl mb-12 max-w-4xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
+                <div className="text-lg sm:text-xl mb-8 max-w-4xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
                   <ShinyText
                     speed={3}
-                    text="Every LLM, one intuitive workspace."
+                    text="The best LLMs, working together."
                   />
                 </div>
 
@@ -812,7 +803,12 @@ export default function LandingPage() {
 
               {/* Chain Interface Preview */}
               <div className="relative max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-800">
-                <div className="bg-gray-800/50 p-1 rounded-2xl overflow-hidden">
+                <div className="relative group lg:p-8">
+                  {/* Enhanced lavender glow effect - all sides */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-lavender-500/20 via-purple-500/20 to-lavender-500/20 rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-lavender-500/15 via-transparent to-lavender-500/15 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
+                  <div className="absolute inset-0 bg-gradient-to-b from-lavender-500/15 via-transparent to-lavender-500/15 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
+
                   <video
                     src="/videos/chained_demo_v3.mp4"
                     autoPlay
@@ -822,7 +818,7 @@ export default function LandingPage() {
                     disablePictureInPicture
                     controlsList="nodownload nofullscreen noremoteplayback"
                     onContextMenu={(e) => e.preventDefault()}
-                    className="w-full h-auto rounded-xl opacity-90 hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                    className="w-full h-auto rounded-xl border-4 border-lavender-400/20 z-10 opacity-90 hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                   />
                 </div>
               </div>
@@ -1312,6 +1308,29 @@ export default function LandingPage() {
             </div>
           </div>
         </footer>
+
+        {/* Bottom Beams Background */}
+        <motion.div
+          className="absolute bottom-0 left-0 w-full h-screen z-5"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{
+            duration: 3,
+            delay: 1,
+            ease: "easeInOut",
+          }}
+        >
+          <Beams
+            beamWidth={2}
+            beamHeight={20}
+            beamNumber={20}
+            lightColor="#c4b5fd"
+            speed={5}
+            noiseIntensity={2}
+            scale={0.15}
+            rotation={-20}
+          />
+        </motion.div>
 
         {/* Access Gate Modal */}
         {showAccessGate && (

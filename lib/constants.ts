@@ -1,6 +1,6 @@
 import { GitCommitHorizontal, GitFork, GitCompareArrows } from "lucide-react";
 import { IoGitBranchOutline } from "react-icons/io5";
-import { SiOpenai, SiClaude } from "react-icons/si";
+import { SiOpenai, SiClaude, SiGoogle } from "react-icons/si";
 import { GrokIcon } from "./grok-icon";
 import React from "react";
 
@@ -25,6 +25,7 @@ export interface ModelProviders {
   openai: ModelProvider;
   anthropic: ModelProvider;
   xai: ModelProvider;
+  google: ModelProvider;
 }
 
 // Centralized Model Providers Configuration
@@ -132,7 +133,7 @@ export const MODEL_PROVIDERS: ModelProviders = {
     models: [
       // Grok 4 Series (Latest)
       {
-        value: "grok-4",
+        value: "grok-4-0709",
         label: "Grok 4",
         modalities: ["text", "vision", "web"],
         description: "Latest flagship model with real-time data access",
@@ -160,6 +161,48 @@ export const MODEL_PROVIDERS: ModelProviders = {
       },
     ],
   },
+
+  google: {
+    name: "Google",
+    icon: SiGoogle,
+    iconColor: "text-white",
+    bgColor: "bg-[#000000]",
+    models: [
+      // Gemini 2.5 Series (Latest)
+      {
+        value: "gemini-2.0-flash-exp",
+        label: "Gemini 2.0 Flash Experimental",
+        modalities: ["text", "vision", "code", "fast"],
+        description:
+          "Experimental fast multimodal model with cutting-edge features",
+        capabilities: [
+          "Ultra-fast responses",
+          "Vision analysis",
+          "Code generation",
+        ],
+      },
+
+      // Gemini 1.5 Series
+      {
+        value: "gemini-1.5-pro",
+        label: "Gemini 1.5 Pro",
+        modalities: ["text", "vision", "code"],
+        description: "High-performance multimodal model",
+        capabilities: [
+          "Advanced reasoning",
+          "Long context window",
+          "Vision analysis",
+        ],
+      },
+      {
+        value: "gemini-1.5-flash",
+        label: "Gemini 1.5 Flash",
+        modalities: ["text", "vision", "code", "fast"],
+        description: "Fast and efficient multimodal model",
+        capabilities: ["Quick responses", "Cost-effective", "Vision support"],
+      },
+    ],
+  },
 };
 
 // Helper function to get provider from model name
@@ -177,6 +220,9 @@ export const getProviderKey = (modelValue: string): keyof ModelProviders => {
   }
   if (modelValue.includes("grok")) {
     return "xai";
+  }
+  if (modelValue.includes("gemini")) {
+    return "google";
   }
   return "openai"; // Default fallback
 };

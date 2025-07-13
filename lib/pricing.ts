@@ -37,6 +37,11 @@ const MODEL_PRICING = {
   // xAI Grok 2 Series
   "grok-2-vision-1212": { input: 0.002, output: 0.01 }, // $2/MTok input, $10/MTok output (with image support)
   "grok-2-1212": { input: 0.002, output: 0.01 }, // $2/MTok input, $10/MTok output
+
+  // Google Gemini Series
+  "gemini-2.0-flash-exp": { input: 0.00015, output: 0.0006 }, // $0.15/MTok input, $0.60/MTok output
+  "gemini-1.5-pro": { input: 0.00125, output: 0.005 }, // $1.25/MTok input, $5/MTok output
+  "gemini-1.5-flash": { input: 0.000075, output: 0.0003 }, // $0.075/MTok input, $0.30/MTok output
 };
 
 export function calculateCost(
@@ -47,7 +52,7 @@ export function calculateCost(
   // Normalize model name for lookup
   const normalizedModel = model
     .toLowerCase()
-    .replace(/^(openai-|anthropic-|xai-)/, "");
+    .replace(/^(openai-|anthropic-|xai-|google-)/, "");
 
   const pricing = MODEL_PRICING[normalizedModel as keyof typeof MODEL_PRICING];
   if (!pricing) {
@@ -89,10 +94,15 @@ export function getModelDisplayName(model: string): string {
     "grok-3-mini-fast": "Grok 3 Mini Fast",
     "grok-2-vision-1212": "Grok 2 Vision",
     "grok-2-1212": "Grok 2",
+
+    // Google Gemini Models
+    "gemini-2.0-flash-exp": "Gemini 2.0 Flash Experimental",
+    "gemini-1.5-pro": "Gemini 1.5 Pro",
+    "gemini-1.5-flash": "Gemini 1.5 Flash",
   };
 
   const normalizedModel = model
     .toLowerCase()
-    .replace(/^(openai-|anthropic-|xai-)/, "");
+    .replace(/^(openai-|anthropic-|xai-|google-)/, "");
   return displayNames[normalizedModel] || model;
 }

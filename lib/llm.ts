@@ -1,5 +1,7 @@
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
+import { google } from "@ai-sdk/google";
+import { streamText as aiStreamText, generateText as aiGenerateText } from "ai";
 import {
   createThinkingManager,
   getProviderFromModel,
@@ -7,6 +9,10 @@ import {
 } from "./thinking-manager";
 import type { Id } from "../convex/_generated/dataModel";
 import { ConvexHttpClient } from "convex/browser";
+import { webSearchTool, getToolsForModel } from "./ai-tools";
+import { openai as vercelOpenAI } from "@ai-sdk/openai";
+import { anthropic as vercelAnthropic } from "@ai-sdk/anthropic";
+import { xai as vercelXai } from "@ai-sdk/xai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -21,6 +27,11 @@ const xai = new OpenAI({
   apiKey: process.env.XAI_API_KEY,
   baseURL: "https://api.x.ai/v1",
 });
+
+// Google AI SDK configuration
+if (!process.env.GOOGLE_API_KEY) {
+  console.warn("GOOGLE_API_KEY not found in environment variables");
+}
 
 interface MultimodalInput {
   prompt: string;
@@ -132,6 +143,10 @@ export async function callLLM({
       return await callXAI(model, enhancedPrompt, images);
     }
 
+    if (model.includes("gemini")) {
+      return await callGemini(model, enhancedPrompt, images);
+    }
+
     throw new Error(`Unsupported model: ${model}`);
   } catch (error) {
     console.error("LLM call failed:", error);
@@ -149,6 +164,7 @@ export async function* callLLMStream({
   webSearchResults,
   options,
   customContext,
+  enableTools = false,
 }: {
   model: string;
   prompt: string;
@@ -162,12 +178,14 @@ export async function* callLLMStream({
   }>;
   options?: LLMStreamOptions;
   customContext?: string;
+  enableTools?: boolean;
 }): AsyncGenerator<{
   content: string;
   isComplete?: boolean;
   tokenUsage?: any;
   thinking?: string;
   isThinking?: boolean;
+  toolCall?: any;
 }> {
   let thinkingManager: ThinkingManager | null = null;
 
@@ -197,6 +215,11 @@ export async function* callLLMStream({
       customContext,
     });
 
+    // Get tools if enabled
+    const tools = enableTools
+      ? getToolsForModel(model, ["web_search"])
+      : undefined;
+
     if (
       model.startsWith("gpt-") ||
       model.includes("openai") ||
@@ -204,16 +227,37 @@ export async function* callLLMStream({
       model.startsWith("o3") ||
       model.startsWith("o4")
     ) {
-      yield* callOpenAIStream(model, enhancedPrompt, images, thinkingManager);
+      yield* callOpenAIStream(
+        model,
+        enhancedPrompt,
+        images,
+        thinkingManager,
+        tools
+      );
     } else if (model.includes("claude")) {
       yield* callAnthropicStream(
         model,
         enhancedPrompt,
         images,
-        thinkingManager
+        thinkingManager,
+        tools
       );
     } else if (model.startsWith("grok-") || model.includes("xai")) {
-      yield* callXAIStream(model, enhancedPrompt, images, thinkingManager);
+      yield* callXAIStream(
+        model,
+        enhancedPrompt,
+        images,
+        thinkingManager,
+        tools
+      );
+    } else if (model.includes("gemini")) {
+      yield* callGeminiStream(
+        model,
+        enhancedPrompt,
+        images,
+        thinkingManager,
+        tools
+      );
     } else {
       throw new Error(`Unsupported model: ${model}`);
     }
@@ -490,17 +534,78 @@ async function callXAI(
   };
 }
 
+async function callGemini(
+  model: string,
+  prompt: string,
+  images?: Array<{ url: string; description?: string }>
+): Promise<LLMResponse> {
+  const messages: any[] = [];
+
+  if (images && images.length > 0) {
+    // For vision-capable Gemini models, include images
+    const content: any[] = [{ type: "text", text: prompt }];
+
+    // Process images for Gemini
+    for (const image of images) {
+      try {
+        const response = await fetch(image.url);
+        const arrayBuffer = await response.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString("base64");
+        const mimeType = response.headers.get("content-type") || "image/jpeg";
+
+        content.push({
+          type: "image",
+          image: base64,
+          mimeType,
+        });
+      } catch (error) {
+        console.error(`Failed to process image for Gemini: ${error}`);
+      }
+    }
+
+    messages.push({
+      role: "user",
+      content: content,
+    });
+  } else {
+    messages.push({
+      role: "user",
+      content: prompt,
+    });
+  }
+
+  const result = await aiGenerateText({
+    model: google(model),
+    messages,
+    maxTokens: 4000,
+  });
+
+  const usage = result.usage;
+  return {
+    content: result.text || "",
+    tokenUsage: usage
+      ? {
+          promptTokens: usage.promptTokens,
+          completionTokens: usage.completionTokens,
+          totalTokens: usage.totalTokens,
+        }
+      : undefined,
+  };
+}
+
 async function* callOpenAIStream(
   model: string,
   prompt: string,
   images?: Array<{ url: string; description?: string }>,
-  thinkingManager?: ThinkingManager | null
+  thinkingManager?: ThinkingManager | null,
+  tools?: Record<string, any>
 ): AsyncGenerator<{
   content: string;
   isComplete?: boolean;
   tokenUsage?: any;
   thinking?: string;
   isThinking?: boolean;
+  toolCall?: any;
 }> {
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
 
@@ -608,45 +713,110 @@ async function* callOpenAIStream(
 
     yield { content: "", isComplete: true, tokenUsage };
   } else {
-    // Regular non-reasoning model streaming
-    const stream = await openai.chat.completions.create({
-      model: model.replace("openai-", ""),
-      messages,
-      max_tokens: 4000,
-      stream: true,
-      stream_options: { include_usage: true },
-    });
+    // Regular non-reasoning model streaming - use Vercel AI SDK if tools are needed
+    if (tools) {
+      const stream = await aiStreamText({
+        model: vercelOpenAI(model),
+        messages: messages as any,
+        maxTokens: 4000,
+        tools,
+      });
 
-    let fullContent = "";
-    let tokenUsage: any = undefined;
+      let tokenUsage: any = undefined;
+      let fullContent = "";
+      let hasStartedContent = false;
 
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta;
-      if (delta?.content) {
-        fullContent += delta.content;
+      for await (const chunk of stream.textStream) {
+        if (!hasStartedContent) {
+          hasStartedContent = true;
+          if (thinkingManager) {
+            await thinkingManager.completeThinking();
+          }
+        }
+
+        fullContent += chunk;
 
         // STREAM-FIRST: Yield immediately, no blocking operations
-        yield { content: delta.content };
+        yield { content: chunk };
 
         // Update stream content through thinking manager if available (non-blocking)
         if (thinkingManager) {
-          // Don't await - make it non-blocking
           thinkingManager.updateStreamContent(fullContent).catch((error) => {
             console.error("Non-blocking stream content update failed:", error);
           });
         }
       }
 
-      if (chunk.usage) {
+      // Check for tool calls
+      const toolResults = await stream.toolResults;
+      if (toolResults && toolResults.length > 0) {
+        for (const toolResult of toolResults) {
+          yield {
+            content: "",
+            toolCall: {
+              name: toolResult.toolName,
+              arguments: toolResult.args,
+              result: toolResult.result,
+            },
+          };
+        }
+      }
+
+      // Get usage stats
+      const usage = await stream.usage;
+      if (usage) {
         tokenUsage = {
-          promptTokens: chunk.usage.prompt_tokens,
-          completionTokens: chunk.usage.completion_tokens,
-          totalTokens: chunk.usage.total_tokens,
+          promptTokens: usage.promptTokens,
+          completionTokens: usage.completionTokens,
+          totalTokens: usage.totalTokens,
         };
       }
-    }
 
-    yield { content: "", isComplete: true, tokenUsage };
+      yield { content: "", isComplete: true, tokenUsage };
+    } else {
+      // No tools - use native OpenAI SDK
+      const stream = await openai.chat.completions.create({
+        model: model.replace("openai-", ""),
+        messages,
+        max_tokens: 4000,
+        stream: true,
+        stream_options: { include_usage: true },
+      });
+
+      let fullContent = "";
+      let tokenUsage: any = undefined;
+
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta;
+        if (delta?.content) {
+          fullContent += delta.content;
+
+          // STREAM-FIRST: Yield immediately, no blocking operations
+          yield { content: delta.content };
+
+          // Update stream content through thinking manager if available (non-blocking)
+          if (thinkingManager) {
+            // Don't await - make it non-blocking
+            thinkingManager.updateStreamContent(fullContent).catch((error) => {
+              console.error(
+                "Non-blocking stream content update failed:",
+                error
+              );
+            });
+          }
+        }
+
+        if (chunk.usage) {
+          tokenUsage = {
+            promptTokens: chunk.usage.prompt_tokens,
+            completionTokens: chunk.usage.completion_tokens,
+            totalTokens: chunk.usage.total_tokens,
+          };
+        }
+      }
+
+      yield { content: "", isComplete: true, tokenUsage };
+    }
   }
 }
 
@@ -654,13 +824,15 @@ async function* callAnthropicStream(
   model: string,
   prompt: string,
   images?: Array<{ url: string; description?: string }>,
-  thinkingManager?: ThinkingManager | null
+  thinkingManager?: ThinkingManager | null,
+  tools?: Record<string, any>
 ): AsyncGenerator<{
   content: string;
   isComplete?: boolean;
   tokenUsage?: any;
   thinking?: string;
   isThinking?: boolean;
+  toolCall?: any;
 }> {
   // For Claude models, simulate thinking if manager is available
   if (thinkingManager) {
@@ -695,22 +867,20 @@ async function* callAnthropicStream(
     }
   }
 
-  const stream = await anthropic.messages.create({
-    model: model,
-    max_tokens: 4000,
-    messages: [{ role: "user", content }],
-    stream: true,
-  });
+  // Use Vercel AI SDK for streaming with tools
+  if (tools) {
+    const stream = await aiStreamText({
+      model: vercelAnthropic(model),
+      messages: [{ role: "user", content: prompt }],
+      maxTokens: 4000,
+      tools,
+    });
 
-  let tokenUsage: any = undefined;
-  let fullContent = "";
-  let hasStartedContent = false;
+    let tokenUsage: any = undefined;
+    let fullContent = "";
+    let hasStartedContent = false;
 
-  for await (const chunk of stream) {
-    if (
-      chunk.type === "content_block_delta" &&
-      chunk.delta.type === "text_delta"
-    ) {
+    for await (const chunk of stream.textStream) {
       if (!hasStartedContent) {
         // First content received, complete thinking
         hasStartedContent = true;
@@ -719,10 +889,10 @@ async function* callAnthropicStream(
         }
       }
 
-      fullContent += chunk.delta.text;
+      fullContent += chunk;
 
       // STREAM-FIRST: Yield immediately, no blocking operations
-      yield { content: chunk.delta.text };
+      yield { content: chunk };
 
       // Update stream content through thinking manager if available (non-blocking)
       if (thinkingManager) {
@@ -731,30 +901,99 @@ async function* callAnthropicStream(
           console.error("Non-blocking stream content update failed:", error);
         });
       }
-    } else if (chunk.type === "message_delta" && chunk.usage) {
+    }
+
+    // Check for tool calls
+    const toolResults = await stream.toolResults;
+    if (toolResults && toolResults.length > 0) {
+      for (const toolResult of toolResults) {
+        yield {
+          content: "",
+          toolCall: {
+            name: toolResult.toolName,
+            arguments: toolResult.args,
+            result: toolResult.result,
+          },
+        };
+      }
+    }
+
+    // Get usage stats
+    const usage = await stream.usage;
+    if (usage) {
       tokenUsage = {
-        promptTokens: chunk.usage.input_tokens || 0,
-        completionTokens: chunk.usage.output_tokens || 0,
-        totalTokens:
-          (chunk.usage.input_tokens || 0) + (chunk.usage.output_tokens || 0),
+        promptTokens: usage.promptTokens,
+        completionTokens: usage.completionTokens,
+        totalTokens: usage.totalTokens,
       };
     }
-  }
 
-  yield { content: "", isComplete: true, tokenUsage };
+    yield { content: "", isComplete: true, tokenUsage };
+  } else {
+    // Existing implementation without tools
+    const stream = await anthropic.messages.create({
+      model: model,
+      max_tokens: 4000,
+      messages: [{ role: "user", content }],
+      stream: true,
+    });
+
+    let tokenUsage: any = undefined;
+    let fullContent = "";
+    let hasStartedContent = false;
+
+    for await (const chunk of stream) {
+      if (
+        chunk.type === "content_block_delta" &&
+        chunk.delta.type === "text_delta"
+      ) {
+        if (!hasStartedContent) {
+          // First content received, complete thinking
+          hasStartedContent = true;
+          if (thinkingManager) {
+            await thinkingManager.completeThinking();
+          }
+        }
+
+        fullContent += chunk.delta.text;
+
+        // STREAM-FIRST: Yield immediately, no blocking operations
+        yield { content: chunk.delta.text };
+
+        // Update stream content through thinking manager if available (non-blocking)
+        if (thinkingManager) {
+          // Don't await - make it non-blocking
+          thinkingManager.updateStreamContent(fullContent).catch((error) => {
+            console.error("Non-blocking stream content update failed:", error);
+          });
+        }
+      } else if (chunk.type === "message_delta" && chunk.usage) {
+        tokenUsage = {
+          promptTokens: chunk.usage.input_tokens || 0,
+          completionTokens: chunk.usage.output_tokens || 0,
+          totalTokens:
+            (chunk.usage.input_tokens || 0) + (chunk.usage.output_tokens || 0),
+        };
+      }
+    }
+
+    yield { content: "", isComplete: true, tokenUsage };
+  }
 }
 
 async function* callXAIStream(
   model: string,
   prompt: string,
   images?: Array<{ url: string; description?: string }>,
-  thinkingManager?: ThinkingManager | null
+  thinkingManager?: ThinkingManager | null,
+  tools?: Record<string, any>
 ): AsyncGenerator<{
   content: string;
   isComplete?: boolean;
   tokenUsage?: any;
   thinking?: string;
   isThinking?: boolean;
+  toolCall?: any;
 }> {
   // For Grok models, simulate thinking if manager is available
   if (thinkingManager) {
@@ -770,22 +1009,223 @@ async function* callXAIStream(
     })();
   }
 
-  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+  // Use Vercel AI SDK for streaming with tools
+  if (tools) {
+    const messages: any[] = [];
+
+    if (images && images.length > 0) {
+      const content: any[] = [{ type: "text", text: prompt }];
+
+      images.forEach((image) => {
+        content.push({
+          type: "image_url",
+          image_url: {
+            url: image.url,
+            detail: "high",
+          },
+        });
+      });
+
+      messages.push({
+        role: "user",
+        content: content,
+      });
+    } else {
+      messages.push({
+        role: "user",
+        content: prompt,
+      });
+    }
+
+    const stream = await aiStreamText({
+      model: vercelXai(model),
+      messages,
+      maxTokens: 4000,
+      tools,
+    });
+
+    let tokenUsage: any = undefined;
+    let fullContent = "";
+    let hasStartedContent = false;
+
+    for await (const chunk of stream.textStream) {
+      if (!hasStartedContent) {
+        // First content received, complete thinking
+        hasStartedContent = true;
+        if (thinkingManager) {
+          await thinkingManager.completeThinking();
+        }
+      }
+
+      fullContent += chunk;
+
+      // STREAM-FIRST: Yield immediately, no blocking operations
+      yield { content: chunk };
+
+      // Update stream content through thinking manager if available (non-blocking)
+      if (thinkingManager) {
+        // Don't await - make it non-blocking
+        thinkingManager.updateStreamContent(fullContent).catch((error) => {
+          console.error("Non-blocking stream content update failed:", error);
+        });
+      }
+    }
+
+    // Check for tool calls
+    const toolResults = await stream.toolResults;
+    if (toolResults && toolResults.length > 0) {
+      for (const toolResult of toolResults) {
+        yield {
+          content: "",
+          toolCall: {
+            name: toolResult.toolName,
+            arguments: toolResult.args,
+            result: toolResult.result,
+          },
+        };
+      }
+    }
+
+    // Get usage stats
+    const usage = await stream.usage;
+    if (usage) {
+      tokenUsage = {
+        promptTokens: usage.promptTokens,
+        completionTokens: usage.completionTokens,
+        totalTokens: usage.totalTokens,
+      };
+    }
+
+    yield { content: "", isComplete: true, tokenUsage };
+  } else {
+    // Existing implementation without tools
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+
+    if (images && images.length > 0) {
+      const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
+        { type: "text", text: prompt },
+      ];
+
+      images.forEach((image) => {
+        content.push({
+          type: "image_url",
+          image_url: {
+            url: image.url,
+            detail: "high",
+          },
+        });
+      });
+
+      messages.push({
+        role: "user",
+        content: content,
+      });
+    } else {
+      messages.push({
+        role: "user",
+        content: prompt,
+      });
+    }
+
+    const stream = await xai.chat.completions.create({
+      model: model,
+      messages,
+      max_tokens: 4000,
+      stream: true,
+    });
+
+    let tokenUsage: any = undefined;
+    let fullContent = "";
+    let hasStartedContent = false;
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta;
+      if (delta?.content) {
+        if (!hasStartedContent) {
+          // First content received, complete thinking
+          hasStartedContent = true;
+          if (thinkingManager) {
+            await thinkingManager.completeThinking();
+          }
+        }
+
+        fullContent += delta.content;
+
+        // STREAM-FIRST: Yield immediately, no blocking operations
+        yield { content: delta.content };
+
+        // Update stream content through thinking manager if available (non-blocking)
+        if (thinkingManager) {
+          // Don't await - make it non-blocking
+          thinkingManager.updateStreamContent(fullContent).catch((error) => {
+            console.error("Non-blocking stream content update failed:", error);
+          });
+        }
+      }
+
+      if (chunk.usage) {
+        tokenUsage = {
+          promptTokens: chunk.usage.prompt_tokens,
+          completionTokens: chunk.usage.completion_tokens,
+          totalTokens: chunk.usage.total_tokens,
+        };
+      }
+    }
+
+    yield { content: "", isComplete: true, tokenUsage };
+  }
+}
+
+async function* callGeminiStream(
+  model: string,
+  prompt: string,
+  images?: Array<{ url: string; description?: string }>,
+  thinkingManager?: ThinkingManager | null,
+  tools?: Record<string, any>
+): AsyncGenerator<{
+  content: string;
+  isComplete?: boolean;
+  tokenUsage?: any;
+  thinking?: string;
+  isThinking?: boolean;
+  toolCall?: any;
+}> {
+  // For Gemini models, simulate thinking if manager is available
+  if (thinkingManager) {
+    // Start thinking simulation in background
+    const thinkingPromise = (async () => {
+      try {
+        for await (const thinkingChunk of thinkingManager.generateThinkingStream()) {
+          // Thinking updates are handled internally by the manager
+        }
+      } catch (error) {
+        console.error("Gemini thinking simulation error:", error);
+      }
+    })();
+  }
+
+  const messages: any[] = [];
 
   if (images && images.length > 0) {
-    const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
-      { type: "text", text: prompt },
-    ];
+    const content: any[] = [{ type: "text", text: prompt }];
 
-    images.forEach((image) => {
-      content.push({
-        type: "image_url",
-        image_url: {
-          url: image.url,
-          detail: "high",
-        },
-      });
-    });
+    // Process images for Gemini
+    for (const image of images) {
+      try {
+        const response = await fetch(image.url);
+        const arrayBuffer = await response.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString("base64");
+        const mimeType = response.headers.get("content-type") || "image/jpeg";
+
+        content.push({
+          type: "image",
+          image: base64,
+          mimeType,
+        });
+      } catch (error) {
+        console.error(`Failed to process image for Gemini: ${error}`);
+      }
+    }
 
     messages.push({
       role: "user",
@@ -798,49 +1238,63 @@ async function* callXAIStream(
     });
   }
 
-  const stream = await xai.chat.completions.create({
-    model: model,
+  const stream = await aiStreamText({
+    model: google(model),
     messages,
-    max_tokens: 4000,
-    stream: true,
+    maxTokens: 4000,
+    tools,
   });
 
   let tokenUsage: any = undefined;
   let fullContent = "";
   let hasStartedContent = false;
 
-  for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta;
-    if (delta?.content) {
-      if (!hasStartedContent) {
-        // First content received, complete thinking
-        hasStartedContent = true;
-        if (thinkingManager) {
-          await thinkingManager.completeThinking();
-        }
-      }
-
-      fullContent += delta.content;
-
-      // STREAM-FIRST: Yield immediately, no blocking operations
-      yield { content: delta.content };
-
-      // Update stream content through thinking manager if available (non-blocking)
+  for await (const chunk of stream.textStream) {
+    if (!hasStartedContent) {
+      // First content received, complete thinking
+      hasStartedContent = true;
       if (thinkingManager) {
-        // Don't await - make it non-blocking
-        thinkingManager.updateStreamContent(fullContent).catch((error) => {
-          console.error("Non-blocking stream content update failed:", error);
-        });
+        await thinkingManager.completeThinking();
       }
     }
 
-    if (chunk.usage) {
-      tokenUsage = {
-        promptTokens: chunk.usage.prompt_tokens,
-        completionTokens: chunk.usage.completion_tokens,
-        totalTokens: chunk.usage.total_tokens,
+    fullContent += chunk;
+
+    // STREAM-FIRST: Yield immediately, no blocking operations
+    yield { content: chunk };
+
+    // Update stream content through thinking manager if available (non-blocking)
+    if (thinkingManager) {
+      // Don't await - make it non-blocking
+      thinkingManager.updateStreamContent(fullContent).catch((error) => {
+        console.error("Non-blocking stream content update failed:", error);
+      });
+    }
+  }
+
+  // Check for tool calls
+  const toolResults = await stream.toolResults;
+  if (toolResults && toolResults.length > 0) {
+    for (const toolResult of toolResults) {
+      yield {
+        content: "",
+        toolCall: {
+          name: toolResult.toolName,
+          arguments: toolResult.args,
+          result: toolResult.result,
+        },
       };
     }
+  }
+
+  // Get usage stats
+  const usage = await stream.usage;
+  if (usage) {
+    tokenUsage = {
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
+    };
   }
 
   yield { content: "", isComplete: true, tokenUsage };

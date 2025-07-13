@@ -1241,7 +1241,7 @@ function AgentPromptWithReferences({
   return (
     <div className="w-full justify-end flex px-0.5">
       <div
-        className="relative w-auto max-w-[80%] bg-gray-800/90 rounded-xl py-2 px-3 gap-2 flex flex-col"
+        className="relative w-auto max-w-[80%] bg-lavender-400/10 rounded-xl py-2 px-3 gap-2 flex flex-col"
         data-prompt-content="true"
         data-source-type="user-prompt"
       >

@@ -345,7 +345,7 @@ const COLUMN_THEMES: ColumnTheme[] = [
     presets: CODING_PRESETS,
   },
   {
-    title: "Content",
+    title: "Create",
     icon: Lightbulb,
     iconColor: "text-lavender-400",
     presets: CREATIVE_PRESETS,

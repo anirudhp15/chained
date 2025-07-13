@@ -1,4 +1,4 @@
-import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { generateText, streamText } from "ai";
 import { z } from "zod";
 import {
@@ -7,16 +7,14 @@ import {
 } from "./thinking-manager";
 import type { Id } from "../convex/_generated/dataModel";
 import { ConvexHttpClient } from "convex/browser";
-import { webSearchTool, analyzeFileTool } from "./ai-tools";
+import { webSearchTool } from "./ai-tools";
 
-export type ClaudeModel =
-  | "claude-opus-4-20250514"
-  | "claude-sonnet-4-20250514"
-  | "claude-3-7-sonnet-20250219"
-  | "claude-3-5-sonnet-20241022"
-  | "claude-3-5-haiku-20241022";
+export type GeminiModel =
+  | "gemini-2.0-flash-exp"
+  | "gemini-1.5-pro"
+  | "gemini-1.5-flash";
 
-export interface ClaudeEnhancedOptions {
+export interface GeminiEnhancedOptions {
   fileAttachments?: Array<{
     name: string;
     content: string;
@@ -24,13 +22,13 @@ export interface ClaudeEnhancedOptions {
   }>;
   temperature?: number;
   maxTokens?: number;
-  model?: ClaudeModel;
+  model?: GeminiModel;
   enableTools?: boolean;
   stepId?: Id<"agentSteps">;
   convexClient?: ConvexHttpClient;
 }
 
-export interface ClaudeEnhancedResponse {
+export interface GeminiEnhancedResponse {
   content: string;
   thinking?: string;
   toolCalls?: Array<{
@@ -45,7 +43,7 @@ export interface ClaudeEnhancedResponse {
   };
 }
 
-export interface ClaudeStreamChunk {
+export interface GeminiStreamChunk {
   type: "content" | "tool_call" | "complete" | "thinking";
   content?: string;
   thinking?: string;
@@ -61,15 +59,15 @@ export interface ClaudeStreamChunk {
   };
 }
 
-export async function callClaudeWithTools(
+export async function callGeminiWithTools(
   messages: Array<{ role: string; content: string }>,
-  options: ClaudeEnhancedOptions = {}
-): Promise<ClaudeEnhancedResponse> {
+  options: GeminiEnhancedOptions = {}
+): Promise<GeminiEnhancedResponse> {
   const {
     fileAttachments = [],
     temperature = 0.7,
     maxTokens = 4096,
-    model = "claude-sonnet-4-20250514",
+    model = "gemini-1.5-pro",
     enableTools = true,
   } = options;
 
@@ -81,11 +79,11 @@ export async function callClaudeWithTools(
       thinkingManager = createThinkingManager({
         stepId: options.stepId,
         convexClient: options.convexClient,
-        provider: "anthropic",
+        provider: "google",
         model: model,
       });
     } catch (error) {
-      console.warn("Could not create thinking manager for Claude:", error);
+      console.warn("Could not create thinking manager for Gemini:", error);
     }
   }
 
@@ -133,22 +131,17 @@ This ensures mathematical content renders beautifully in the user interface.`,
             // Thinking updates are handled internally by the manager
           }
         } catch (error) {
-          console.error("Claude thinking simulation error:", error);
+          console.error("Gemini thinking simulation error:", error);
         }
       })();
     }
 
     const result = await generateText({
-      model: anthropic(model),
+      model: google(model),
       messages: enhancedMessages as any,
       temperature,
       maxTokens,
-      tools: enableTools
-        ? {
-            web_search: webSearchTool,
-            analyze_file: analyzeFileTool,
-          }
-        : undefined,
+      tools: enableTools ? { web_search: webSearchTool } : undefined,
     });
 
     // Complete thinking if manager is available
@@ -172,9 +165,9 @@ This ensures mathematical content renders beautifully in the user interface.`,
         : undefined,
     };
   } catch (error) {
-    console.error("Claude enhanced call failed:", error);
+    console.error("Gemini enhanced call failed:", error);
     throw new Error(
-      `Claude enhanced call failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      `Gemini enhanced call failed: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   } finally {
     // Clean up thinking manager
@@ -184,15 +177,15 @@ This ensures mathematical content renders beautifully in the user interface.`,
   }
 }
 
-export async function* streamClaudeWithTools(
+export async function* streamGeminiWithTools(
   messages: Array<{ role: string; content: string }>,
-  options: ClaudeEnhancedOptions = {}
-): AsyncGenerator<ClaudeStreamChunk> {
+  options: GeminiEnhancedOptions = {}
+): AsyncGenerator<GeminiStreamChunk> {
   const {
     fileAttachments = [],
     temperature = 0.7,
     maxTokens = 4096,
-    model = "claude-sonnet-4-20250514",
+    model = "gemini-1.5-pro",
     enableTools = true,
   } = options;
 
@@ -204,11 +197,11 @@ export async function* streamClaudeWithTools(
       thinkingManager = createThinkingManager({
         stepId: options.stepId,
         convexClient: options.convexClient,
-        provider: "anthropic",
+        provider: "google",
         model: model,
       });
     } catch (error) {
-      console.warn("Could not create thinking manager for Claude:", error);
+      console.warn("Could not create thinking manager for Gemini:", error);
     }
   }
 
@@ -256,22 +249,17 @@ This ensures mathematical content renders beautifully in the user interface.`,
             // Thinking updates are handled internally by the manager
           }
         } catch (error) {
-          console.error("Claude thinking simulation error:", error);
+          console.error("Gemini thinking simulation error:", error);
         }
       })();
     }
 
     const stream = await streamText({
-      model: anthropic(model),
+      model: google(model),
       messages: enhancedMessages as any,
       temperature,
       maxTokens,
-      tools: enableTools
-        ? {
-            web_search: webSearchTool,
-            analyze_file: analyzeFileTool,
-          }
-        : undefined,
+      tools: enableTools ? { web_search: webSearchTool } : undefined,
     });
 
     let fullContent = "";
@@ -327,9 +315,9 @@ This ensures mathematical content renders beautifully in the user interface.`,
         : undefined,
     };
   } catch (error) {
-    console.error("Claude enhanced streaming failed:", error);
+    console.error("Gemini enhanced streaming failed:", error);
     throw new Error(
-      `Claude enhanced streaming failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      `Gemini enhanced streaming failed: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   } finally {
     // Clean up thinking manager
@@ -339,14 +327,8 @@ This ensures mathematical content renders beautifully in the user interface.`,
   }
 }
 
-// Predefined tool sets for common use cases
-export const CLAUDE_TOOL_SETS = {
-  webSearch: { web_search: webSearchTool },
-  fileAnalysis: { analyze_file: analyzeFileTool },
-};
-
-// Helper function to process file uploads for Claude
-export function processFileForClaude(file: File): Promise<{
+// Helper function to process file uploads for Gemini
+export function processFileForGemini(file: File): Promise<{
   name: string;
   content: string;
   mimeType: string;
