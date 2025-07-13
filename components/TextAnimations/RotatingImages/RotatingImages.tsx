@@ -33,6 +33,10 @@ export interface ImageItem {
   component: React.ComponentType<{ size?: number; className?: string }>;
   className?: string;
   size?: number;
+  badge?: {
+    text: string;
+    className?: string;
+  };
 }
 
 export interface RotatingImagesProps
@@ -161,7 +165,7 @@ const RotatingImages = forwardRef<RotatingImagesRef, RotatingImagesProps>(
         >
           <motion.span
             key={currentImageIndex}
-            className="inline-flex items-center justify-center"
+            className="inline-flex items-center justify-center relative"
             layout
             initial={initial as any}
             animate={animate as any}
@@ -172,6 +176,16 @@ const RotatingImages = forwardRef<RotatingImagesRef, RotatingImagesProps>(
               size={currentImage.size || 24}
               className={cn(imageClassName, currentImage.className)}
             />
+            {currentImage.badge && (
+              <span
+                className={cn(
+                  "absolute -top-2 -right-2 bg-amber-500 text-black text-xs px-2 py-1 rounded-full font-semibold whitespace-nowrap shadow-lg",
+                  currentImage.badge.className
+                )}
+              >
+                {currentImage.badge.text}
+              </span>
+            )}
           </motion.span>
         </AnimatePresence>
       </motion.span>

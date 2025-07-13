@@ -53,7 +53,7 @@ import Beams from "@/components/Backgrounds/Beams/Beams";
 import StarBorder from "@/components/Animations/StarBorder/StarBorder";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
 import { FaGoogle } from "react-icons/fa";
-import { SiOpenai, SiClaude } from "react-icons/si";
+import { SiOpenai, SiClaude, SiPerplexity } from "react-icons/si";
 import { GrokIcon } from "@/lib/grok-icon";
 
 // Feature data structure matching welcome screen pattern
@@ -797,6 +797,14 @@ export default function LandingPage() {
                           size: 32,
                           className: "text-white",
                         },
+                        {
+                          component: SiPerplexity,
+                          size: 32,
+                          className: "text-white",
+                          badge: {
+                            text: "Coming Soon",
+                          },
+                        },
                       ]}
                       rotationInterval={1500}
                       mainClassName="inline-block lg:hidden"
@@ -824,6 +832,14 @@ export default function LandingPage() {
                           component: GrokIcon,
                           size: 48,
                           className: "text-white",
+                        },
+                        {
+                          component: SiPerplexity,
+                          size: 48,
+                          className: "text-white",
+                          badge: {
+                            text: "Coming Soon",
+                          },
                         },
                       ]}
                       rotationInterval={1500}
