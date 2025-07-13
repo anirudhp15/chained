@@ -557,9 +557,33 @@ export default function LandingPage() {
         className="min-h-screen bg-black relative overflow-hidden"
         style={{ overscrollBehavior: "none" }}
       >
-        {/* Beams Background */}
+        {/* Beams Background - Desktop: Static top/bottom, Mobile: Fixed sticky */}
+        {/* Desktop Top Beams */}
         <motion.div
-          className="absolute top-0 left-0 w-full h-screen z-5"
+          className="hidden lg:block absolute top-0 left-0 w-full h-screen z-5"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{
+            duration: 3,
+            delay: 0.5,
+            ease: "easeInOut",
+          }}
+        >
+          <Beams
+            beamWidth={2}
+            beamHeight={20}
+            beamNumber={20}
+            lightColor="#c4b5fd"
+            speed={5}
+            noiseIntensity={2}
+            scale={0.15}
+            rotation={20}
+          />
+        </motion.div>
+
+        {/* Mobile Sticky Beams */}
+        <motion.div
+          className="lg:hidden fixed inset-0 z-5"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{
@@ -743,13 +767,13 @@ export default function LandingPage() {
 
                 {/* Hero Title */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-                  <div className="flex flex-wrap justify-center items-center gap-2 lg:gap-4 lg:mb-2 text-2xl sm:text-4xl lg:text-5xl">
-                    <span>Prompt</span>
+                  <div className="flex flex-wrap justify-center items-center gap-3 lg:mb-2 text-2xl sm:text-4xl lg:text-5xl">
+                    <span>Sync and Queue</span>
 
                     <RotatingText
                       texts={["Claude", "ChatGPT", "Gemini", "Grok"]}
                       rotationInterval={1500}
-                      className="bg-lavender-600/20 hover:bg-lavender-600/30 text-lavender-400 border border-lavender-600/50 hover:border-lavender-600/10 px-2 rounded-lg"
+                      className="bg-lavender-600/20 hover:bg-lavender-600/30 text-lavender-400 border border-lavender-600/50 hover:border-lavender-600/10 px-2 rounded-lg font-semibold"
                       mainClassName="inline-block"
                       staggerFrom="last"
                       staggerDuration={0.025}
@@ -765,7 +789,7 @@ export default function LandingPage() {
                 <div className="text-lg sm:text-xl mb-8 max-w-4xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
                   <ShinyText
                     speed={3}
-                    text="The best LLMs, working together."
+                    text="The best LLMs, work best together."
                   />
                 </div>
 
@@ -1309,9 +1333,9 @@ export default function LandingPage() {
           </div>
         </footer>
 
-        {/* Bottom Beams Background */}
+        {/* Desktop Bottom Beams Background */}
         <motion.div
-          className="absolute bottom-0 left-0 w-full h-screen z-5"
+          className="hidden lg:block absolute bottom-0 left-0 w-full h-screen z-5"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{
@@ -1323,12 +1347,12 @@ export default function LandingPage() {
           <Beams
             beamWidth={2}
             beamHeight={20}
-            beamNumber={20}
+            beamNumber={15}
             lightColor="#c4b5fd"
-            speed={5}
+            speed={4}
             noiseIntensity={2}
-            scale={0.15}
-            rotation={-20}
+            scale={0.12}
+            rotation={-15}
           />
         </motion.div>
 
