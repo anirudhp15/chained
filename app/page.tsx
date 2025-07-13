@@ -52,9 +52,8 @@ import ShinyText from "@/components/TextAnimations/ShinyText/ShinyText";
 import Beams from "@/components/Backgrounds/Beams/Beams";
 import StarBorder from "@/components/Animations/StarBorder/StarBorder";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
-import { FaGoogle } from "react-icons/fa";
 import { SiOpenai, SiClaude, SiPerplexity } from "react-icons/si";
-import { DeepSeek } from "@lobehub/icons";
+import { DeepSeek, Gemini } from "@lobehub/icons";
 import { GrokIcon } from "@/lib/grok-icon";
 
 // Feature data structure matching welcome screen pattern
@@ -789,9 +788,9 @@ export default function LandingPage() {
                           className: "text-white",
                         },
                         {
-                          component: FaGoogle,
+                          component: Gemini.Color,
                           size: 32,
-                          className: "text-white",
+                          className: "",
                         },
                         {
                           component: GrokIcon,
@@ -833,9 +832,9 @@ export default function LandingPage() {
                           className: "text-white",
                         },
                         {
-                          component: FaGoogle,
+                          component: Gemini.Color,
                           size: 48,
-                          className: "text-white",
+                          className: "",
                         },
                         {
                           component: GrokIcon,
