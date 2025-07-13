@@ -47,10 +47,13 @@ import {
 } from "@/lib/analytics";
 import CardSwap, { Card } from "@/components/Components/CardSwap/CardSwap";
 import RotatingText from "@/components/TextAnimations/RotatingText/RotatingText";
+import RotatingImages from "@/components/TextAnimations/RotatingImages/RotatingImages";
 import ShinyText from "@/components/TextAnimations/ShinyText/ShinyText";
 import Beams from "@/components/Backgrounds/Beams/Beams";
 import StarBorder from "@/components/Animations/StarBorder/StarBorder";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
+import { SiOpenai, SiClaude, SiGoogle } from "react-icons/si";
+import { GrokIcon } from "@/lib/grok-icon";
 
 // Feature data structure matching welcome screen pattern
 interface FeatureDetail {
@@ -768,20 +771,38 @@ export default function LandingPage() {
                 {/* Hero Title */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
                   <div className="flex flex-wrap justify-center items-center gap-3 lg:mb-2 text-2xl sm:text-4xl lg:text-5xl">
-                    <span>Sync and Queue</span>
+                    <span>Use multiple AI models</span>
 
-                    <RotatingText
-                      texts={["Claude", "ChatGPT", "Gemini", "Grok"]}
+                    <RotatingImages
+                      images={[
+                        {
+                          component: SiClaude,
+                          size: 32,
+                          className: "text-[#da7756]",
+                        },
+                        {
+                          component: SiOpenai,
+                          size: 32,
+                          className: "text-white",
+                        },
+                        {
+                          component: SiGoogle,
+                          size: 32,
+                          className: "text-white",
+                        },
+                        {
+                          component: GrokIcon,
+                          size: 32,
+                          className: "text-white",
+                        },
+                      ]}
                       rotationInterval={1500}
-                      className="bg-lavender-600/20 hover:bg-lavender-600/30 text-lavender-400 border border-lavender-600/50 hover:border-lavender-600/10 px-2 rounded-lg font-semibold"
+                      className="bg-lavender-600/20 hover:bg-lavender-600/30 border border-lavender-600/50 hover:border-lavender-600/10 px-3 py-2 rounded-lg"
                       mainClassName="inline-block"
-                      staggerFrom="last"
-                      staggerDuration={0.025}
-                      splitLevelClassName="overflow-hidden"
                     />
                   </div>
                   <span className="text-lavender-400 text-3xl sm:text-5xl lg:text-6xl">
-                    in one workspace
+                    in one chat.
                   </span>
                 </h1>
 
@@ -807,7 +828,7 @@ export default function LandingPage() {
 
                   <button className="group lg:inline-flex hidden  items-center justify-center bg-gray-900/50 hover:bg-gray-800/50 text-white lg:px-8 lg:py-4 px-4 py-2 rounded-xl font-medium transition-all duration-300 border border-gray-700/50 hover:border-lavender-500/50 text-xs sm:text-sm lg:text-lg">
                     <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
-                    Watch Demo
+                    See what you can do
                   </button>
                 </div>
 
