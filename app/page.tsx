@@ -56,6 +56,15 @@ import { SiOpenai, SiClaude, SiPerplexity } from "react-icons/si";
 import { DeepSeek, Gemini } from "@lobehub/icons";
 import { GrokIcon } from "@/lib/grok-icon";
 
+// Wrapper component for Gemini.Color to work with RotatingImages
+const GeminiColorIcon = ({
+  size,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) => <Gemini.Color size={size} className={className} />;
+
 // Feature data structure matching welcome screen pattern
 interface FeatureDetail {
   id: string;
@@ -788,7 +797,7 @@ export default function LandingPage() {
                           className: "text-white",
                         },
                         {
-                          component: Gemini.Color,
+                          component: GeminiColorIcon,
                           size: 32,
                           className: "",
                         },
@@ -832,7 +841,7 @@ export default function LandingPage() {
                           className: "text-white",
                         },
                         {
-                          component: Gemini.Color,
+                          component: GeminiColorIcon,
                           size: 48,
                           className: "",
                         },
