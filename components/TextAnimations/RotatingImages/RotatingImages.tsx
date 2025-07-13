@@ -17,6 +17,7 @@ import {
   type Target,
   type TargetAndTransition,
 } from "framer-motion";
+import ShinyText from "../ShinyText/ShinyText";
 
 function cn(...classes: (string | undefined | null | boolean)[]): string {
   return classes.filter(Boolean).join(" ");
@@ -179,11 +180,11 @@ const RotatingImages = forwardRef<RotatingImagesRef, RotatingImagesProps>(
             {currentImage.badge && (
               <span
                 className={cn(
-                  "absolute -top-4 -right-16 bg-amber-500 text-black text-xs px-2 py-1 rounded-full font-semibold whitespace-nowrap shadow-lg",
+                  "absolute -top-4 -right-16 bg-gray-900/50 backdrop-blur-xl border-2 border-gray-700/50 text-white text-xs px-2 py-1 rounded-full font-semibold whitespace-nowrap shadow-lg",
                   currentImage.badge.className
                 )}
               >
-                {currentImage.badge.text}
+                <ShinyText text={currentImage.badge.text} speed={3} />
               </span>
             )}
           </motion.span>

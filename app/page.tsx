@@ -52,7 +52,8 @@ import ShinyText from "@/components/TextAnimations/ShinyText/ShinyText";
 import Beams from "@/components/Backgrounds/Beams/Beams";
 import StarBorder from "@/components/Animations/StarBorder/StarBorder";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
-import { SiOpenai, SiClaude, SiPerplexity } from "react-icons/si";
+import { SiOpenai, SiClaude, SiPerplexity, SiOllama } from "react-icons/si";
+import { FaMeta } from "react-icons/fa6";
 import { GrokIcon } from "@/lib/grok-icon";
 
 // Gemini PNG icon component
@@ -84,6 +85,42 @@ const DeepSeekColorIcon = ({
   <img
     src="/images/logos/deepseek-color.png"
     alt="DeepSeek"
+    width={size || 24}
+    height={size || 24}
+    className={className}
+    style={{ width: size || 24, height: size || 24 }}
+  />
+);
+
+// Mistral PNG icon component
+const MistralColorIcon = ({
+  size,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) => (
+  <img
+    src="/images/logos/mistral-color.png"
+    alt="Mistral"
+    width={size || 24}
+    height={size || 24}
+    className={className}
+    style={{ width: size || 24, height: size || 24 }}
+  />
+);
+
+// Qwen PNG icon component
+const QwenColorIcon = ({
+  size,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) => (
+  <img
+    src="/images/logos/qwen-color.png"
+    alt="Qwen"
     width={size || 24}
     height={size || 24}
     className={className}
@@ -808,7 +845,7 @@ export default function LandingPage() {
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
                   <div className="flex flex-wrap justify-center items-center gap-3 lg:mb-2 text-2xl sm:text-4xl lg:text-5xl">
                     <span className="flex items-center">
-                      Chain together AIs
+                      Chain AIs together
                     </span>
 
                     {/* Mobile Icons (32px) */}
@@ -844,6 +881,38 @@ export default function LandingPage() {
                         },
                         {
                           component: DeepSeekColorIcon,
+                          size: 32,
+                          className: "",
+                          badge: {
+                            text: "Coming Soon",
+                          },
+                        },
+                        {
+                          component: SiOllama,
+                          size: 32,
+                          className: "text-white",
+                          badge: {
+                            text: "Coming Soon",
+                          },
+                        },
+                        {
+                          component: FaMeta,
+                          size: 32,
+                          className: "text-white",
+                          badge: {
+                            text: "Coming Soon",
+                          },
+                        },
+                        {
+                          component: MistralColorIcon,
+                          size: 32,
+                          className: "",
+                          badge: {
+                            text: "Coming Soon",
+                          },
+                        },
+                        {
+                          component: QwenColorIcon,
                           size: 32,
                           className: "",
                           badge: {
@@ -888,6 +957,38 @@ export default function LandingPage() {
                         },
                         {
                           component: DeepSeekColorIcon,
+                          size: 48,
+                          className: "",
+                          badge: {
+                            text: "Coming Soon",
+                          },
+                        },
+                        {
+                          component: SiOllama,
+                          size: 48,
+                          className: "text-white",
+                          badge: {
+                            text: "Coming Soon",
+                          },
+                        },
+                        {
+                          component: FaMeta,
+                          size: 48,
+                          className: "text-white",
+                          badge: {
+                            text: "Coming Soon",
+                          },
+                        },
+                        {
+                          component: MistralColorIcon,
+                          size: 48,
+                          className: "",
+                          badge: {
+                            text: "Coming Soon",
+                          },
+                        },
+                        {
+                          component: QwenColorIcon,
                           size: 48,
                           className: "",
                           badge: {
