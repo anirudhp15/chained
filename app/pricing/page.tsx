@@ -11,7 +11,10 @@ import {
   Code,
   Link2,
   Unlink,
+  Linkedin,
+  Instagram,
 } from "lucide-react";
+import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { hasBetaAccess } from "@/lib/beta-access";
@@ -371,64 +374,6 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* Social Proof Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="mb-16 text-center"
-          >
-            <p className="text-gray-400 text-lg mb-8">
-              Trusted by developers at YC startups, Fortune 500s, and research
-              labs
-            </p>
-            <div className="flex items-center justify-center space-x-8 opacity-50">
-              <div className="text-gray-500 font-semibold">OpenAI</div>
-              <div className="text-gray-500 font-semibold">Anthropic</div>
-              <div className="text-gray-500 font-semibold">GitHub</div>
-              <div className="text-gray-500 font-semibold">Meta</div>
-            </div>
-          </motion.div>
-
-          {/* Value Props Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mb-16"
-          >
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-lavender-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-6 h-6 text-lavender-400" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Deploy in Minutes</h3>
-                <p className="text-gray-400">
-                  From prototype to production with our chain templates
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-lavender-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Code className="w-6 h-6 text-lavender-400" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Scale Infinitely</h3>
-                <p className="text-gray-400">
-                  Handle complex workflows with conditional logic and parallel
-                  execution
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-lavender-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Crown className="w-6 h-6 text-lavender-400" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Own Your Data</h3>
-                <p className="text-gray-400">
-                  Run on your infrastructure or ours, with full control
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
           {/* Pricing Cards */}
           <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Free Plan */}
@@ -609,33 +554,186 @@ export default function PricingPage() {
             </motion.div>
           </div>
 
-          {/* Bottom CTA */}
+          {/* Value Props Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="mt-16 text-center"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mt-20 mb-16"
           >
-            <h2 className="text-3xl font-bold mb-6">
-              Ready to 10x your workflow with AI agents?
-            </h2>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button
-                onClick={() => handleSubscribe("Free")}
-                className="px-8 py-3 bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-lavender-500/25"
-              >
-                Start Free
-              </button>
-              <button
-                onClick={() => handleSubscribe("Demo")}
-                className="px-8 py-3 border border-lavender-500/50 hover:border-lavender-500 text-lavender-400 hover:text-white rounded-lg font-medium transition-all duration-200 hover:bg-lavender-500/10"
-              >
-                Book Demo
-              </button>
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-lavender-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-6 h-6 text-lavender-400" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Deploy in Minutes</h3>
+                <p className="text-gray-400">
+                  From prototype to production with our chain templates
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-lavender-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Code className="w-6 h-6 text-lavender-400" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Scale Infinitely</h3>
+                <p className="text-gray-400">
+                  Handle complex workflows with conditional logic and parallel
+                  execution
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-lavender-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Crown className="w-6 h-6 text-lavender-400" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Own Your Data</h3>
+                <p className="text-gray-400">
+                  Run on your infrastructure or ours, with full control
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Social Proof Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="mb-16 text-center"
+          >
+            <p className="text-gray-400 text-lg mb-8">
+              Trusted by developers at YC startups, Fortune 500s, and research
+              labs
+            </p>
+            <div className="flex items-center justify-center space-x-8 opacity-50">
+              <div className="text-gray-500 font-semibold">OpenAI</div>
+              <div className="text-gray-500 font-semibold">Anthropic</div>
+              <div className="text-gray-500 font-semibold">GitHub</div>
+              <div className="text-gray-500 font-semibold">Meta</div>
             </div>
           </motion.div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="relative z-10 p-8 xl:p-16 xl:pb-8 bg-gradient-to-b mt-16 from-gray-950/80 to-transparent max-w-7xl mx-auto rounded-t-3xl  border border-x-0 lg:border-x border-gray-800/50 border-b-0">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="lg:col-span-2">
+              <Link href="/" className="flex items-center space-x-2 group mb-4">
+                <div className="relative group/logo">
+                  <Link2 className="h-6 w-6 text-lavender-400 group-hover/logo:hidden transition-all duration-200 group-hover:-rotate-45 block" />
+                  <Unlink className="h-6 w-6 text-lavender-400/80 group-hover/logo:text-lavender-400 transition-all duration-200 group-hover/logo:block hidden" />
+                </div>
+                <span className="text-xl font-semibold text-lavender-400 group-hover:text-white transition-colors duration-300">
+                  Ch<span className="text-lavender-400">ai</span>nedChat
+                </span>
+              </Link>
+            </div>
+
+            <div className="lg:text-right">
+              <h3 className="text-white font-bold mb-4">Product</h3>
+              <ul className="space-y-4 font-semibold text-gray-400 text-xs lg:text-sm">
+                <li>
+                  <Link
+                    href="/#features"
+                    className="hover:text-lavender-400 transition-colors duration-300"
+                  >
+                    Features
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/#demo"
+                    className="hover:text-lavender-400 transition-colors duration-300"
+                  >
+                    Demo
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/#workflow"
+                    className="hover:text-lavender-400 transition-colors duration-300"
+                  >
+                    Workflow
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/chat"
+                    className="hover:text-lavender-400 transition-colors duration-300"
+                  >
+                    Get Started
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div className="lg:text-right hidden lg:block">
+              <h3 className="text-white font-bold mb-4">Company</h3>
+              <ul className="space-y-4 font-semibold text-gray-400 text-xs lg:text-sm">
+                <li>
+                  <Link
+                    href="#about"
+                    className="hover:text-lavender-400 transition-colors duration-300"
+                  >
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="#contact"
+                    className="hover:text-lavender-400 transition-colors duration-300"
+                  >
+                    Contact
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="#privacy"
+                    className="hover:text-lavender-400 transition-colors duration-300"
+                  >
+                    Privacy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="#terms"
+                    className="hover:text-lavender-400 transition-colors duration-300"
+                  >
+                    Terms
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800/50 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center">
+            <p className="text-gray-400 text-sm">
+              © 2025 ChainedChat. All rights reserved.
+            </p>
+            <div className="flex space-x-4 mt-4 sm:mt-0">
+              <Link href="https://www.linkedin.com/company/chained-chat">
+                <Linkedin className="h-6 w-6 text-lavender-400" />
+              </Link>
+              <Link href="https://www.x.com/chainedchat">
+                <FaXTwitter className="h-6 w-6 text-lavender-400" />
+              </Link>
+              <Link href="https://www.instagram.com/chainedchat">
+                <Instagram className="h-6 w-6 text-lavender-400" />
+              </Link>
+              <Link href="https://www.youtube.com/@chainedchat">
+                <FaYoutube className="h-6 w-6 text-lavender-400" />
+              </Link>
+              <Link href="https://www.tiktok.com/@chainedchat">
+                <FaTiktok className="h-6 w-6 text-lavender-400" />
+              </Link>
+              <Link href="https://www.threads.net/@chainedchat">
+                <FaThreads className="h-6 w-6 text-lavender-400" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
