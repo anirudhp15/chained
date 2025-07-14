@@ -326,7 +326,7 @@ export default function PricingPage() {
 
       {/* Main Content */}
       <main className="relative z-10 px-4 pt-[calc(6rem+env(safe-area-inset-top))] pb-16 sm:pt-[calc(8rem+env(safe-area-inset-top))]">
-        <div className="max-w-6xl mx-auto text-center">
+        <div className="max-w-7xl mx-auto text-center">
           {/* Hero Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -372,13 +372,13 @@ export default function PricingPage() {
           </div>
 
           {/* Pricing Cards */}
-          <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Free Plan */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="bg-gray-900/50 border border-gray-700 rounded-2xl p-8 hover:border-gray-600 transition-all duration-300"
+              className="bg-gradient-to-br from-lavender-500/10 to-purple-500/5 border border-lavender-500/30 rounded-2xl p-8 hover:border-lavender-500/50 transition-all duration-300 backdrop-blur-sm"
             >
               <div className="text-left">
                 <h3 className="text-2xl font-bold mb-2">Free</h3>
@@ -393,7 +393,7 @@ export default function PricingPage() {
 
                 <button
                   onClick={() => handleSubscribe("Free")}
-                  className="w-full bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-lg font-medium transition-all duration-200 mb-8"
+                  className="w-full bg-gradient-to-r from-lavender-600/80 to-purple-600/80 hover:from-lavender-500 hover:to-purple-500 text-white py-3 rounded-lg font-medium transition-all duration-200 mb-8 shadow-lg hover:shadow-lavender-500/25"
                 >
                   Download for Mac
                 </button>
@@ -428,13 +428,8 @@ export default function PricingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-gray-900/50 border border-lavender-500 rounded-2xl p-8 relative overflow-hidden hover:border-lavender-400 transition-all duration-300"
+              className="bg-gradient-to-br from-lavender-500/10 to-purple-500/5 border border-lavender-500/30 rounded-2xl p-8 hover:border-lavender-500/50 transition-all duration-300 backdrop-blur-sm"
             >
-              {/* Popular Badge */}
-              <div className="absolute top-0 right-6 bg-gradient-to-r from-lavender-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-b-lg">
-                POPULAR
-              </div>
-
               <div className="text-left">
                 <h3 className="text-2xl font-bold mb-2 flex items-center">
                   Pro
@@ -442,9 +437,11 @@ export default function PricingPage() {
                 </h3>
                 <div className="mb-6">
                   <span className="text-4xl font-bold">
-                    ${selectedPlan === "monthly" ? "20" : "16"}
+                    ${selectedPlan === "monthly" ? "30" : "120"}
                   </span>
-                  <span className="text-gray-400">/mo</span>
+                  <span className="text-gray-400">
+                    {selectedPlan === "monthly" ? "/mo" : "/year"}
+                  </span>
                   {selectedPlan === "annually" && (
                     <span className="text-green-400 text-sm ml-2">
                       Save 20%
@@ -458,7 +455,7 @@ export default function PricingPage() {
 
                 <button
                   onClick={() => handleSubscribe("Pro")}
-                  className="w-full bg-lavender-600 hover:bg-lavender-700 text-white py-3 rounded-lg font-medium transition-all duration-200 mb-8"
+                  className="w-full bg-gradient-to-r from-lavender-600/80 to-purple-600/80 hover:from-lavender-500 hover:to-purple-500 text-white py-3 rounded-lg font-medium transition-all duration-200 mb-8 shadow-lg hover:shadow-lavender-500/25"
                 >
                   Subscribe
                 </button>
@@ -491,52 +488,58 @@ export default function PricingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="bg-gradient-to-br from-gray-900 to-black border border-gray-600 rounded-2xl p-8 hover:border-gray-500 transition-all duration-300"
+              className="bg-gradient-to-br from-black via-gray-950 to-slate-900 border border-slate-800/50 rounded-2xl p-8 hover:border-slate-700 transition-all duration-300 relative overflow-hidden shadow-2xl"
             >
-              <div className="text-left">
-                <h3 className="text-2xl font-bold mb-2 flex items-center">
-                  API
-                  <Code className="w-5 h-5 text-blue-400 ml-2" />
-                </h3>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">Custom</span>
+              {/* Subtle glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5 pointer-events-none"></div>
+              <div className="relative z-10">
+                <div className="text-left">
+                  <h3 className="text-2xl font-bold mb-2 flex items-center text-slate-100">
+                    API
+                    <Code className="w-5 h-5 text-slate-300 ml-2" />
+                  </h3>
+                  <div className="mb-6">
+                    <span className="text-4xl font-bold text-slate-200">
+                      Custom
+                    </span>
+                  </div>
+                  <p className="text-slate-400 mb-8">
+                    Specifically made for developers who need full customization
+                    and integration capabilities.
+                  </p>
+
+                  <Link
+                    href="/api-docs"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-gradient-to-r from-slate-800 via-gray-900 to-slate-800 hover:from-slate-700 hover:to-slate-700 border border-slate-700/50 hover:border-slate-600 text-white py-3 rounded-lg font-medium transition-all duration-200 mb-8 inline-block text-center shadow-lg hover:shadow-xl"
+                  >
+                    View Documentation
+                  </Link>
+
+                  <ul className="space-y-4 text-sm text-slate-300">
+                    <li className="flex items-center">
+                      <Check className="w-4 h-4 text-slate-400 mr-3 flex-shrink-0" />
+                      Admin dashboard with detailed usage analytics
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="w-4 h-4 text-slate-400 mr-3 flex-shrink-0" />
+                      Team-wide knowledge and system prompts
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="w-4 h-4 text-slate-400 mr-3 flex-shrink-0" />
+                      Post-call AI suggestions and coaching insights
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="w-4 h-4 text-slate-400 mr-3 flex-shrink-0" />
+                      Centralized team billing
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="w-4 h-4 text-slate-400 mr-3 flex-shrink-0" />
+                      Data privacy and advanced security
+                    </li>
+                  </ul>
                 </div>
-                <p className="text-gray-400 mb-8">
-                  Specifically made for developers who need full customization
-                  and integration capabilities.
-                </p>
-
-                <Link
-                  href="/api-docs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-all duration-200 mb-8 inline-block text-center"
-                >
-                  View Documentation
-                </Link>
-
-                <ul className="space-y-4 text-sm">
-                  <li className="flex items-center">
-                    <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    Admin dashboard with detailed usage analytics
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    Team-wide knowledge and system prompts
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    Post-call AI suggestions and coaching insights
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    Centralized team billing
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    Data privacy and advanced security
-                  </li>
-                </ul>
               </div>
             </motion.div>
           </div>
