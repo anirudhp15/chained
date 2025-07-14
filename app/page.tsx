@@ -695,7 +695,7 @@ export default function LandingPage() {
               </Link>
 
               {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center text-sm space-x-8">
+              <div className="hidden md:flex items-center text-sm space-x-8 font-semibold">
                 <Link
                   href="#features"
                   className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
@@ -1123,7 +1123,7 @@ export default function LandingPage() {
                       {/* Icon Container with Enhanced Glow */}
                       <div className="relative">
                         <div
-                          className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-r ${feature.gradient} bg-opacity-20 group-hover:scale-110 transition-all duration-300 relative overflow-hidden`}
+                          className={`w-12 h-12 rounded-lg flex items-center justify-center mb-6 bg-gradient-to-r ${feature.gradient} bg-opacity-20 group-hover:scale-110 transition-all duration-300 relative overflow-hidden`}
                         >
                           {/* Icon glow effect */}
                           <div
@@ -1453,8 +1453,8 @@ export default function LandingPage() {
               </div>
 
               <div className="lg:text-right">
-                <h3 className="text-white font-semibold mb-4">Product</h3>
-                <ul className="space-y-4 text-gray-400 text-xs lg:text-sm">
+                <h3 className="text-white font-bold mb-4">Product</h3>
+                <ul className="space-y-4 font-semibold text-gray-400 text-xs lg:text-sm">
                   <li>
                     <Link
                       href="#features"
@@ -1491,8 +1491,8 @@ export default function LandingPage() {
               </div>
 
               <div className="lg:text-right hidden lg:block">
-                <h3 className="text-white font-semibold mb-4">Company</h3>
-                <ul className="space-y-4 text-gray-400 text-xs lg:text-sm">
+                <h3 className="text-white font-bold mb-4">Company</h3>
+                <ul className="space-y-4 font-semibold text-gray-400 text-xs lg:text-sm">
                   <li>
                     <Link
                       href="#about"
