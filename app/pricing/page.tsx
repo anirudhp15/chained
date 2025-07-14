@@ -440,16 +440,11 @@ export default function PricingPage() {
                 </h3>
                 <div className="mb-6">
                   <span className="text-4xl font-bold">
-                    ${selectedPlan === "monthly" ? "25" : "250"}
+                    ${selectedPlan === "monthly" ? "30" : "120"}
                   </span>
                   <span className="text-gray-400">
                     {selectedPlan === "monthly" ? "/mo" : "/year"}
                   </span>
-                  {selectedPlan === "annually" && (
-                    <span className="text-green-400 text-sm ml-2">
-                      Save 17%
-                    </span>
-                  )}
                 </div>
                 <p className="text-gray-400 mb-8">
                   Full platform access for individuals and small teams building
@@ -562,10 +557,13 @@ export default function PricingPage() {
             transition={{ duration: 0.6, delay: 0.6 }}
             className="mt-20 mb-16"
           >
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-white">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-white mb-3">
                 Compare all features
               </h2>
+              <p className="text-gray-400 text-lg">
+                Detailed breakdown of what's included in each plan
+              </p>
             </div>
 
             {/* Desktop Table */}
@@ -573,17 +571,15 @@ export default function PricingPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gray-800/50 border-b border-gray-700/50">
-                      <th className="text-left p-6 text-white font-semibold">
-                        Features
-                      </th>
-                      <th className="text-center p-6 text-white font-semibold">
+                    <tr className="bg-gray-800/60 border-b border-gray-700/50">
+                      <th className="text-left p-5 text-white font-bold text-lg"></th>
+                      <th className="text-center p-5 text-white font-bold text-lg">
                         Free
                       </th>
-                      <th className="text-center p-6 text-white font-semibold">
+                      <th className="text-center p-5 text-white font-bold text-lg">
                         Pro
                       </th>
-                      <th className="text-center p-6 text-white font-semibold">
+                      <th className="text-center p-5 text-white font-bold text-lg">
                         Enterprise
                       </th>
                     </tr>
@@ -591,86 +587,116 @@ export default function PricingPage() {
                   <tbody>
                     {/* Core Features Section */}
                     <tr className="border-b border-gray-700/30">
-                      <td colSpan={4} className="p-4 bg-gray-800/30">
-                        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                      <td colSpan={4} className="p-5 bg-gray-800/40">
+                        <h3 className="text-base font-bold text-lavender-300 uppercase tracking-wide">
                           Core Features
                         </h3>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white text-left">
-                        Agent interactions per month
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Agent interactions per month
+                        </span>
                       </td>
-                      <td className="p-4 text-center text-lavender-400 font-semibold">
-                        50
+                      <td className="p-5 text-center">
+                        <span className="text-lavender-400 font-bold text-lg">
+                          50
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
                           <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white">Unlimited</span>
+                          <span className="text-white font-semibold">
+                            Unlimited
+                          </span>
                         </div>
                       </td>
-                      <td className="p-4 text-center text-cyan-400 font-semibold">
-                        Pay per use
+                      <td className="p-5 text-center">
+                        <span className="text-cyan-400 font-bold text-lg">
+                          Pay per use
+                        </span>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">Chain templates</td>
-                      <td className="p-4 text-center">
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Chain templates
+                        </span>
+                      </td>
+                      <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
                           <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white text-sm">Basic (3)</span>
+                          <span className="text-white font-medium">
+                            Basic (3)
+                          </span>
                         </div>
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
                           <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white text-sm">
+                          <span className="text-white font-medium">
                             Advanced (10+)
                           </span>
                         </div>
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
                           <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white text-sm">
+                          <span className="text-white font-medium">
                             Programmatic
                           </span>
                         </div>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">Workspace users</td>
-                      <td className="p-4 text-center text-lavender-400 font-semibold">
-                        1 user
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Workspace users
+                        </span>
                       </td>
-                      <td className="p-4 text-center text-lavender-400 font-semibold">
-                        Up to 5
+                      <td className="p-5 text-center">
+                        <span className="text-lavender-400 font-bold text-lg">
+                          1 user
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-5 text-center">
+                        <span className="text-lavender-400 font-bold text-lg">
+                          Up to 5
+                        </span>
+                      </td>
+                      <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
                           <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white">Team billing</span>
+                          <span className="text-white font-semibold">
+                            Team billing
+                          </span>
                         </div>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">Available models</td>
-                      <td className="p-4 text-center text-gray-400 text-sm">
-                        GPT-4, Claude Sonnet
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Available models
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-5 text-center">
+                        <span className="text-gray-400 font-medium">
+                          GPT-4, Claude Sonnet
+                        </span>
+                      </td>
+                      <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
                           <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white text-sm">
+                          <span className="text-white font-medium">
                             All latest models
                           </span>
                         </div>
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
                           <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white text-sm">
+                          <span className="text-white font-medium">
                             All models + custom
                           </span>
                         </div>
@@ -679,206 +705,262 @@ export default function PricingPage() {
 
                     {/* Advanced Features Section */}
                     <tr className="border-b border-gray-700/30">
-                      <td colSpan={4} className="p-4 bg-gray-800/30">
-                        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                      <td colSpan={4} className="p-5 bg-gray-800/40">
+                        <h3 className="text-base font-bold text-lavender-300 uppercase tracking-wide">
                           Advanced Features
                         </h3>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">
-                        Conditional logic chains
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Conditional logic chains
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
                       </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-4 h-4 text-green-500 mx-auto" />
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">Parallel execution</td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-4 h-4 text-green-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">Custom agent templates</td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Parallel execution
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-5 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-5 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Custom agent templates
+                        </span>
+                      </td>
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-5 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
-                          <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white text-sm">Via config</span>
+                          <Check className="w-5 h-5 text-green-500 mr-2" />
+                          <span className="text-white font-medium">
+                            Via config
+                          </span>
                         </div>
                       </td>
                     </tr>
 
                     {/* API-Specific Features Section */}
                     <tr className="border-b border-gray-700/30">
-                      <td colSpan={4} className="p-4 bg-gray-800/30">
-                        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                      <td colSpan={4} className="p-5 bg-gray-800/40">
+                        <h3 className="text-base font-bold text-lavender-300 uppercase tracking-wide">
                           API-Specific Features
                         </h3>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">REST API access</td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          REST API access
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
-                          <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white text-sm">
+                          <Check className="w-5 h-5 text-green-500 mr-2" />
+                          <span className="text-white font-medium">
                             Full access
                           </span>
                         </div>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">Python SDK</td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Python SDK
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
                       </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
                       </td>
-                    </tr>
-                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">TypeScript SDK</td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
-                      </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">Webhook support</td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          TypeScript SDK
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
                       </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-5 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">Rate limiting control</td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Webhook support
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-5 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Rate limiting control
+                        </span>
+                      </td>
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
-                          <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white text-sm">
+                          <Check className="w-5 h-5 text-green-500 mr-2" />
+                          <span className="text-white font-medium">
                             Custom limits
                           </span>
                         </div>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">Usage analytics API</td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Usage analytics API
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
                       </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-5 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
                     </tr>
 
                     {/* Support & Integration Section */}
                     <tr className="border-b border-gray-700/30">
-                      <td colSpan={4} className="p-4 bg-gray-800/30">
-                        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                      <td colSpan={4} className="p-5 bg-gray-800/40">
+                        <h3 className="text-base font-bold text-lavender-300 uppercase tracking-wide">
                           Support & Integration
                         </h3>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">Support level</td>
-                      <td className="p-4 text-center text-gray-400">
-                        Community
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Support level
+                        </span>
                       </td>
-                      <td className="p-4 text-center text-lavender-400">
-                        Email
+                      <td className="p-5 text-center">
+                        <span className="text-gray-400 font-medium">
+                          Community
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-5 text-center">
+                        <span className="text-lavender-400 font-bold">
+                          Email
+                        </span>
+                      </td>
+                      <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
-                          <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white text-sm">
+                          <Check className="w-5 h-5 text-green-500 mr-2" />
+                          <span className="text-white font-medium">
                             Priority + Slack
                           </span>
                         </div>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">Custom integrations</td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          Custom integrations
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
                       </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-5 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
                     </tr>
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">White-label options</td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          White-label options
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
                       </td>
-                      <td className="p-4 text-center">
-                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-5 text-center">
+                        <Check className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
                     </tr>
                     <tr className="hover:bg-gray-800/20 transition-colors">
-                      <td className="p-4 text-white">SLA guarantee</td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-left">
+                        <span className="text-white font-semibold text-base">
+                          SLA guarantee
+                        </span>
                       </td>
-                      <td className="p-4 text-center">
-                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-5 text-center">
+                        <X className="w-5 h-5 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
-                          <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white text-sm">99.9%</span>
+                          <Check className="w-5 h-5 text-green-500 mr-2" />
+                          <span className="text-white font-medium">99.9%</span>
                         </div>
                       </td>
                     </tr>
