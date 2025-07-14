@@ -20,6 +20,25 @@ import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { hasBetaAccess } from "@/lib/beta-access";
 import Beams from "@/components/Backgrounds/Beams/Beams";
+import { SiOpenai, SiAnthropic } from "react-icons/si";
+import { GrokIcon } from "@/lib/grok-icon";
+
+const GeminiColorIcon = ({
+  size,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) => (
+  <img
+    src="/images/logos/gemini-color.png"
+    alt="Gemini"
+    width={size || 24}
+    height={size || 24}
+    className={className}
+    style={{ width: size || 24, height: size || 24 }}
+  />
+);
 
 export default function PricingPage() {
   const [mounted, setMounted] = useState(false);
@@ -492,7 +511,7 @@ export default function PricingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="bg-gradient-to-br from-black via-gray-950 to-slate-900 border border-slate-800/50 rounded-2xl p-8 hover:border-slate-700 transition-all duration-300 relative overflow-hidden shadow-2xl"
+              className="bg-gradient-to-br from-black via-gray-950 to-slate-900 border border-slate-700/50 rounded-2xl p-8 hover:border-slate-700 transition-all duration-300 relative overflow-hidden shadow-2xl"
             >
               {/* Subtle glow effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5 pointer-events-none"></div>
@@ -571,7 +590,7 @@ export default function PricingPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gray-800/60 border-b border-gray-700/50">
+                    <tr className=" border-b border-gray-700/50">
                       <th className="text-left p-5 text-white font-bold text-lg"></th>
                       <th className="text-center p-5 text-white font-bold text-lg">
                         Free
@@ -588,7 +607,7 @@ export default function PricingPage() {
                     {/* Core Features Section */}
                     <tr className="border-b border-gray-700/30">
                       <td colSpan={4} className="p-5 bg-gray-800/40">
-                        <h3 className="text-base font-bold text-lavender-300 uppercase tracking-wide">
+                        <h3 className="text-base font-bold text-lavender-400 uppercase tracking-wide">
                           Core Features
                         </h3>
                       </td>
@@ -636,44 +655,18 @@ export default function PricingPage() {
                         <div className="flex items-center justify-center">
                           <Check className="w-4 h-4 text-green-500 mr-2" />
                           <span className="text-white font-medium">
-                            Advanced (10+)
+                            Unlimited
                           </span>
                         </div>
                       </td>
                       <td className="p-5 text-center">
                         <div className="flex items-center justify-center">
                           <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white font-medium">
-                            Programmatic
-                          </span>
+                          <span className="text-white font-medium">JSON</span>
                         </div>
                       </td>
                     </tr>
-                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
-                      <td className="p-5 text-left">
-                        <span className="text-white font-semibold text-base">
-                          Workspace users
-                        </span>
-                      </td>
-                      <td className="p-5 text-center">
-                        <span className="text-lavender-400 font-bold text-lg">
-                          1 user
-                        </span>
-                      </td>
-                      <td className="p-5 text-center">
-                        <span className="text-lavender-400 font-bold text-lg">
-                          Up to 5
-                        </span>
-                      </td>
-                      <td className="p-5 text-center">
-                        <div className="flex items-center justify-center">
-                          <Check className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-white font-semibold">
-                            Team billing
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
+
                     <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
                       <td className="p-5 text-left">
                         <span className="text-white font-semibold text-base">
@@ -681,8 +674,11 @@ export default function PricingPage() {
                         </span>
                       </td>
                       <td className="p-5 text-center">
-                        <span className="text-gray-400 font-medium">
-                          GPT-4, Claude Sonnet
+                        <span className="text-white font-medium flex items-center justify-center gap-2">
+                          <SiOpenai className="w-6 h-6" />
+                          <SiAnthropic className="w-6 h-6" />
+                          <GrokIcon className="w-6 h-6" />
+                          <GeminiColorIcon className="w-6 h-6" />
                         </span>
                       </td>
                       <td className="p-5 text-center">
@@ -706,7 +702,7 @@ export default function PricingPage() {
                     {/* Advanced Features Section */}
                     <tr className="border-b border-gray-700/30">
                       <td colSpan={4} className="p-5 bg-gray-800/40">
-                        <h3 className="text-base font-bold text-lavender-300 uppercase tracking-wide">
+                        <h3 className="text-base font-bold text-lavender-400 uppercase tracking-wide">
                           Advanced Features
                         </h3>
                       </td>
@@ -768,7 +764,7 @@ export default function PricingPage() {
                     {/* API-Specific Features Section */}
                     <tr className="border-b border-gray-700/30">
                       <td colSpan={4} className="p-5 bg-gray-800/40">
-                        <h3 className="text-base font-bold text-lavender-300 uppercase tracking-wide">
+                        <h3 className="text-base font-bold text-lavender-400 uppercase tracking-wide">
                           API-Specific Features
                         </h3>
                       </td>
@@ -883,7 +879,7 @@ export default function PricingPage() {
                     {/* Support & Integration Section */}
                     <tr className="border-b border-gray-700/30">
                       <td colSpan={4} className="p-5 bg-gray-800/40">
-                        <h3 className="text-base font-bold text-lavender-300 uppercase tracking-wide">
+                        <h3 className="text-base font-bold text-lavender-400 uppercase tracking-wide">
                           Support & Integration
                         </h3>
                       </td>
