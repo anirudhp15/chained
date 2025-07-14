@@ -830,7 +830,7 @@ export default function LandingPage() {
         )}
 
         {/* Hero Section */}
-        <main className="relative z-10 px-4 sm:px-6 pt-[calc(6rem+env(safe-area-inset-top))] pb-24 sm:pt-[calc(8rem+env(safe-area-inset-top))] sm:pb-32">
+        <main className="relative z-10 px-2 pt-[calc(6rem+env(safe-area-inset-top))] pb-24 sm:pt-[calc(8rem+env(safe-area-inset-top))] sm:pb-32">
           <div className="max-w-8xl mx-auto">
             <div className="text-center max-w-7xl mx-auto">
               <div className="flex flex-col items-center justify-center">
@@ -843,7 +843,7 @@ export default function LandingPage() {
 
                 {/* Hero Title */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-                  <div className="flex flex-wrap justify-center items-center gap-3 lg:mb-2 text-xl sm:text-4xl lg:text-5xl">
+                  <div className="flex flex-wrap justify-center items-center gap-4 lg:mb-2 text-3xl sm:text-4xl lg:text-6xl">
                     <span className="flex items-center">
                       Chain AIs together
                     </span>
@@ -876,7 +876,7 @@ export default function LandingPage() {
                           size: 32,
                           className: "text-white",
                           badge: {
-                            text: "Coming Soon",
+                            text: "TBA",
                           },
                         },
                         {
@@ -884,7 +884,7 @@ export default function LandingPage() {
                           size: 32,
                           className: "",
                           badge: {
-                            text: "Coming Soon",
+                            text: "TBA",
                           },
                         },
                         {
@@ -892,7 +892,7 @@ export default function LandingPage() {
                           size: 32,
                           className: "text-white",
                           badge: {
-                            text: "Coming Soon",
+                            text: "TBA",
                           },
                         },
                         {
@@ -900,7 +900,7 @@ export default function LandingPage() {
                           size: 32,
                           className: "text-white",
                           badge: {
-                            text: "Coming Soon",
+                            text: "TBA",
                           },
                         },
                         {
@@ -908,15 +908,7 @@ export default function LandingPage() {
                           size: 32,
                           className: "",
                           badge: {
-                            text: "Coming Soon",
-                          },
-                        },
-                        {
-                          component: QwenColorIcon,
-                          size: 32,
-                          className: "",
-                          badge: {
-                            text: "Coming Soon",
+                            text: "TBA",
                           },
                         },
                       ]}
@@ -987,20 +979,12 @@ export default function LandingPage() {
                             text: "Coming Soon",
                           },
                         },
-                        {
-                          component: QwenColorIcon,
-                          size: 48,
-                          className: "",
-                          badge: {
-                            text: "Coming Soon",
-                          },
-                        },
                       ]}
                       rotationInterval={1500}
                       mainClassName="hidden lg:inline-block"
                     />
                   </div>
-                  <span className="text-lavender-400 text-3xl sm:text-5xl lg:text-6xl">
+                  <span className="text-lavender-400 text-3xl sm:text-5xl lg:text-7xl">
                     in one chat.
                   </span>
                 </h1>
@@ -1080,7 +1064,7 @@ export default function LandingPage() {
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
                 Powerful Features
               </h2>
-              <div className="text-lg sm:text-xl max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+              <div className="text-lg sm:text-xl max-w-3xl mx-auto animate-in font-semibold fade-in slide-in-from-bottom-8 duration-700 delay-200">
                 <ShinyText
                   text="Everything you need to easily build sophisticated AI workflows."
                   speed={3}
