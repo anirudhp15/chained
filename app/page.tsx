@@ -717,6 +717,15 @@ export default function LandingPage() {
                   Workflow
                   <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
                 </Link>
+                <Link
+                  href="/pricing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
+                >
+                  Pricing
+                  <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
+                </Link>
               </div>
 
               <div className="flex items-center space-x-4">
@@ -806,6 +815,15 @@ export default function LandingPage() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Workflow
+              </Link>
+              <Link
+                href="/pricing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-black text-4xl font-bold hover:text-gray-800 transition-colors duration-200"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Pricing
               </Link>
               <button
                 onClick={() => {
