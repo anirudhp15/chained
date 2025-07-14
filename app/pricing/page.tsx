@@ -15,6 +15,7 @@ import {
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { hasBetaAccess } from "@/lib/beta-access";
+import Beams from "@/components/Backgrounds/Beams/Beams";
 
 export default function PricingPage() {
   const [mounted, setMounted] = useState(false);
@@ -95,7 +96,54 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Beams Background - Desktop: Static top, Mobile: Fixed sticky */}
+      {/* Desktop Top Beams */}
+      <motion.div
+        className="hidden lg:block absolute top-0 left-0 w-full h-screen z-5"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{
+          duration: 3,
+          delay: 0.5,
+          ease: "easeInOut",
+        }}
+      >
+        <Beams
+          beamWidth={2}
+          beamHeight={20}
+          beamNumber={20}
+          lightColor="#c4b5fd"
+          speed={5}
+          noiseIntensity={2}
+          scale={0.15}
+          rotation={20}
+        />
+      </motion.div>
+
+      {/* Mobile Sticky Beams */}
+      <motion.div
+        className="lg:hidden fixed inset-0 z-5"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{
+          duration: 3,
+          delay: 0.5,
+          ease: "easeInOut",
+        }}
+      >
+        <Beams
+          beamWidth={2}
+          beamHeight={20}
+          beamNumber={20}
+          lightColor="#c4b5fd"
+          speed={5}
+          noiseIntensity={2}
+          scale={0.15}
+          rotation={20}
+        />
+      </motion.div>
+
       {/* Success Message */}
       {showSuccessMessage && (
         <motion.div
@@ -172,9 +220,9 @@ export default function PricingPage() {
                 </button>
               </motion.div>
 
-              <div className="text-xs text-gray-500 bg-gray-900 px-3 py-1 rounded-full">
+              {/* <div className="text-xs text-gray-500 bg-gray-900 px-3 py-1 rounded-full">
                 DEV ONLY
-              </div>
+              </div> */}
 
               {/* Beta Access Bypass for users who already have validated codes */}
               {!hasAccess && !isSignedIn && (
@@ -284,14 +332,14 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="mb-16"
+            className="mb-16 font-bold"
           >
             <h1 className="text-5xl lg:text-6xl font-bold mb-6">
               Start for free.
               <br />
               <span className="text-lavender-400">Get used to winning.</span>
             </h1>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            <p className="text-xl font-semibold text-gray-400 max-w-2xl mx-auto">
               Whether you're using ChainedChat for research, writing, creative
               work, or just curious, it's always free to start.
             </p>
