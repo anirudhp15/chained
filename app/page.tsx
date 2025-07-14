@@ -697,13 +697,6 @@ export default function LandingPage() {
               {/* Desktop Navigation */}
               <div className="hidden md:flex items-center text-sm space-x-8 font-semibold">
                 <Link
-                  href="#features"
-                  className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
-                >
-                  Features
-                  <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
-                </Link>
-                <Link
                   href="#demo"
                   className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
                 >
@@ -711,10 +704,10 @@ export default function LandingPage() {
                   <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
                 </Link>
                 <Link
-                  href="#workflow"
+                  href="/features"
                   className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
                 >
-                  Workflow
+                  Features
                   <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
                 </Link>
                 <Link
@@ -794,7 +787,7 @@ export default function LandingPage() {
 
             <div className="flex flex-col items-center space-y-12">
               <Link
-                href="#features"
+                href="/features"
                 className="text-black text-4xl font-bold hover:text-gray-800 transition-colors duration-200"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -850,7 +843,7 @@ export default function LandingPage() {
               <div className="flex flex-col items-center justify-center">
                 {/* Hero Badge */}
                 <div className="inline-flex text-xs items-center lg:px-4 lg:py-2 px-2 py-1 rounded-full bg-gray-900/50 border border-gray-700/50  text-gray-300 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                  <Sparkles className="h-4 w-4 text-lavender-400 mr-2" />
+                  <Unlink className="h-4 w-4 text-lavender-400 mr-2" />
                   <ShinyText text="Beta Live Now" speed={3} />
                   <div className="ml-2 w-2 h-2 bg-lavender-400 rounded-full animate-pulse"></div>
                 </div>
@@ -858,10 +851,7 @@ export default function LandingPage() {
                 {/* Hero Title */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
                   <div className="flex flex-wrap justify-center items-center gap-4 lg:mb-2 text-3xl sm:text-4xl lg:text-6xl">
-                    <span className="flex items-center">
-                      Chain AIs together
-                    </span>
-
+                    <span className="flex items-center">Chain</span>
                     {/* Mobile Icons (32px) */}
                     <RotatingImages
                       images={[
@@ -935,27 +925,27 @@ export default function LandingPage() {
                       images={[
                         {
                           component: SiClaude,
-                          size: 48,
+                          size: 56,
                           className: "text-[#da7756]",
                         },
                         {
                           component: SiOpenai,
-                          size: 48,
+                          size: 56,
                           className: "text-white",
                         },
                         {
                           component: GeminiColorIcon,
-                          size: 48,
+                          size: 56,
                           className: "",
                         },
                         {
                           component: GrokIcon,
-                          size: 48,
+                          size: 56,
                           className: "text-white",
                         },
                         {
                           component: SiPerplexity,
-                          size: 48,
+                          size: 56,
                           className: "text-white",
                           badge: {
                             text: "Coming Soon",
@@ -963,7 +953,7 @@ export default function LandingPage() {
                         },
                         {
                           component: DeepSeekColorIcon,
-                          size: 48,
+                          size: 56,
                           className: "",
                           badge: {
                             text: "Coming Soon",
@@ -971,7 +961,7 @@ export default function LandingPage() {
                         },
                         {
                           component: SiOllama,
-                          size: 48,
+                          size: 56,
                           className: "text-white",
                           badge: {
                             text: "Coming Soon",
@@ -979,7 +969,7 @@ export default function LandingPage() {
                         },
                         {
                           component: FaMeta,
-                          size: 48,
+                          size: 56,
                           className: "text-white",
                           badge: {
                             text: "Coming Soon",
@@ -987,7 +977,7 @@ export default function LandingPage() {
                         },
                         {
                           component: MistralColorIcon,
-                          size: 48,
+                          size: 56,
                           className: "",
                           badge: {
                             text: "Coming Soon",
@@ -997,7 +987,8 @@ export default function LandingPage() {
                       rotationInterval={1500}
                       mainClassName="hidden lg:inline-block"
                     />
-                  </div>
+                    <span className="">together</span>
+                  </div>{" "}
                   <span className="text-lavender-400 text-3xl sm:text-5xl lg:text-7xl">
                     in one chat.
                   </span>
@@ -1083,7 +1074,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 rounded-3xl overflow-hidden border border-gray-700/50">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 rounded-3xl overflow-hidden border-4 border-lavender-400/20">
               {FEATURE_DETAILS.map((feature, index) => {
                 // Define corner positions for responsive grids
                 const getCornerClasses = (idx: number) => {
@@ -1109,7 +1100,7 @@ export default function LandingPage() {
                 return (
                   <div
                     key={feature.id}
-                    className={`group relative bg-gray-900/30 backdrop-blur-2xl border-r border-b border-gray-700/50 last:border-r-0 p-6 lg:p-8 hover:border-lavender-500/50 hover:z-10 transition-all duration-500 hover:bg-gray-900/50 cursor-pointer overflow-hidden animate-in fade-in slide-in-from-bottom-8 ${feature.delay}${getCornerClasses(index)}`}
+                    className={`group relative bg-gray-900/30 backdrop-blur-2xl border-r-4 border-b-4 border-lavender-400/20 last:border-r-0 p-6 lg:p-8 hover:z-10 transition-all duration-500 hover:bg-gray-900/50 cursor-pointer overflow-hidden animate-in fade-in slide-in-from-bottom-8 ${feature.delay}${getCornerClasses(index)}`}
                   >
                     {/* Enhanced Background Glow Effect */}
                     <div className="absolute inset-0  bg-gradient-to-br from-lavender-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -1471,7 +1462,7 @@ export default function LandingPage() {
                 <ul className="space-y-4 font-semibold text-gray-400 text-xs lg:text-sm">
                   <li>
                     <Link
-                      href="#features"
+                      href="/features"
                       className="hover:text-lavender-400 transition-colors duration-300"
                     >
                       Features

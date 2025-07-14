@@ -199,13 +199,6 @@ export default function PricingPage() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center text-sm space-x-8 font-semibold">
               <Link
-                href="/#features"
-                className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
-              >
-                Features
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
-              </Link>
-              <Link
                 href="/#demo"
                 className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
               >
@@ -213,12 +206,13 @@ export default function PricingPage() {
                 <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
               </Link>
               <Link
-                href="/#workflow"
+                href="/features"
                 className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
               >
-                Workflow
+                Features
                 <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-lavender-400 group-hover:w-full transition-all duration-300"></div>
               </Link>
+
               <Link
                 href="/pricing"
                 className="text-lavender-400 hover:text-white transition-all duration-300 relative group"
@@ -298,7 +292,7 @@ export default function PricingPage() {
 
           <div className="flex flex-col items-center space-y-12">
             <Link
-              href="/#features"
+              href="/features"
               className="text-black text-4xl font-bold hover:text-gray-800 transition-colors duration-200"
               onClick={() => setIsMenuOpen(false)}
             >
@@ -360,7 +354,9 @@ export default function PricingPage() {
             <h1 className="text-5xl lg:text-6xl font-bold mb-6">
               Build with AI agents that
               <br />
-              <span className="text-lavender-400">actually work together.</span>
+              <span className="text-lavender-400 text-6xl lg:text-7xl">
+                actually work together.
+              </span>
             </h1>
             <p className="text-xl font-semibold text-gray-400 max-w-3xl mx-auto">
               Deploy multi-agent workflows in production. Research faster, code
@@ -1088,7 +1084,7 @@ export default function PricingPage() {
               <ul className="space-y-4 font-semibold text-gray-400 text-xs lg:text-sm">
                 <li>
                   <Link
-                    href="/#features"
+                    href="/features"
                     className="hover:text-lavender-400 transition-colors duration-300"
                   >
                     Features
