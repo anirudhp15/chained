@@ -719,8 +719,6 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   href="/pricing"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="text-gray-400 hover:text-lavender-400 transition-all duration-300 relative group"
                 >
                   Pricing
@@ -818,8 +816,6 @@ export default function LandingPage() {
               </Link>
               <Link
                 href="/pricing"
-                target="_blank"
-                rel="noopener noreferrer"
                 className="text-black text-4xl font-bold hover:text-gray-800 transition-colors duration-200"
                 onClick={() => setIsMenuOpen(false)}
               >
