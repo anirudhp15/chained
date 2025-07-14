@@ -13,6 +13,7 @@ import {
   Unlink,
   Linkedin,
   Instagram,
+  X,
 } from "lucide-react";
 import { FaTiktok, FaXTwitter, FaYoutube, FaThreads } from "react-icons/fa6";
 import { useAuth } from "@clerk/nextjs";
@@ -124,7 +125,7 @@ export default function PricingPage() {
         />
       </motion.div>
 
-      {/* Mobile Sticky Beams */}
+      {/* Mobile Single Fixed Beam */}
       <motion.div
         className="lg:hidden fixed inset-0 z-5"
         initial={{ opacity: 0 }}
@@ -138,7 +139,7 @@ export default function PricingPage() {
         <Beams
           beamWidth={2}
           beamHeight={20}
-          beamNumber={20}
+          beamNumber={1}
           lightColor="#c4b5fd"
           speed={5}
           noiseIntensity={2}
@@ -554,61 +555,435 @@ export default function PricingPage() {
             </motion.div>
           </div>
 
-          {/* Value Props Section */}
+          {/* Feature Comparison Table */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
             className="mt-20 mb-16"
           >
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-lavender-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-6 h-6 text-lavender-400" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Deploy in Minutes</h3>
-                <p className="text-gray-400">
-                  From prototype to production with our chain templates
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-lavender-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Code className="w-6 h-6 text-lavender-400" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Scale Infinitely</h3>
-                <p className="text-gray-400">
-                  Handle complex workflows with conditional logic and parallel
-                  execution
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-lavender-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Crown className="w-6 h-6 text-lavender-400" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Own Your Data</h3>
-                <p className="text-gray-400">
-                  Run on your infrastructure or ours, with full control
-                </p>
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-white">
+                Compare all features
+              </h2>
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden md:block bg-gray-900/30 backdrop-blur-2xl border border-gray-700/50 rounded-2xl overflow-hidden max-w-6xl mx-auto">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-800/50 border-b border-gray-700/50">
+                      <th className="text-left p-6 text-white font-semibold">
+                        Features
+                      </th>
+                      <th className="text-center p-6 text-white font-semibold">
+                        Free
+                      </th>
+                      <th className="text-center p-6 text-white font-semibold">
+                        Pro
+                      </th>
+                      <th className="text-center p-6 text-white font-semibold">
+                        Enterprise
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* Core Features Section */}
+                    <tr className="border-b border-gray-700/30">
+                      <td colSpan={4} className="p-4 bg-gray-800/30">
+                        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                          Core Features
+                        </h3>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white text-left">
+                        Agent interactions per month
+                      </td>
+                      <td className="p-4 text-center text-lavender-400 font-semibold">
+                        50
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-white">Unlimited</span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-center text-cyan-400 font-semibold">
+                        Pay per use
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">Chain templates</td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-white text-sm">Basic (3)</span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-white text-sm">
+                            Advanced (10+)
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-white text-sm">
+                            Programmatic
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">Workspace users</td>
+                      <td className="p-4 text-center text-lavender-400 font-semibold">
+                        1 user
+                      </td>
+                      <td className="p-4 text-center text-lavender-400 font-semibold">
+                        Up to 5
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-white">Team billing</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">Available models</td>
+                      <td className="p-4 text-center text-gray-400 text-sm">
+                        GPT-4, Claude Sonnet
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-white text-sm">
+                            All latest models
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-white text-sm">
+                            All models + custom
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Advanced Features Section */}
+                    <tr className="border-b border-gray-700/30">
+                      <td colSpan={4} className="p-4 bg-gray-800/30">
+                        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                          Advanced Features
+                        </h3>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">
+                        Conditional logic chains
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">Parallel execution</td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">Custom agent templates</td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-white text-sm">Via config</span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* API-Specific Features Section */}
+                    <tr className="border-b border-gray-700/30">
+                      <td colSpan={4} className="p-4 bg-gray-800/30">
+                        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                          API-Specific Features
+                        </h3>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">REST API access</td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-white text-sm">
+                            Full access
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">Python SDK</td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">TypeScript SDK</td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">Webhook support</td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">Rate limiting control</td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-white text-sm">
+                            Custom limits
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">Usage analytics API</td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+
+                    {/* Support & Integration Section */}
+                    <tr className="border-b border-gray-700/30">
+                      <td colSpan={4} className="p-4 bg-gray-800/30">
+                        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+                          Support & Integration
+                        </h3>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">Support level</td>
+                      <td className="p-4 text-center text-gray-400">
+                        Community
+                      </td>
+                      <td className="p-4 text-center text-lavender-400">
+                        Email
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-white text-sm">
+                            Priority + Slack
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">Custom integrations</td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-700/20 hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">White-label options</td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Check className="w-4 h-4 text-green-500 mx-auto" />
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-800/20 transition-colors">
+                      <td className="p-4 text-white">SLA guarantee</td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <X className="w-4 h-4 text-red-500 mx-auto" />
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-white text-sm">99.9%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
-          </motion.div>
 
-          {/* Social Proof Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="mb-16 text-center"
-          >
-            <p className="text-gray-400 text-lg mb-8">
-              Trusted by developers at YC startups, Fortune 500s, and research
-              labs
-            </p>
-            <div className="flex items-center justify-center space-x-8 opacity-50">
-              <div className="text-gray-500 font-semibold">OpenAI</div>
-              <div className="text-gray-500 font-semibold">Anthropic</div>
-              <div className="text-gray-500 font-semibold">GitHub</div>
-              <div className="text-gray-500 font-semibold">Meta</div>
+            {/* Mobile Card Layout */}
+            <div className="md:hidden space-y-6">
+              {/* Free Plan Card */}
+              <div className="bg-gradient-to-br from-lavender-500/10 to-purple-500/5 border border-lavender-500/30 rounded-2xl p-6">
+                <h3 className="text-xl font-bold text-white mb-6 text-center">
+                  Free Plan
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Agent interactions</span>
+                    <span className="text-lavender-400 font-semibold">
+                      50/month
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Chain templates</span>
+                    <div className="flex items-center">
+                      <Check className="w-4 h-4 text-green-500 mr-1" />
+                      <span className="text-white text-sm">Basic (3)</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Workspace users</span>
+                    <span className="text-lavender-400">1 user</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Support</span>
+                    <span className="text-gray-400">Community</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pro Plan Card */}
+              <div className="bg-gradient-to-br from-lavender-500/10 to-purple-500/5 border border-lavender-500/30 rounded-2xl p-6">
+                <h3 className="text-xl font-bold text-white mb-6 text-center">
+                  Pro Plan
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Agent interactions</span>
+                    <div className="flex items-center">
+                      <Check className="w-4 h-4 text-green-500 mr-1" />
+                      <span className="text-white">Unlimited</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Chain templates</span>
+                    <div className="flex items-center">
+                      <Check className="w-4 h-4 text-green-500 mr-1" />
+                      <span className="text-white text-sm">Advanced (10+)</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Workspace users</span>
+                    <span className="text-lavender-400">Up to 5</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Support</span>
+                    <span className="text-lavender-400">Email</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Enterprise Plan Card */}
+              <div className="bg-gradient-to-br from-black via-gray-950 to-slate-900 border border-slate-800/50 rounded-2xl p-6">
+                <h3 className="text-xl font-bold text-slate-100 mb-6 text-center">
+                  Enterprise Plan
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Agent interactions</span>
+                    <span className="text-cyan-400">Pay per use</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">API Access</span>
+                    <div className="flex items-center">
+                      <Check className="w-4 h-4 text-green-500 mr-1" />
+                      <span className="text-slate-100 text-sm">
+                        Full REST API
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Team billing</span>
+                    <Check className="w-4 h-4 text-green-500" />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Support</span>
+                    <div className="flex items-center">
+                      <Check className="w-4 h-4 text-green-500 mr-1" />
+                      <span className="text-slate-100 text-sm">
+                        Priority + Slack
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>
@@ -734,6 +1109,29 @@ export default function PricingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Desktop Bottom Beams Background */}
+      <motion.div
+        className="hidden lg:block absolute bottom-0 left-0 w-full h-screen z-5"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{
+          duration: 3,
+          delay: 1,
+          ease: "easeInOut",
+        }}
+      >
+        <Beams
+          beamWidth={2}
+          beamHeight={20}
+          beamNumber={15}
+          lightColor="#c4b5fd"
+          speed={4}
+          noiseIntensity={2}
+          scale={0.12}
+          rotation={-15}
+        />
+      </motion.div>
     </div>
   );
 }
