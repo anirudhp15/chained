@@ -1055,10 +1055,7 @@ export default function LandingPage() {
         </main>
 
         {/* Features Section */}
-        <section
-          id="features"
-          className="relative z-10 px-4 sm:px-6 py-32 sm:py-40"
-        >
+        <section id="features" className="relative z-10 px-2 py-32 sm:py-40">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
@@ -1072,62 +1069,85 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4">
-              {FEATURE_DETAILS.map((feature, index) => (
-                <div
-                  key={feature.id}
-                  className={`group relative bg-gray-900/30 backdrop-blur-2xl border border-gray-700/50 rounded-2xl p-6 lg:p-8 hover:border-lavender-500/50 transition-all duration-500 hover:bg-gray-900/50 cursor-pointer overflow-hidden animate-in fade-in slide-in-from-bottom-8 ${feature.delay}`}
-                >
-                  {/* Enhanced Background Glow Effect */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-lavender-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 rounded-3xl overflow-hidden border border-gray-700/50">
+              {FEATURE_DETAILS.map((feature, index) => {
+                // Define corner positions for responsive grids
+                const getCornerClasses = (idx: number) => {
+                  let classes = "";
+
+                  // Top corners
+                  if (idx === 0)
+                    classes += " sm:rounded-tl-3xl lg:rounded-tl-3xl";
+                  if (idx === 1)
+                    classes += " sm:rounded-tr-3xl lg:rounded-none";
+                  if (idx === 2) classes += " lg:rounded-tr-3xl";
+
+                  // Bottom corners
+                  if (idx === 3) classes += " lg:rounded-bl-3xl";
+                  if (idx === 4)
+                    classes += " sm:rounded-bl-3xl lg:rounded-none";
+                  if (idx === 5)
+                    classes += " sm:rounded-br-3xl lg:rounded-br-3xl";
+
+                  return classes;
+                };
+
+                return (
                   <div
-                    className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-[0.03] transition-opacity duration-500`}
-                  />
-
-                  {/* Animated border glow */}
-                  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <div
-                      className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${feature.gradient} opacity-20 blur-sm animate-pulse`}
-                    />
-                  </div>
-
-                  {/* Eye Button */}
-                  <button
-                    onClick={(e) => handleFeatureInfo(feature.id, e)}
-                    className="absolute top-4 right-4 p-2 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-400 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100 hover:scale-110"
+                    key={feature.id}
+                    className={`group relative bg-gray-900/30 backdrop-blur-2xl border-r border-b border-gray-700/50 last:border-r-0 p-6 lg:p-8 hover:border-lavender-500/50 hover:z-10 transition-all duration-500 hover:bg-gray-900/50 cursor-pointer overflow-hidden animate-in fade-in slide-in-from-bottom-8 ${feature.delay}${getCornerClasses(index)}`}
                   >
-                    <Eye size={16} />
-                  </button>
+                    {/* Enhanced Background Glow Effect */}
+                    <div className="absolute inset-0  bg-gradient-to-br from-lavender-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div
+                      className={`absolute inset-0     bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-[0.03] transition-opacity duration-500`}
+                    />
 
-                  {/* Content */}
-                  <div className="relative space-y-4">
-                    {/* Icon Container with Enhanced Glow */}
-                    <div className="relative">
+                    {/* Animated border glow */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                       <div
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-r ${feature.gradient} bg-opacity-20 group-hover:scale-110 transition-all duration-300 relative overflow-hidden`}
-                      >
-                        {/* Icon glow effect */}
-                        <div
-                          className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} opacity-20 blur-lg group-hover:opacity-40 transition-opacity duration-300`}
-                        />
-                        <feature.icon
-                          className={`h-6 w-6 text-white relative z-10 group-hover:scale-110 transition-transform duration-300`}
-                        />
-                      </div>
+                        className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} opacity-20 blur-sm animate-pulse`}
+                      />
                     </div>
 
-                    <h3 className="text-xl font-semibold text-white mb-4 group-hover:text-lavender-400 transition-colors duration-300">
-                      {feature.title}
-                    </h3>
-                    <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors duration-300">
-                      {feature.description}
-                    </p>
-                  </div>
+                    {/* Eye Button */}
+                    <button
+                      onClick={(e) => handleFeatureInfo(feature.id, e)}
+                      className="absolute top-4 right-4 p-2 bg-gray-800/70 hover:bg-gray-700/70 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg text-gray-400 hover:text-lavender-400 transition-all duration-200 z-10 opacity-0 group-hover:opacity-100 hover:scale-110"
+                    >
+                      <Eye size={16} />
+                    </button>
 
-                  {/* Subtle shimmer effect on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                </div>
-              ))}
+                    {/* Content */}
+                    <div className="relative space-y-4">
+                      {/* Icon Container with Enhanced Glow */}
+                      <div className="relative">
+                        <div
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-r ${feature.gradient} bg-opacity-20 group-hover:scale-110 transition-all duration-300 relative overflow-hidden`}
+                        >
+                          {/* Icon glow effect */}
+                          <div
+                            className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} opacity-20 blur-lg group-hover:opacity-40 transition-opacity duration-300`}
+                          />
+                          <feature.icon
+                            className={`h-6 w-6 text-white relative z-10 group-hover:scale-110 transition-transform duration-300`}
+                          />
+                        </div>
+                      </div>
+
+                      <h3 className="text-xl font-semibold text-white mb-4 group-hover:text-lavender-400 transition-colors duration-300">
+                        {feature.title}
+                      </h3>
+                      <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors duration-300">
+                        {feature.description}
+                      </p>
+                    </div>
+
+                    {/* Subtle shimmer effect on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -1414,7 +1434,7 @@ export default function LandingPage() {
         </section> */}
 
         {/* Footer */}
-        <footer className="relative z-10 p-8 xl:p-16 xl:pb-8 bg-gradient-to-b from-gray-950/80 to-transparent max-w-7xl mx-auto rounded-t-3xl  border border-x-0 lg:border-x border-gray-800/50 border-b-0">
+        <footer className="relative z-10 p-8 xl:p-16 xl:pb-8 bg-gradient-to-b mt-16 from-gray-950/80 to-transparent max-w-7xl mx-auto rounded-t-3xl  border border-x-0 lg:border-x border-gray-800/50 border-b-0">
           <div className="max-w-7xl mx-auto">
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="lg:col-span-2">
