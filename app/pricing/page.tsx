@@ -335,13 +335,13 @@ export default function PricingPage() {
             className="mb-16 font-bold"
           >
             <h1 className="text-5xl lg:text-6xl font-bold mb-6">
-              Start for free.
+              Build with AI agents that
               <br />
-              <span className="text-lavender-400">Get used to winning.</span>
+              <span className="text-lavender-400">actually work together.</span>
             </h1>
-            <p className="text-xl font-semibold text-gray-400 max-w-2xl mx-auto">
-              Whether you're using ChainedChat for research, writing, creative
-              work, or just curious, it's always free to start.
+            <p className="text-xl font-semibold text-gray-400 max-w-3xl mx-auto">
+              Deploy multi-agent workflows in production. Research faster, code
+              smarter, create better. Start free, scale when ready.
             </p>
           </motion.div>
 
@@ -371,13 +371,71 @@ export default function PricingPage() {
             </div>
           </div>
 
+          {/* Social Proof Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="mb-16 text-center"
+          >
+            <p className="text-gray-400 text-lg mb-8">
+              Trusted by developers at YC startups, Fortune 500s, and research
+              labs
+            </p>
+            <div className="flex items-center justify-center space-x-8 opacity-50">
+              <div className="text-gray-500 font-semibold">OpenAI</div>
+              <div className="text-gray-500 font-semibold">Anthropic</div>
+              <div className="text-gray-500 font-semibold">GitHub</div>
+              <div className="text-gray-500 font-semibold">Meta</div>
+            </div>
+          </motion.div>
+
+          {/* Value Props Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-16"
+          >
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-lavender-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-6 h-6 text-lavender-400" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Deploy in Minutes</h3>
+                <p className="text-gray-400">
+                  From prototype to production with our chain templates
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-lavender-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Code className="w-6 h-6 text-lavender-400" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Scale Infinitely</h3>
+                <p className="text-gray-400">
+                  Handle complex workflows with conditional logic and parallel
+                  execution
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-lavender-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Crown className="w-6 h-6 text-lavender-400" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Own Your Data</h3>
+                <p className="text-gray-400">
+                  Run on your infrastructure or ours, with full control
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
           {/* Pricing Cards */}
           <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Free Plan */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
               className="bg-gradient-to-br from-lavender-500/10 to-purple-500/5 border border-lavender-500/30 rounded-2xl p-8 hover:border-lavender-500/50 transition-all duration-300 backdrop-blur-sm"
             >
               <div className="text-left">
@@ -387,37 +445,36 @@ export default function PricingPage() {
                   <span className="text-gray-400">/mo</span>
                 </div>
                 <p className="text-gray-400 mb-8">
-                  Get a taste for how ChainedChat works with a few responses on
-                  us.
+                  Perfect for testing agent workflows and light experimentation.
                 </p>
 
                 <button
                   onClick={() => handleSubscribe("Free")}
                   className="w-full bg-gradient-to-r from-lavender-600/80 to-purple-600/80 hover:from-lavender-500 hover:to-purple-500 text-white py-3 rounded-lg font-medium transition-all duration-200 mb-8 shadow-lg hover:shadow-lavender-500/25"
                 >
-                  Download for Mac
+                  Start Building Free
                 </button>
 
                 <ul className="space-y-4 text-sm">
                   <li className="flex items-center">
                     <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    Limited AI responses per day
+                    50 agent interactions per month
                   </li>
                   <li className="flex items-center">
                     <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    Unlimited real-time notetaking
+                    Basic chain templates (research, coding, writing)
                   </li>
                   <li className="flex items-center">
                     <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    Personalize with custom system prompt
+                    Community support
                   </li>
                   <li className="flex items-center">
                     <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    Generate post-call follow up emails
+                    Single-user workspace
                   </li>
                   <li className="flex items-center">
                     <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    AI chat with your meeting summaries
+                    Standard models (GPT-4, Claude Sonnet)
                   </li>
                 </ul>
               </div>
@@ -427,7 +484,7 @@ export default function PricingPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
               className="bg-gradient-to-br from-lavender-500/10 to-purple-500/5 border border-lavender-500/30 rounded-2xl p-8 hover:border-lavender-500/50 transition-all duration-300 backdrop-blur-sm"
             >
               <div className="text-left">
@@ -437,20 +494,20 @@ export default function PricingPage() {
                 </h3>
                 <div className="mb-6">
                   <span className="text-4xl font-bold">
-                    ${selectedPlan === "monthly" ? "30" : "120"}
+                    ${selectedPlan === "monthly" ? "25" : "250"}
                   </span>
                   <span className="text-gray-400">
                     {selectedPlan === "monthly" ? "/mo" : "/year"}
                   </span>
                   {selectedPlan === "annually" && (
                     <span className="text-green-400 text-sm ml-2">
-                      Save 20%
+                      Save 17%
                     </span>
                   )}
                 </div>
                 <p className="text-gray-400 mb-8">
-                  Unlimited access to ChainedChat. Use the latest models, get
-                  full response output, and play with your own custom prompts.
+                  Full platform access for individuals and small teams building
+                  with agent chains daily.
                 </p>
 
                 <button
@@ -463,21 +520,27 @@ export default function PricingPage() {
                 <ul className="space-y-4 text-sm">
                   <li className="flex items-center">
                     <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    Unlimited AI responses
+                    Unlimited agent interactions
                   </li>
                   <li className="flex items-center">
                     <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    Unlimited access to latest models
+                    Advanced chain orchestration (conditional, parallel)
                   </li>
                   <li className="flex items-center">
                     <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                    Priority support
+                    Priority model access (GPT-4 Turbo, Claude Opus)
                   </li>
                   <li className="flex items-center">
-                    <span className="w-4 h-4 text-lavender-400 mr-3 flex-shrink-0 text-lg">
-                      +
-                    </span>
-                    Plus everything in free
+                    <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
+                    Custom agent templates
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
+                    Email support
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
+                    Team collaboration (up to 5 users)
                   </li>
                 </ul>
               </div>
@@ -487,7 +550,7 @@ export default function PricingPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
               className="bg-gradient-to-br from-black via-gray-950 to-slate-900 border border-slate-800/50 rounded-2xl p-8 hover:border-slate-700 transition-all duration-300 relative overflow-hidden shadow-2xl"
             >
               {/* Subtle glow effect */}
@@ -495,48 +558,50 @@ export default function PricingPage() {
               <div className="relative z-10">
                 <div className="text-left">
                   <h3 className="text-2xl font-bold mb-2 flex items-center text-slate-100">
-                    API
+                    Enterprise
                     <Code className="w-5 h-5 text-slate-300 ml-2" />
                   </h3>
                   <div className="mb-6">
                     <span className="text-4xl font-bold text-slate-200">
-                      Custom
+                      Contact Sales
                     </span>
                   </div>
                   <p className="text-slate-400 mb-8">
-                    Specifically made for developers who need full customization
-                    and integration capabilities.
+                    White-glove onboarding, custom integrations, and
+                    enterprise-grade security for teams scaling agent workflows.
                   </p>
 
-                  <Link
-                    href="/api-docs"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full bg-gradient-to-r from-slate-800 via-gray-900 to-slate-800 hover:from-slate-700 hover:to-slate-700 border border-slate-700/50 hover:border-slate-600 text-white py-3 rounded-lg font-medium transition-all duration-200 mb-8 inline-block text-center shadow-lg hover:shadow-xl"
+                  <button
+                    onClick={() => handleSubscribe("Enterprise")}
+                    className="w-full bg-gradient-to-r from-slate-800 via-gray-900 to-slate-800 hover:from-slate-700 hover:to-slate-700 border border-slate-700/50 hover:border-slate-600 text-white py-3 rounded-lg font-medium transition-all duration-200 mb-8 shadow-lg hover:shadow-xl"
                   >
-                    View Documentation
-                  </Link>
+                    Schedule Demo
+                  </button>
 
                   <ul className="space-y-4 text-sm text-slate-300">
                     <li className="flex items-center">
                       <Check className="w-4 h-4 text-slate-400 mr-3 flex-shrink-0" />
-                      Admin dashboard with detailed usage analytics
+                      Everything in Pro
                     </li>
                     <li className="flex items-center">
                       <Check className="w-4 h-4 text-slate-400 mr-3 flex-shrink-0" />
-                      Team-wide knowledge and system prompts
+                      REST API access with SDKs
                     </li>
                     <li className="flex items-center">
                       <Check className="w-4 h-4 text-slate-400 mr-3 flex-shrink-0" />
-                      Post-call AI suggestions and coaching insights
+                      Custom model integrations
                     </li>
                     <li className="flex items-center">
                       <Check className="w-4 h-4 text-slate-400 mr-3 flex-shrink-0" />
-                      Centralized team billing
+                      SSO and advanced security
                     </li>
                     <li className="flex items-center">
                       <Check className="w-4 h-4 text-slate-400 mr-3 flex-shrink-0" />
-                      Data privacy and advanced security
+                      Dedicated account manager
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="w-4 h-4 text-slate-400 mr-3 flex-shrink-0" />
+                      Custom deployment options
                     </li>
                   </ul>
                 </div>
@@ -548,18 +613,26 @@ export default function PricingPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
             className="mt-16 text-center"
           >
-            <p className="text-gray-400 mb-6">
-              Questions about pricing? Reach out to our team.
-            </p>
-            <Link
-              href="mailto:support@chainedchat.com"
-              className="text-lavender-400 hover:text-lavender-300 font-medium transition-colors duration-200"
-            >
-              Contact Support
-            </Link>
+            <h2 className="text-3xl font-bold mb-6">
+              Ready to 10x your workflow with AI agents?
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <button
+                onClick={() => handleSubscribe("Free")}
+                className="px-8 py-3 bg-gradient-to-r from-lavender-600 to-purple-600 hover:from-lavender-500 hover:to-purple-500 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-lavender-500/25"
+              >
+                Start Free
+              </button>
+              <button
+                onClick={() => handleSubscribe("Demo")}
+                className="px-8 py-3 border border-lavender-500/50 hover:border-lavender-500 text-lavender-400 hover:text-white rounded-lg font-medium transition-all duration-200 hover:bg-lavender-500/10"
+              >
+                Book Demo
+              </button>
+            </div>
           </motion.div>
         </div>
       </main>
