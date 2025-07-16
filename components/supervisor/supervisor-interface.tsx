@@ -404,11 +404,11 @@ export function SupervisorInterface({
     setHoverContext("supervisor");
   };
 
-  // Get sidebar state for positioning
-  const { sidebarWidth } = useSidebar();
-
   // Get performance state for performance toggle
   const { showDetailedPerformance, togglePerformance } = usePerformance();
+
+  // Get sidebar state for positioning
+  const { sidebarWidth } = useSidebar();
 
   // Copy reference state management
   const [showReferencesModal, setShowReferencesModal] = useState(false);
@@ -437,20 +437,6 @@ export function SupervisorInterface({
     name: step.name || `LLM ${index + 1}`,
     model: step.model,
   }));
-
-  // Calculate margin for desktop centering
-  const getContainerStyle = () => {
-    // Only apply margin on desktop (md and up)
-    if (typeof window !== "undefined" && window.innerWidth >= 768) {
-      return {
-        marginLeft: `${sidebarWidth}px`,
-        width: `calc(100% - ${sidebarWidth}px)`,
-        transition:
-          "margin-left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-      };
-    }
-    return {};
-  };
 
   // Enhanced keyboard shortcuts for modal control
   useEffect(() => {
@@ -785,12 +771,15 @@ export function SupervisorInterface({
     <div
       ref={containerRef}
       className={`
-        fixed left-0 right-0 z-50 
+        fixed z-50 
+        w-full max-w-4xl
         transition-all duration-300 ease-in-out
         flex flex-col items-center justify-end
         ${isMaximized ? "top-0 bottom-0" : "bottom-0"}
       `}
       style={{
+        left: `calc(50vw + ${sidebarWidth / 2}px)`,
+        transform: "translateX(-50%)",
         paddingBottom:
           typeof window !== "undefined" &&
           window.innerWidth >= 768 &&
@@ -798,7 +787,6 @@ export function SupervisorInterface({
             ? "max(0.5rem, env(safe-area-inset-bottom))"
             : "0px",
         paddingTop: isMaximized ? "1rem" : "0",
-        ...getContainerStyle(),
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -807,16 +795,14 @@ export function SupervisorInterface({
         className={`
         w-full flex flex-col items-center justify-end
         transition-all duration-300 ease-in-out h-full
-        md:max-w-4xl
         ${isMaximized ? "h-full" : ""}
       `}
       >
         {/* Supervisor Modal/Indicator with enhanced resize functionality */}
         <motion.div
           className={`
-        relative w-[90%] lg:w-full bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 group rounded-xl mb-2 lg:mb-0 lg:rounded-b-none 
+        relative w-full bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 group rounded-xl mb-2 lg:mb-0 lg:rounded-b-none 
         shadow-2xl shadow-gray-950/50
-        md:max-w-4xl
         ${isMaximized ? "max-w-full h-full flex flex-col" : "flex flex-col"}
         ${isDragging ? "select-none" : ""}
       `}
@@ -1005,7 +991,7 @@ export function SupervisorInterface({
         <motion.div
           className="
           relative w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 border-x-0 md:border-x border-b-0 md:border-b rounded-t-3xl lg:rounded-t-none md:rounded-b-3xl
-          transition-all duration-300 ease-in-out md:max-w-4xl"
+          transition-all duration-300 ease-in-out"
           initial={false}
         >
           <textarea

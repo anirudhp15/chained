@@ -235,14 +235,14 @@ export async function POST(request: NextRequest) {
           if (validMentions.length > 0) {
             // 🔍 DEBUG - Agent execution flow
             console.log(
-              "🚀 SUPERVISOR-INTERACT: === AGENT EXECUTION START ==="
+              "🚀 SUPERVISOR-INTERACT: === AGENT COORDINATION START ==="
             );
             console.log(
               "🚀 SUPERVISOR-INTERACT: Valid mentions found:",
               validMentions.length
             );
             console.log(
-              "🚀 SUPERVISOR-INTERACT: Mentions to process:",
+              "🚀 SUPERVISOR-INTERACT: Mentions to coordinate:",
               validMentions
             );
 
@@ -257,15 +257,14 @@ export async function POST(request: NextRequest) {
               )
             );
 
-            // For @mentions, supervisor stays silent until agents complete
-            // No "Processing..." message - just execute agents directly
+            // COORDINATION-ONLY MODE: Don't execute agents directly, just store conversation turns
+            // The frontend/existing systems will handle actual agent execution to prevent duplication
 
-            // Execute mentioned agents with UNIFIED streaming (eliminates duplication)
             const executedAgentUpdates: any[] = [];
             for (const mention of validMentions) {
               try {
                 console.log(
-                  `🚀 SUPERVISOR-INTERACT: Processing mention ${mention.agentIndex} (${mention.agentName})`
+                  `🚀 SUPERVISOR-INTERACT: Coordinating mention ${mention.agentIndex} (${mention.agentName})`
                 );
 
                 // Find agent by actual index, not array position
@@ -290,6 +289,48 @@ export async function POST(request: NextRequest) {
                   agentStep.model,
                   "at index",
                   agentStep.index
+                );
+
+                // Extract clean task prompt without reference markers for display
+                const cleanTaskPrompt = extractCleanTaskPrompt(
+                  mention.taskPrompt
+                );
+
+                // COORDINATION-ONLY: Create conversation turn immediately without execution
+                // The actual execution will be handled by the existing system to prevent duplication
+                console.log(
+                  `💾 SUPERVISOR-INTERACT: Creating coordination record for agent ${mention.agentIndex}`
+                );
+
+                await convex.mutation(api.mutations.appendAgentConversation, {
+                  sessionId: sessionId as Id<"chatSessions">,
+                  agentIndex: mention.agentIndex,
+                  userPrompt: cleanTaskPrompt,
+                  agentResponse: "", // Will be filled by the actual execution system
+                  triggeredBy: "supervisor",
+                  references: references,
+                });
+
+                console.log(
+                  `✅ SUPERVISOR-INTERACT: Coordination record created for agent ${mention.agentIndex}`
+                );
+
+                // Send coordination signal to frontend
+                controller.enqueue(
+                  new TextEncoder().encode(
+                    `data: ${JSON.stringify({
+                      type: "agent_coordination",
+                      agentIndex: mention.agentIndex,
+                      agentName: mention.agentName,
+                      userPrompt: cleanTaskPrompt,
+                      turnId,
+                    })}\n\n`
+                  )
+                );
+
+                // EXECUTE AGENT: Now trigger actual execution using the existing agent step
+                console.log(
+                  `🚀 SUPERVISOR-INTERACT: Starting actual execution for agent ${mention.agentIndex}`
                 );
 
                 // Build context from chain history
@@ -317,7 +358,7 @@ export async function POST(request: NextRequest) {
                   }
                 );
 
-                // Build the internal prompt for the agent
+                // Build the execution prompt for the agent
                 const agentPrompt = buildAgentTaskPrompt(
                   mention.taskPrompt,
                   chainContext,
@@ -327,142 +368,111 @@ export async function POST(request: NextRequest) {
                   mention.taskPrompt
                 );
 
-                console.log(
-                  "🚀 SUPERVISOR-INTERACT: === STARTING AGENT EXECUTION ==="
-                );
-                console.log(
-                  "🚀 SUPERVISOR-INTERACT: Agent name:",
-                  agentStep.name
-                );
-                console.log(
-                  "🚀 SUPERVISOR-INTERACT: Agent model:",
-                  agentStep.model
-                );
-                console.log(
-                  "🚀 SUPERVISOR-INTERACT: Agent index:",
-                  mention.agentIndex
-                );
-                console.log(
-                  "🚀 SUPERVISOR-INTERACT: Task prompt:",
-                  mention.taskPrompt
-                );
-                console.log(
-                  "🚀 SUPERVISOR-INTERACT: Full prompt (first 200 chars):",
-                  agentPrompt.substring(0, 200) + "..."
-                );
-                console.log(
-                  "🚀 SUPERVISOR-INTERACT: Full prompt length:",
-                  agentPrompt.length
-                );
-
-                // CONVERSATION-ISOLATED STREAM - preserves original agent data
+                // Execute the agent with streaming to the existing agent step
                 let agentResponse = "";
                 console.log(
-                  "🚀 SUPERVISOR-INTERACT: About to call streamLLM..."
+                  `🚀 SUPERVISOR-INTERACT: Executing agent with stepId: ${agentStep._id}`
                 );
 
                 try {
                   await streamLLM({
                     model: agentStep.model,
                     prompt: agentPrompt,
-                    // NO stepId passed - prevents original agentStep data modification
                     onChunk: async (chunk: string) => {
-                      console.log(
-                        `🔥 CHUNK DEBUG: Agent ${mention.agentIndex} received chunk:`,
-                        {
-                          chunkLength: chunk.length,
-                          chunkPreview: chunk.substring(0, 50),
-                          agentResponseLength: agentResponse.length,
-                        }
-                      );
                       agentResponse += chunk;
 
-                      // Stream only to conversation UI (no agentStep data pollution)
-                      const chunkData = {
-                        type: "agent_chunk",
-                        agentIndex: mention.agentIndex,
-                        content: chunk,
-                        userPrompt: mention.taskPrompt, // Include user prompt for UI
-                        turnId,
-                      };
-
-                      console.log(
-                        `📤 SENDING CHUNK: Agent ${mention.agentIndex}:`,
+                      // Update the existing agent step with streaming content
+                      await convex.mutation(
+                        api.mutations.updateStreamedContent,
                         {
-                          type: chunkData.type,
-                          contentLength: chunkData.content.length,
-                          contentPreview: chunkData.content.substring(0, 50),
+                          stepId: agentStep._id,
+                          content: agentResponse,
                         }
-                      );
-
-                      controller.enqueue(
-                        new TextEncoder().encode(
-                          `data: ${JSON.stringify(chunkData)}\n\n`
-                        )
                       );
                     },
                     onComplete: async () => {
                       console.log(
                         `✅ SUPERVISOR-INTERACT: Agent ${mention.agentIndex} execution completed`
                       );
-                      console.log(
-                        `✅ SUPERVISOR-INTERACT: Final response length: ${agentResponse.length}`
+
+                      // Update the agent step as complete
+                      await convex.mutation(api.mutations.updateAgentStep, {
+                        stepId: agentStep._id,
+                        response: agentResponse,
+                        isComplete: true,
+                        isStreaming: false,
+                      });
+
+                      // Update conversation with final response
+                      const conversations = await convex.query(
+                        api.queries.getAgentConversationHistory,
+                        {
+                          sessionId: sessionId as Id<"chatSessions">,
+                          agentIndex: mention.agentIndex,
+                        }
                       );
 
-                      // Signal agent completion with full context
+                      // Try to update the conversation turn we just created
+                      if (
+                        conversations &&
+                        conversations.conversationHistory &&
+                        conversations.conversationHistory.length > 0
+                      ) {
+                        const lastTurn =
+                          conversations.conversationHistory[
+                            conversations.conversationHistory.length - 1
+                          ];
+                        if (
+                          lastTurn.userPrompt === cleanTaskPrompt &&
+                          !lastTurn.agentResponse
+                        ) {
+                          // Use appendAgentConversation to update - it should handle existing turns
+                          await convex.mutation(
+                            api.mutations.appendAgentConversation,
+                            {
+                              sessionId: sessionId as Id<"chatSessions">,
+                              agentIndex: mention.agentIndex,
+                              userPrompt: cleanTaskPrompt,
+                              agentResponse: agentResponse,
+                              triggeredBy: "supervisor",
+                              references: references,
+                            }
+                          );
+                        }
+                      }
+
+                      // Signal completion to frontend
                       controller.enqueue(
                         new TextEncoder().encode(
                           `data: ${JSON.stringify({
-                            type: "agent_complete",
+                            type: "agent_execution_complete",
                             agentIndex: mention.agentIndex,
                             agentName: mention.agentName,
                             response: agentResponse,
-                            userPrompt: mention.taskPrompt,
+                            userPrompt: cleanTaskPrompt,
                             turnId,
                           })}\n\n`
                         )
                       );
-
-                      // Store ONLY in conversation history - DO NOT modify original agentStep
-                      console.log(
-                        `💾 SUPERVISOR-INTERACT: Saving conversation for agent ${mention.agentIndex}`
-                      );
-
-                      // Extract clean task prompt without reference markers for display
-                      const cleanTaskPrompt = extractCleanTaskPrompt(
-                        mention.taskPrompt
-                      );
-
-                      await convex.mutation(
-                        api.mutations.appendAgentConversation,
-                        {
-                          sessionId: sessionId as Id<"chatSessions">,
-                          agentIndex: mention.agentIndex,
-                          userPrompt: cleanTaskPrompt, // Use clean prompt without reference markers
-                          agentResponse: agentResponse,
-                          triggeredBy: "supervisor",
-                          references: references, // References stored separately
-                        }
-                      );
-                      console.log(
-                        `✅ SUPERVISOR-INTERACT: Conversation saved for agent ${mention.agentIndex}`
-                      );
-
-                      executedAgentUpdates.push({
-                        agentIndex: mention.agentIndex,
-                        userFacingTask: mention.taskPrompt,
-                        responsePreview: agentResponse.slice(0, 200),
-                      });
                     },
                     onError: async (error: Error) => {
                       console.error(
-                        `❌ SUPERVISOR-INTERACT: Agent ${mention.agentIndex} streaming error:`,
+                        `❌ SUPERVISOR-INTERACT: Agent ${mention.agentIndex} execution error:`,
                         error
                       );
+
+                      // Update agent step with error
+                      await convex.mutation(api.mutations.updateAgentStep, {
+                        stepId: agentStep._id,
+                        error: error.message,
+                        isComplete: true,
+                        isStreaming: false,
+                      });
+
                       controller.enqueue(
                         new TextEncoder().encode(
                           `data: ${JSON.stringify({
-                            type: "agent_error",
+                            type: "agent_execution_error",
                             agentIndex: mention.agentIndex,
                             error: error.message,
                             turnId,
@@ -473,45 +483,30 @@ export async function POST(request: NextRequest) {
                   });
 
                   console.log(
-                    "✅ SUPERVISOR-INTERACT: streamLLM call completed successfully"
+                    "✅ SUPERVISOR-INTERACT: Agent execution completed successfully"
                   );
-                } catch (streamError: any) {
+                } catch (executionError: any) {
                   console.error(
-                    `❌ SUPERVISOR-INTERACT: streamLLM failed for agent ${mention.agentIndex}:`,
-                    streamError
-                  );
-                  console.error("❌ SUPERVISOR-INTERACT: Error details:", {
-                    name: streamError?.name || "UnknownError",
-                    message: streamError?.message || String(streamError),
-                    stack: streamError?.stack || "No stack trace",
-                  });
-
-                  controller.enqueue(
-                    new TextEncoder().encode(
-                      `data: ${JSON.stringify({
-                        type: "agent_error",
-                        agentIndex: mention.agentIndex,
-                        error: `streamLLM execution failed: ${streamError?.message || String(streamError)}`,
-                        turnId,
-                      })}\n\n`
-                    )
+                    `❌ SUPERVISOR-INTERACT: Agent execution failed for ${mention.agentIndex}:`,
+                    executionError
                   );
                 }
 
-                console.log(
-                  "✅ SUPERVISOR-INTERACT: AGENT EXECUTION COMPLETED, response length:",
-                  agentResponse.length
-                );
+                executedAgentUpdates.push({
+                  agentIndex: mention.agentIndex,
+                  userFacingTask: mention.taskPrompt,
+                  coordinatedOnly: true,
+                });
               } catch (agentError) {
                 console.error(
-                  `❌ Agent execution failed for ${mention.agentName}:`,
+                  `❌ Agent coordination failed for ${mention.agentName}:`,
                   agentError
                 );
               }
             }
 
-            // SUPERVISOR RESPONSE: Simple completion message (no streaming duplication)
-            const completionMessage = `Routed task to ${validMentions
+            // SUPERVISOR RESPONSE: Simple coordination message (no execution duplication)
+            const coordinationMessage = `Coordinating with ${validMentions
               .map((m: any) => {
                 // Convert agent names to LLM format for user display
                 const displayName = m.agentName.toLowerCase().includes("agent")
@@ -519,20 +514,22 @@ export async function POST(request: NextRequest) {
                   : m.agentName;
                 return displayName;
               })
-              .join(", ")}, see results below.`;
+              .join(
+                ", "
+              )}. Tasks have been routed - execution will begin shortly.`;
 
             controller.enqueue(
               new TextEncoder().encode(
                 `data: ${JSON.stringify({
                   type: "supervisor_chunk",
-                  content: completionMessage,
+                  content: coordinationMessage,
                   turnId,
                   isCompletion: true,
                 })}\n\n`
               )
             );
 
-            supervisorResponse = completionMessage;
+            supervisorResponse = coordinationMessage;
           } else {
             // No mentions - normal supervisor response
             console.log(

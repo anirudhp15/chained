@@ -21,6 +21,7 @@ import {
   LoaderCircle,
   ExternalLink,
   SquareArrowOutUpRight,
+  Copy,
 } from "lucide-react";
 import { SiOpenai, SiClaude } from "react-icons/si";
 import { UploadedImage } from "../modality/ImageUpload";
@@ -89,6 +90,9 @@ interface AgentInputProps {
   isMobileCollapsed?: boolean;
   // All agents in the chain for smart naming
   allAgents?: Agent[];
+  // Copy functionality
+  onCopyPrompt?: () => void;
+  showCopyButton?: boolean;
 }
 
 // Modality Icons Component
@@ -147,6 +151,8 @@ export function AgentInput({
   isLoading,
   isMobileCollapsed,
   allAgents = [],
+  onCopyPrompt,
+  showCopyButton,
 }: AgentInputProps) {
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [isNameEditing, setIsNameEditing] = useState(false);
@@ -850,6 +856,16 @@ export function AgentInput({
             {renderModelSelector()}
             {/* Tool Button for mobile */}
             {renderEnhancedOptions()}
+            {/* Copy Button for mobile */}
+            {showCopyButton && onCopyPrompt && (
+              <button
+                onClick={onCopyPrompt}
+                className="flex items-center justify-center p-1.5 rounded-md text-gray-400 hover:text-lavender-400 hover:bg-gray-700/50 transition-all"
+                title="Copy prompt to all other agents"
+              >
+                <Copy size={14} />
+              </button>
+            )}
           </div>
         </div>
         {/* Left side controls */}
@@ -857,6 +873,16 @@ export function AgentInput({
           {renderModelSelector()}
           {/* Tool Button */}
           {renderEnhancedOptions()}
+          {/* Copy Button */}
+          {showCopyButton && onCopyPrompt && (
+            <button
+              onClick={onCopyPrompt}
+              className="flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-lavender-400 hover:bg-gray-700/50 transition-all"
+              title="Copy prompt to all other agents"
+            >
+              <Copy size={16} />
+            </button>
+          )}
         </div>
 
         {/* Right side controls */}

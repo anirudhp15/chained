@@ -415,9 +415,108 @@ function ChatPageContent() {
                     );
                     break;
 
+                  case "agent_coordination":
+                    // NEW: Handle supervisor coordination events (no duplication)
+                    console.log("📋 SUPERVISOR COORDINATION:", {
+                      agentIndex: data.agentIndex,
+                      agentName: data.agentName,
+                      userPrompt: data.userPrompt,
+                      turnId: data.turnId,
+                    });
+
+                    // Create conversation turn for coordination
+                    setAgentConversations((prev) => {
+                      const updated = { ...prev };
+
+                      if (!updated[data.agentIndex]) {
+                        updated[data.agentIndex] = [];
+                      }
+
+                      // Add coordination turn - actual execution will be handled separately
+                      updated[data.agentIndex].push({
+                        userPrompt: data.userPrompt,
+                        agentResponse: "", // Will be filled by actual execution
+                        timestamp: Date.now(),
+                        isStreaming: false, // Coordination is instant
+                        isComplete: false, // Execution pending
+                      });
+
+                      return updated;
+                    });
+                    break;
+
+                  case "agent_execution_complete":
+                    // NEW: Handle completion of supervisor-triggered execution
+                    console.log("✅ SUPERVISOR EXECUTION COMPLETE:", {
+                      agentIndex: data.agentIndex,
+                      agentName: data.agentName,
+                      responseLength: data.response?.length || 0,
+                    });
+
+                    // Update the conversation with the final response
+                    setAgentConversations((prev) => {
+                      const updated = { ...prev };
+
+                      if (
+                        updated[data.agentIndex] &&
+                        updated[data.agentIndex].length > 0
+                      ) {
+                        const lastTurnIndex =
+                          updated[data.agentIndex].length - 1;
+                        const lastTurn =
+                          updated[data.agentIndex][lastTurnIndex];
+
+                        // Update the turn that matches this user prompt
+                        if (lastTurn.userPrompt === data.userPrompt) {
+                          updated[data.agentIndex][lastTurnIndex] = {
+                            ...lastTurn,
+                            agentResponse: data.response,
+                            isComplete: true,
+                            isStreaming: false,
+                          };
+                        }
+                      }
+
+                      return updated;
+                    });
+                    break;
+
+                  case "agent_execution_error":
+                    // NEW: Handle execution errors from supervisor
+                    console.error("❌ SUPERVISOR EXECUTION ERROR:", {
+                      agentIndex: data.agentIndex,
+                      error: data.error,
+                    });
+
+                    // Update the conversation with error state
+                    setAgentConversations((prev) => {
+                      const updated = { ...prev };
+
+                      if (
+                        updated[data.agentIndex] &&
+                        updated[data.agentIndex].length > 0
+                      ) {
+                        const lastTurnIndex =
+                          updated[data.agentIndex].length - 1;
+                        const lastTurn =
+                          updated[data.agentIndex][lastTurnIndex];
+
+                        updated[data.agentIndex][lastTurnIndex] = {
+                          ...lastTurn,
+                          agentResponse: `Error: ${data.error}`,
+                          isComplete: true,
+                          isStreaming: false,
+                        };
+                      }
+
+                      return updated;
+                    });
+                    break;
+
                   case "agent_chunk":
-                    // UPDATED: Handle unified stream with userPrompt included
-                    console.log("📥 FRONTEND CHUNK RECEIVED:", {
+                    // LEGACY: Handle agent chunks from legacy supervisor streaming (DEPRECATED)
+                    // This should no longer be used after removing legacy supervisor execution
+                    console.log("📥 LEGACY CHUNK RECEIVED (DEPRECATED):", {
                       agentIndex: data.agentIndex,
                       contentLength: data.content?.length || 0,
                       contentPreview: data.content?.substring(0, 50) || "",

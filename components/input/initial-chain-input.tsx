@@ -9,6 +9,9 @@ import {
   DEFAULT_AGENT_CONFIG,
   CONDITION_PRESETS,
   MAX_AGENTS_PER_CHAIN,
+  MODEL_PROVIDERS,
+  getProviderKey,
+  type ModelConfig,
 } from "@/lib/constants";
 import { useSidebar } from "@/lib/sidebar-context";
 import { generateSmartAgentName } from "@/lib/utils";
@@ -369,6 +372,11 @@ export function InitialChainInput({
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showBrowseModal, setShowBrowseModal] = useState(false);
 
+  // Copy prompt state
+  const [showCopyConfirmModal, setShowCopyConfirmModal] = useState(false);
+  const [copySourceIndex, setCopySourceIndex] = useState<number>(-1);
+  const [agentsWithPrompts, setAgentsWithPrompts] = useState<string[]>([]);
+
   // Track previous agent count to detect add/remove operations
   const prevAgentCountRef = useRef(agents.length);
   const prevAgentIdsRef = useRef(agents.map((a) => a.id).join(","));
@@ -530,6 +538,57 @@ export function InitialChainInput({
   const handleSaveSuccess = () => {
     // Could show a success toast here if desired
     console.log("Chain saved successfully");
+  };
+
+  // Copy prompt functionality
+  const handleCopyPrompt = (sourceIndex: number) => {
+    const sourceAgent = agents[sourceIndex];
+    if (!sourceAgent.prompt.trim()) return;
+
+    // Check if any other agents have prompts
+    const otherAgentsWithPrompts = agents
+      .filter((agent, index) => index !== sourceIndex && agent.prompt.trim())
+      .map((agent) => {
+        const effectiveModel = agent.model || "gpt-4o";
+        const providerKey = getProviderKey(effectiveModel);
+        const provider = MODEL_PROVIDERS[providerKey];
+        const model = provider?.models.find((m) => m.value === effectiveModel);
+        return model?.label || effectiveModel;
+      });
+
+    if (otherAgentsWithPrompts.length > 0) {
+      // Show confirmation modal
+      setCopySourceIndex(sourceIndex);
+      setAgentsWithPrompts(otherAgentsWithPrompts);
+      setShowCopyConfirmModal(true);
+    } else {
+      // Copy directly
+      executeCopyPrompt(sourceIndex);
+    }
+  };
+
+  const executeCopyPrompt = (sourceIndex: number) => {
+    const sourceAgent = agents[sourceIndex];
+    const newAgents = agents.map((agent, index) => {
+      if (index !== sourceIndex) {
+        return { ...agent, prompt: sourceAgent.prompt };
+      }
+      return agent;
+    });
+    setAgents(newAgents);
+  };
+
+  const handleCopyConfirm = () => {
+    executeCopyPrompt(copySourceIndex);
+    setShowCopyConfirmModal(false);
+    setCopySourceIndex(-1);
+    setAgentsWithPrompts([]);
+  };
+
+  const handleCopyCancel = () => {
+    setShowCopyConfirmModal(false);
+    setCopySourceIndex(-1);
+    setAgentsWithPrompts([]);
   };
 
   const handleSendChain = () => {
@@ -763,6 +822,11 @@ export function InitialChainInput({
                             isMobileCollapsed={!expandedAgents.has(agent.id)}
                             // All agents for smart naming
                             allAgents={agents}
+                            // Copy functionality
+                            onCopyPrompt={() => handleCopyPrompt(index)}
+                            showCopyButton={
+                              agents.length > 1 && agent.prompt.trim() !== ""
+                            }
                           />
 
                           {/* Queued Agent Indicator */}
@@ -817,6 +881,60 @@ export function InitialChainInput({
             onLoadChain={handleLoadChain}
             hasCurrentChain={hasCurrentChain}
           />
+
+          {/* Copy Confirmation Modal */}
+          {showCopyConfirmModal &&
+            createPortal(
+              <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4">
+                <div
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                  onClick={handleCopyCancel}
+                />
+                <div className="relative bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in-0 zoom-in-95 duration-200">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-amber-400 rounded rotate-45"></div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-white mb-2">
+                        Overwrite Existing Prompts?
+                      </h3>
+                      <p className="text-gray-300 text-sm mb-3">
+                        This will overwrite prompts in the following models:
+                      </p>
+                      <div className="space-y-1 mb-4">
+                        {agentsWithPrompts.map((modelName, index) => (
+                          <div
+                            key={index}
+                            className="text-sm text-lavender-400 bg-lavender-500/10 px-2 py-1 rounded"
+                          >
+                            {modelName}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-gray-400 text-xs">
+                        This action cannot be undone.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 justify-end">
+                    <button
+                      onClick={handleCopyCancel}
+                      className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleCopyConfirm}
+                      className="px-4 py-2 bg-lavender-500 hover:bg-lavender-600 text-white rounded-lg transition-all"
+                    >
+                      Copy to All
+                    </button>
+                  </div>
+                </div>
+              </div>,
+              document.body
+            )}
         </div>
       </div>
     </>

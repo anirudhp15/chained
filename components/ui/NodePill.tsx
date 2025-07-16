@@ -13,10 +13,18 @@ import {
   GitCommitHorizontal,
   GitFork,
   GitCompareArrows,
+  Tally1,
+  Tally2,
+  Tally3,
+  Tally4,
 } from "lucide-react";
 import { IoGitBranchOutline } from "react-icons/io5";
 import { Agent } from "../input/agent-input";
-import { CONDITION_PRESETS } from "@/lib/constants";
+import {
+  CONDITION_PRESETS,
+  MODEL_PROVIDERS,
+  getProviderKey,
+} from "@/lib/constants";
 import { generateSmartAgentName } from "@/lib/utils";
 
 interface NodePillProps {
@@ -263,6 +271,53 @@ function getModelCategory(model: string): keyof typeof MODEL_PROMPTS {
   return "gpt"; // Default for GPT and other models
 }
 
+// Get simplified model name for display
+function getSimplifiedModelName(model: string): string {
+  const modelLower = model.toLowerCase();
+
+  // OpenAI models
+  if (
+    modelLower.includes("gpt") ||
+    modelLower.includes("o1") ||
+    modelLower.includes("o3") ||
+    modelLower.includes("o4")
+  ) {
+    if (modelLower.includes("o1")) return "o1";
+    if (modelLower.includes("o3")) return "o3";
+    if (modelLower.includes("o4")) return "o4";
+    if (modelLower.includes("4o")) return "4o";
+    if (modelLower.includes("4.1")) return "4.1";
+    if (modelLower.includes("4-turbo")) return "4 Turbo";
+    if (modelLower.includes("gpt-4")) return "4";
+    if (modelLower.includes("3.5")) return "3.5";
+    return "GPT";
+  }
+
+  // Claude models
+  if (modelLower.includes("claude")) {
+    if (modelLower.includes("3-7")) return "Sonnet 3.7";
+    if (modelLower.includes("3-5")) return "Sonnet 3.5";
+    if (modelLower.includes("3-opus")) return "Opus 3";
+    if (modelLower.includes("3-sonnet")) return "Sonnet 3";
+    if (modelLower.includes("3-haiku")) return "Haiku 3";
+    if (modelLower.includes("sonnet")) return "Sonnet";
+    if (modelLower.includes("opus")) return "Opus";
+    if (modelLower.includes("haiku")) return "Haiku";
+    return "Claude";
+  }
+
+  // Grok models
+  if (modelLower.includes("grok")) {
+    const match = modelLower.match(/grok-?(\d+)/);
+    if (match) return match[1];
+    return "Grok";
+  }
+
+  // Other models - try to extract version number
+  const versionMatch = model.match(/\d+(?:\.\d+)?/);
+  return versionMatch ? versionMatch[0] : model;
+}
+
 // Hook to detect if we're on mobile (below lg breakpoint)
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(false);
@@ -310,6 +365,74 @@ export function NodePill({
     return generateSmartAgentName(effectiveModel, allAgents, agent.id);
   };
 
+  // Get provider info for display
+  const getProviderDisplay = () => {
+    const effectiveModel = agent.model || "gpt-4o";
+    const providerKey = getProviderKey(effectiveModel);
+    const provider = MODEL_PROVIDERS[providerKey];
+    const simplifiedName = getSimplifiedModelName(effectiveModel);
+
+    return {
+      icon: provider?.icon,
+      iconColor: provider?.iconColor,
+      name: simplifiedName,
+      fallbackName: getDefaultName(),
+    };
+  };
+
+  // Get tally logic for duplicate detection
+  const getTallyInfo = () => {
+    const tallyMap = new Map<string, number>();
+    const displayNames: string[] = [];
+
+    // Build display names for all agents
+    allAgents.forEach((ag) => {
+      const effectiveModel = ag.model || "gpt-4o";
+      const simplifiedName = getSimplifiedModelName(effectiveModel);
+      const displayName = ag.name || simplifiedName;
+      displayNames.push(displayName);
+    });
+
+    // Count occurrences and assign tally numbers
+    const nameCounts: { [key: string]: number } = {};
+    const nameIndexes: { [key: string]: number[] } = {};
+
+    displayNames.forEach((name, idx) => {
+      if (!nameCounts[name]) {
+        nameCounts[name] = 0;
+        nameIndexes[name] = [];
+      }
+      nameCounts[name]++;
+      nameIndexes[name].push(idx);
+    });
+
+    // Only assign tallies if there are duplicates
+    Object.keys(nameCounts).forEach((name) => {
+      if (nameCounts[name] > 1) {
+        nameIndexes[name].forEach((agentIndex, occurrence) => {
+          tallyMap.set(`${agentIndex}`, occurrence + 1); // 1-based tally numbers
+        });
+      }
+    });
+
+    return tallyMap;
+  };
+
+  const getTallyIcon = (tallyNumber: number) => {
+    switch (tallyNumber) {
+      case 1:
+        return Tally1;
+      case 2:
+        return Tally2;
+      case 3:
+        return Tally3;
+      case 4:
+        return Tally4;
+      default:
+        return null;
+    }
+  };
+
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(getDefaultName());
   const [showPromptsModal, setShowPromptsModal] = useState(false);
@@ -322,6 +445,12 @@ export function NodePill({
   const nodeName = getDefaultName();
   const modelCategory = getModelCategory(agent.model);
   const promptData = MODEL_PROMPTS[modelCategory];
+  const providerDisplay = getProviderDisplay();
+  const tallyMap = getTallyInfo();
+  const currentTallyNumber = tallyMap.get(`${index}`);
+  const TallyIcon = currentTallyNumber
+    ? getTallyIcon(currentTallyNumber)
+    : null;
 
   // Update tempName when agent name, model, or allAgents change
   useEffect(() => {
@@ -377,6 +506,42 @@ export function NodePill({
       return "Parallel";
     }
     return sourceAgentName || `Node ${index}`;
+  };
+
+  // Get provider display for source agent (for connection display)
+  const getSourceProviderDisplay = () => {
+    if (currentConnectionType === "parallel") {
+      return { text: "Parallel", icon: null, iconColor: "", tallyIcon: null };
+    }
+
+    // Find the source agent to get its model info
+    const sourceAgent = allAgents.find((_, idx) => idx === index - 1);
+    if (!sourceAgent) {
+      return {
+        text: sourceAgentName || `Node ${index}`,
+        icon: null,
+        iconColor: "",
+        tallyIcon: null,
+      };
+    }
+
+    const effectiveModel = sourceAgent.model || "gpt-4o";
+    const providerKey = getProviderKey(effectiveModel);
+    const provider = MODEL_PROVIDERS[providerKey];
+    const simplifiedName = getSimplifiedModelName(effectiveModel);
+
+    // Get tally for source agent (index - 1)
+    const sourceTallyNumber = tallyMap.get(`${index - 1}`);
+    const SourceTallyIcon = sourceTallyNumber
+      ? getTallyIcon(sourceTallyNumber)
+      : null;
+
+    return {
+      text: sourceAgent.name || simplifiedName,
+      icon: provider?.icon,
+      iconColor: provider?.iconColor,
+      tallyIcon: SourceTallyIcon,
+    };
   };
 
   const filteredPrompts = React.useMemo(() => {
@@ -488,71 +653,122 @@ export function NodePill({
                 </>
               ) : (
                 <>
-                  {/* <div className="w-2 h-2 bg-lavender-400 rounded-full"></div> */}
-                  <span className="text-xs whitespace-nowrap text-lavender-400 font-medium">
-                    {nodeName}
-                  </span>
+                  {/* Provider Icon + Simplified Name + Tally */}
+                  <div className="flex items-center gap-1.5">
+                    {providerDisplay.icon && (
+                      <providerDisplay.icon
+                        size={14}
+                        className={providerDisplay.iconColor}
+                      />
+                    )}
+                    <span className="text-xs whitespace-nowrap text-lavender-400 font-medium">
+                      {agent.name ? nodeName : providerDisplay.name}
+                    </span>
+                    {TallyIcon && (
+                      <TallyIcon size={14} className="text-lavender-400" />
+                    )}
+                  </div>
                 </>
               )}
 
               {/* Mobile Connection Button - only show on mobile and if showConnection is true */}
-              {isMobile && showConnection && !isEditing && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowConnectionModal(true);
-                  }}
-                  className={`p-1 flex items-center gap-2 hover:bg-gray-700/50 rounded hover:${currentConnection?.bgColor} hover:${currentConnection?.borderColor}`}
-                  title={`Connection: ${currentConnectionType === "parallel" ? "Parallel" : currentConnection?.label + "ly from " + sourceAgentName}`}
-                >
-                  {currentConnection && (
-                    <currentConnection.Icon
-                      size={12}
-                      className={`${currentConnection.color} ${currentConnection.iconRotate || ""}`}
-                    />
-                  )}
-                  <span
-                    className={`text-xs font-medium ${currentConnection?.color}`}
-                  >
-                    {getConnectionDisplayText()}
-                  </span>
-                  {currentConnectionType === "conditional" && (
-                    // show truncated connection condition
-                    <span className="text-xs text-gray-400">
-                      {agent.connection?.condition?.substring(0, 10)}
-                    </span>
-                  )}
-                </button>
-              )}
+              {isMobile &&
+                showConnection &&
+                !isEditing &&
+                (() => {
+                  const sourceDisplay = getSourceProviderDisplay();
+                  return (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowConnectionModal(true);
+                      }}
+                      className={`p-1 flex items-center gap-2 hover:bg-gray-700/50 rounded hover:${currentConnection?.bgColor} hover:${currentConnection?.borderColor}`}
+                      title={`Connection: ${currentConnectionType === "parallel" ? "Parallel" : currentConnection?.label + "ly from " + sourceAgentName}`}
+                    >
+                      {currentConnection && (
+                        <currentConnection.Icon
+                          size={12}
+                          className={`${currentConnection.color} ${currentConnection.iconRotate || ""}`}
+                        />
+                      )}
+                      <div className="flex items-center gap-1">
+                        {sourceDisplay.icon && (
+                          <sourceDisplay.icon
+                            size={10}
+                            className={sourceDisplay.iconColor}
+                          />
+                        )}
+                        <span
+                          className={`text-xs font-medium ${currentConnection?.color}`}
+                        >
+                          {sourceDisplay.text}
+                        </span>
+                        {sourceDisplay.tallyIcon && (
+                          <sourceDisplay.tallyIcon
+                            size={10}
+                            className="text-lavender-400"
+                          />
+                        )}
+                      </div>
+                      {currentConnectionType === "conditional" && (
+                        // show truncated connection condition
+                        <span className="text-xs text-gray-400">
+                          {agent.connection?.condition?.substring(0, 10)}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })()}
 
               {/* Desktop Connection Button - only show on desktop and if showConnection is true */}
-              {!isMobile && showConnection && !isEditing && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowConnectionModal(true);
-                  }}
-                  className={`lg:opacity-50 lg:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 flex items-center gap-1 hover:bg-gray-700/50 rounded hover:${currentConnection?.bgColor} hover:${currentConnection?.borderColor}`}
-                  title={`Connection: ${currentConnectionType === "parallel" ? "Parallel" : currentConnection?.label + "ly from " + sourceAgentName}`}
-                >
-                  {currentConnection && (
-                    <currentConnection.Icon
-                      size={12}
-                      className={`${currentConnection.color} ${currentConnection.iconRotate || ""}`}
-                    />
-                  )}
-                  <span
-                    className={`text-xs font-medium ${currentConnection?.color}`}
-                  >
-                    {getConnectionDisplayText()}
-                  </span>
-                  {currentConnectionType === "conditional" && (
-                    <span className="text-xs text-gray-400">
-                      {agent.connection?.condition?.substring(0, 8)}...
-                    </span>
-                  )}
-                </button>
-              )}
+              {!isMobile &&
+                showConnection &&
+                !isEditing &&
+                (() => {
+                  const sourceDisplay = getSourceProviderDisplay();
+                  return (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowConnectionModal(true);
+                      }}
+                      className={`lg:opacity-50 lg:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 flex items-center gap-1 hover:bg-gray-700/50 rounded hover:${currentConnection?.bgColor} hover:${currentConnection?.borderColor}`}
+                      title={`Connection: ${currentConnectionType === "parallel" ? "Parallel" : currentConnection?.label + "ly from " + sourceAgentName}`}
+                    >
+                      {currentConnection && (
+                        <currentConnection.Icon
+                          size={12}
+                          className={`${currentConnection.color} ${currentConnection.iconRotate || ""}`}
+                        />
+                      )}
+                      <div className="flex items-center gap-1">
+                        {sourceDisplay.icon && (
+                          <sourceDisplay.icon
+                            size={10}
+                            className={sourceDisplay.iconColor}
+                          />
+                        )}
+                        <span
+                          className={`text-xs font-medium ${currentConnection?.color}`}
+                        >
+                          {sourceDisplay.text}
+                        </span>
+                        {sourceDisplay.tallyIcon && (
+                          <sourceDisplay.tallyIcon
+                            size={10}
+                            className="text-lavender-400"
+                          />
+                        )}
+                      </div>
+                      {currentConnectionType === "conditional" && (
+                        <span className="text-xs text-gray-400">
+                          {agent.connection?.condition?.substring(0, 8)}...
+                        </span>
+                      )}
+                    </button>
+                  );
+                })()}
             </div>
 
             {/* Right: Status + Controls */}
