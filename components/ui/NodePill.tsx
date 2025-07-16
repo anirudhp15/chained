@@ -757,7 +757,7 @@ export function NodePill({
                         {sourceDisplay.tallyIcon && (
                           <sourceDisplay.tallyIcon
                             size={10}
-                            className="text-lavender-400"
+                            className={`${currentConnection?.color}`}
                           />
                         )}
                       </div>
