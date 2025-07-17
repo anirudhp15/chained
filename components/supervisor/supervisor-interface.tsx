@@ -772,10 +772,10 @@ export function SupervisorInterface({
       ref={containerRef}
       className={`
         fixed z-50 
-        w-full max-w-4xl
+        w-full 
         transition-all duration-300 ease-in-out
         flex flex-col items-center justify-end
-        ${isMaximized ? "top-0 bottom-0" : "bottom-0"}
+        ${isMaximized ? "top-0 bottom-0 max-w-7xl" : "bottom-0 max-w-4xl"}
       `}
       style={{
         left: `calc(50vw + ${sidebarWidth / 2}px)`,

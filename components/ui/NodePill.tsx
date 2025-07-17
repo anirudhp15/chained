@@ -17,6 +17,8 @@ import {
   Tally2,
   Tally3,
   Tally4,
+  CircleAlert,
+  CircleCheck,
 } from "lucide-react";
 import { IoGitBranchOutline } from "react-icons/io5";
 import { Agent } from "../input/agent-input";
@@ -654,18 +656,18 @@ export function NodePill({
               ) : (
                 <>
                   {/* Provider Icon + Simplified Name + Tally */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     {providerDisplay.icon && (
                       <providerDisplay.icon
                         size={14}
                         className={providerDisplay.iconColor}
                       />
                     )}
-                    <span className="text-xs whitespace-nowrap text-lavender-400 font-medium">
+                    <span className="text-xs whitespace-nowrap text-white font-medium">
                       {agent.name ? nodeName : providerDisplay.name}
                     </span>
                     {TallyIcon && (
-                      <TallyIcon size={14} className="text-lavender-400" />
+                      <TallyIcon size={14} className="text-white" />
                     )}
                   </div>
                 </>
@@ -733,31 +735,29 @@ export function NodePill({
                         e.stopPropagation();
                         setShowConnectionModal(true);
                       }}
-                      className={`lg:opacity-50 lg:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 flex items-center gap-1 hover:bg-gray-700/50 rounded hover:${currentConnection?.bgColor} hover:${currentConnection?.borderColor}`}
+                      className={`lg:opacity-50 lg:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1 flex items-center gap-3 hover:bg-gray-700/50 rounded hover:${currentConnection?.bgColor} hover:${currentConnection?.borderColor}`}
                       title={`Connection: ${currentConnectionType === "parallel" ? "Parallel" : currentConnection?.label + "ly from " + sourceAgentName}`}
                     >
                       {currentConnection && (
                         <currentConnection.Icon
-                          size={12}
+                          size={14}
                           className={`${currentConnection.color} ${currentConnection.iconRotate || ""}`}
                         />
                       )}
                       <div className="flex items-center gap-1">
                         {sourceDisplay.icon && (
                           <sourceDisplay.icon
-                            size={10}
+                            size={14}
                             className={sourceDisplay.iconColor}
                           />
                         )}
-                        <span
-                          className={`text-xs font-medium ${currentConnection?.color}`}
-                        >
+                        <span className={`text-xs font-medium text-white`}>
                           {sourceDisplay.text}
                         </span>
                         {sourceDisplay.tallyIcon && (
                           <sourceDisplay.tallyIcon
-                            size={10}
-                            className={`${currentConnection?.color}`}
+                            size={14}
+                            className="text-white"
                           />
                         )}
                       </div>
@@ -773,16 +773,16 @@ export function NodePill({
 
             {/* Right: Status + Controls */}
             <div className="flex items-center gap-1">
-              {/* Mobile: Prompt Preview + Status Icon */}
+              {/* Mobile: Prompt Status Icon */}
               <div className="lg:hidden flex items-center gap-2">
-                {agent.prompt?.trim() && isExpanded ? (
-                  <span className="text-xs text-gray-300 truncate w-24 sm:w-48">
-                    {agent.prompt.length > 32
-                      ? `${agent.prompt.substring(0, 32)}...`
-                      : agent.prompt}
-                  </span>
+                {agent.prompt?.trim() ? (
+                  <div title="Prompt configured">
+                    <CircleCheck size={14} className="text-green-400" />
+                  </div>
                 ) : (
-                  <span className="text-xs text-gray-500">No prompt</span>
+                  <div title="No prompt configured">
+                    <CircleAlert size={14} className="text-amber-400" />
+                  </div>
                 )}
               </div>
 

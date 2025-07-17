@@ -18,6 +18,11 @@ import {
   GitCommitHorizontal,
   GitFork,
   ArrowDown,
+  Tally1,
+  Tally2,
+  Tally3,
+  Tally4,
+  Edit3,
 } from "lucide-react";
 import { IoGitBranchOutline } from "react-icons/io5";
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
@@ -43,6 +48,7 @@ import ShinyText from "../TextAnimations/ShinyText/ShinyText";
 import { CopyReference } from "../ui/CopyReference";
 import { extractCleanTaskPrompt } from "../../lib/supervisor-parser";
 import { useSidebar } from "../../lib/sidebar-context";
+import { MODEL_PROVIDERS, getProviderKey } from "@/lib/constants";
 
 interface AgentConversationTurn {
   userPrompt: string;
@@ -84,6 +90,53 @@ interface MobileAgentCardProps {
   agentGroups: any[];
   UserDisplay: React.ComponentType;
   onUpdateAgentName: (agentId: string, newName: string) => Promise<void>;
+}
+
+// Get simplified model name for display
+function getSimplifiedModelName(model: string): string {
+  const modelLower = model.toLowerCase();
+
+  // OpenAI models
+  if (
+    modelLower.includes("gpt") ||
+    modelLower.includes("o1") ||
+    modelLower.includes("o3") ||
+    modelLower.includes("o4")
+  ) {
+    if (modelLower.includes("o1")) return "o1";
+    if (modelLower.includes("o3")) return "o3";
+    if (modelLower.includes("o4")) return "o4";
+    if (modelLower.includes("4o")) return "4o";
+    if (modelLower.includes("4.1")) return "4.1";
+    if (modelLower.includes("4-turbo")) return "4 Turbo";
+    if (modelLower.includes("gpt-4")) return "4";
+    if (modelLower.includes("3.5")) return "3.5";
+    return "GPT";
+  }
+
+  // Claude models
+  if (modelLower.includes("claude")) {
+    if (modelLower.includes("3-7")) return "Sonnet 3.7";
+    if (modelLower.includes("3-5")) return "Sonnet 3.5";
+    if (modelLower.includes("3-opus")) return "Opus 3";
+    if (modelLower.includes("3-sonnet")) return "Sonnet 3";
+    if (modelLower.includes("3-haiku")) return "Haiku 3";
+    if (modelLower.includes("sonnet")) return "Sonnet";
+    if (modelLower.includes("opus")) return "Opus";
+    if (modelLower.includes("haiku")) return "Haiku";
+    return "Claude";
+  }
+
+  // Grok models
+  if (modelLower.includes("grok")) {
+    const match = modelLower.match(/grok-?(\d+)/);
+    if (match) return match[1];
+    return "Grok";
+  }
+
+  // Other models - try to extract version number
+  const versionMatch = model.match(/\d+(?:\.\d+)?/);
+  return versionMatch ? versionMatch[0] : model;
 }
 
 // Live Status Indicator Component
@@ -1361,6 +1414,8 @@ export function ChatArea({
   const [mobileFocusedAgent, setMobileFocusedAgent] = useState<number | null>(
     null
   );
+  const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<string>("");
 
   // Get user information
   const { user } = useUser();
@@ -1497,6 +1552,59 @@ export function ChatArea({
     );
   };
 
+  // Get tally logic for duplicate detection
+  const getTallyInfo = useCallback((agents: any[]) => {
+    const tallyMap = new Map<string, number>();
+    const displayNames: string[] = [];
+
+    // Build display names for all agents
+    agents.forEach((ag) => {
+      const effectiveModel = ag.model || "gpt-4o";
+      const simplifiedName = getSimplifiedModelName(effectiveModel);
+      const displayName = ag.name || simplifiedName;
+      displayNames.push(displayName);
+    });
+
+    // Count occurrences and assign tally numbers
+    const nameCounts: { [key: string]: number } = {};
+    const nameIndexes: { [key: string]: number[] } = {};
+
+    displayNames.forEach((name, idx) => {
+      if (!nameCounts[name]) {
+        nameCounts[name] = 0;
+        nameIndexes[name] = [];
+      }
+      nameCounts[name]++;
+      nameIndexes[name].push(idx);
+    });
+
+    // Only assign tallies if there are duplicates
+    Object.keys(nameCounts).forEach((name) => {
+      if (nameCounts[name] > 1) {
+        nameIndexes[name].forEach((agentIndex, occurrence) => {
+          tallyMap.set(`${agentIndex}`, occurrence + 1); // 1-based tally numbers
+        });
+      }
+    });
+
+    return tallyMap;
+  }, []);
+
+  const getTallyIcon = useCallback((tallyNumber: number) => {
+    switch (tallyNumber) {
+      case 1:
+        return Tally1;
+      case 2:
+        return Tally2;
+      case 3:
+        return Tally3;
+      case 4:
+        return Tally4;
+      default:
+        return null;
+    }
+  }, []);
+
   // Group steps by agent and calculate layout
   const agentGroups = useMemo(() => {
     const stepsByAgent = new Map();
@@ -1628,6 +1736,12 @@ export function ChatArea({
 
     return groups;
   }, [agentSteps, queuedAgents, columnStates.length]);
+
+  // Calculate tally information for duplicate names
+  const tallyMap = useMemo(
+    () => getTallyInfo(agentGroups),
+    [agentGroups, getTallyInfo]
+  );
 
   // Auto-scroll agent columns to bottom on content changes and initial load
   useEffect(() => {
@@ -1920,34 +2034,193 @@ export function ChatArea({
               {/* Agent Column */}
               <div className="h-full flex flex-col relative z-20">
                 {/* Agent Header */}
-                <div className="agent-header flex flex-row justify-between flex-shrink-0 pr-2 border-b-2 border-lavender-400/30 hover:bg-lavender-400/10">
-                  <div className="flex items-center gap-1">
-                    <div className="border border-lavender-400/30 border-l-0 border-y-0 p-1 mr-1">
-                      <ModelAvatar model={agent.model} size="sm" />
-                    </div>
-                    <EditableText
-                      value={agent.name || `LLM ${agent.index + 1}`}
-                      onSave={(newName) =>
-                        handleUpdateAgentName(agent._id, newName)
-                      }
-                      placeholder={`LLM ${agent.index + 1}`}
-                      className="min-w-0"
-                      maxLength={50}
-                      disabled={
-                        !agent._id || agent._id.startsWith("placeholder-")
-                      }
-                      showEditIcon={true}
-                      editTrigger="click"
-                      validateOnChange={(value) => {
-                        if (value.trim().length === 0)
-                          return "Name cannot be empty";
-                        if (value.trim().length > 50) return "Name too long";
-                        return null;
-                      }}
-                    />
-                    <kbd className="text-gray-400 text-xs ml-1 bg-gray-800/50 rounded-md px-2 py-0.5 font-medium">
-                      {agent.model}
-                    </kbd>
+                <div className="agent-header flex flex-row justify-between items-center flex-shrink-0 px-3 py-2 border-b-2 border-lavender-400/30 hover:bg-lavender-400/10">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {(() => {
+                      const effectiveModel = agent.model || "gpt-4o";
+                      const providerKey = getProviderKey(effectiveModel);
+                      const provider = MODEL_PROVIDERS[providerKey];
+                      const simplifiedName =
+                        getSimplifiedModelName(effectiveModel);
+                      const currentTallyNumber = tallyMap.get(`${agent.index}`);
+                      const TallyIcon = currentTallyNumber
+                        ? getTallyIcon(currentTallyNumber)
+                        : null;
+
+                      // Function to detect and replace company names with logos in text
+                      const renderTextWithCompanyLogos = (text: string) => {
+                        const companyPatterns = [
+                          { name: "ChatGPT", provider: MODEL_PROVIDERS.openai },
+                          { name: "OpenAI", provider: MODEL_PROVIDERS.openai },
+                          {
+                            name: "Claude",
+                            provider: MODEL_PROVIDERS.anthropic,
+                          },
+                          {
+                            name: "Anthropic",
+                            provider: MODEL_PROVIDERS.anthropic,
+                          },
+                          { name: "Grok", provider: MODEL_PROVIDERS.xai },
+                          { name: "xAI", provider: MODEL_PROVIDERS.xai },
+                          { name: "Gemini", provider: MODEL_PROVIDERS.google },
+                          { name: "Google", provider: MODEL_PROVIDERS.google },
+                        ];
+
+                        // Check if text contains any company names
+                        const foundPattern = companyPatterns.find((pattern) =>
+                          text
+                            .toLowerCase()
+                            .includes(pattern.name.toLowerCase())
+                        );
+
+                        if (foundPattern) {
+                          // Split text around the company name and replace with logo
+                          const regex = new RegExp(
+                            `\\b${foundPattern.name}\\b`,
+                            "gi"
+                          );
+                          const parts = text.split(regex);
+
+                          return (
+                            <div className="flex items-center gap-1">
+                              {parts.map((part, index) => (
+                                <React.Fragment key={index}>
+                                  {part && <span>{part}</span>}
+                                  {index < parts.length - 1 && (
+                                    <foundPattern.provider.icon
+                                      size={12}
+                                      className={
+                                        foundPattern.provider.iconColor
+                                      }
+                                    />
+                                  )}
+                                </React.Fragment>
+                              ))}
+                            </div>
+                          );
+                        }
+
+                        return <span>{text}</span>;
+                      };
+
+                      return (
+                        <>
+                          {/* Company Logo - Always First */}
+                          {provider?.icon && (
+                            <div className="flex-shrink-0">
+                              <provider.icon
+                                size={16}
+                                className={provider.iconColor}
+                              />
+                            </div>
+                          )}
+
+                          {/* Model Name and Edit Section */}
+                          <div className="flex items-center gap-1 flex-1 min-w-0">
+                            {agent.name ? (
+                              // Custom name with potential company logo replacement
+                              <div className="flex items-center gap-1 flex-1 min-w-0">
+                                <div className="text-sm font-medium text-white truncate">
+                                  {renderTextWithCompanyLogos(agent.name)}
+                                </div>
+                                {TallyIcon && (
+                                  <TallyIcon
+                                    size={12}
+                                    className="text-white flex-shrink-0"
+                                  />
+                                )}
+                              </div>
+                            ) : (
+                              // Auto-generated name
+                              <div className="flex items-center gap-1">
+                                <span className="text-sm font-medium text-white">
+                                  {simplifiedName}
+                                </span>
+                                {TallyIcon && (
+                                  <TallyIcon size={12} className="text-white" />
+                                )}
+                              </div>
+                            )}
+
+                            {/* Edit Button - Right after model name */}
+                            {editingAgentId === agent._id ? (
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <input
+                                  type="text"
+                                  value={editingValue}
+                                  onChange={(e) =>
+                                    setEditingValue(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      if (editingValue.trim()) {
+                                        handleUpdateAgentName(
+                                          agent._id,
+                                          editingValue.trim()
+                                        )
+                                          .then(() => {
+                                            setEditingAgentId(null);
+                                            setEditingValue("");
+                                          })
+                                          .catch(() => {
+                                            // Keep editing mode if save fails
+                                          });
+                                      }
+                                    } else if (e.key === "Escape") {
+                                      setEditingAgentId(null);
+                                      setEditingValue("");
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    if (editingValue.trim()) {
+                                      handleUpdateAgentName(
+                                        agent._id,
+                                        editingValue.trim()
+                                      )
+                                        .then(() => {
+                                          setEditingAgentId(null);
+                                          setEditingValue("");
+                                        })
+                                        .catch(() => {
+                                          // Keep editing mode if save fails
+                                        });
+                                    } else {
+                                      setEditingAgentId(null);
+                                      setEditingValue("");
+                                    }
+                                  }}
+                                  className="text-xs bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white w-24 focus:outline-none focus:border-lavender-400"
+                                  placeholder={`LLM ${agent.index + 1}`}
+                                  autoFocus
+                                />
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setEditingAgentId(agent._id);
+                                  setEditingValue(
+                                    agent.name || `LLM ${agent.index + 1}`
+                                  );
+                                }}
+                                className="flex-shrink-0 p-1 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded transition-colors"
+                                title="Edit agent name"
+                                disabled={
+                                  !agent._id ||
+                                  agent._id.startsWith("placeholder-")
+                                }
+                              >
+                                <Edit3 size={12} />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Model Badge */}
+                          <div className="flex-shrink-0 text-xs text-gray-400 bg-gray-800/50 rounded px-2 py-0.5 font-mono">
+                            {simplifiedName}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                   <button
                     onClick={() => handleFocusToggle(agent.index)}
@@ -2073,7 +2346,7 @@ export function ChatArea({
                               (conversation, turnIndex) => (
                                 <div key={turnIndex} className="space-y-3">
                                   {/* User Message with References */}
-                                  <div className="flex justify-end mt-2">
+                                  <div className="flex justify-end mt-2 px-0.5">
                                     <div className="max-w-[80%] ml-auto bg-blue-600/20 border border-blue-500/30 rounded-xl px-3 py-2">
                                       {(() => {
                                         // Extract clean prompt and parse embedded references
