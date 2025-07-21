@@ -324,6 +324,8 @@ interface InitialChainInputProps {
   isStreaming?: boolean;
   presetAgents?: Agent[] | null;
   onClearPresetAgents?: () => void;
+  agents: Agent[];
+  setAgents: React.Dispatch<React.SetStateAction<Agent[]>>;
 }
 
 export function InitialChainInput({
@@ -333,13 +335,13 @@ export function InitialChainInput({
   isStreaming = false,
   presetAgents,
   onClearPresetAgents,
+  agents,
+  setAgents,
 }: InitialChainInputProps) {
   const initialAgent = {
     id: uuidv4(),
     ...DEFAULT_AGENT_CONFIG,
   };
-
-  const [agents, setAgents] = useState<Agent[]>([initialAgent]);
 
   const [animatingAgentId, setAnimatingAgentId] = useState<string | null>(null);
 
@@ -741,7 +743,7 @@ export function InitialChainInput({
       // Single agent: centered with max-width constraint
       return {
         outerContainer: "w-full flex justify-center",
-        innerContainer: "w-full px-4",
+        innerContainer: "w-full px-0 lg:px-4",
         flexContainer:
           "flex flex-col lg:flex-row lg:items-end lg:justify-center w-full",
         agentWrapper:

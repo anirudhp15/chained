@@ -954,7 +954,7 @@ export function AgentInput({
 
   return (
     <div
-      className={`relative flex flex-col ${isLastAgent ? "mx-0 mb-0" : "mx-2 mb-2"} lg:mx-0 lg:mb-0 ${isLastAgent ? "rounded-t-3xl lg:rounded-3xl border-y-0 border-x-0 lg:border-y lg:border-x" : "rounded-3xl"} border border-gray-600/50 bg-slate-800/90 backdrop-blur-lg hover:backdrop-blur-xl hover:border-lavender-400/20 animate-none ${
+      className={`relative flex flex-col ${isLastAgent ? "mx-0 mb-0" : "mx-2 mb-2"} lg:mx-0 lg:mb-0 ${isLastAgent ? "rounded-t-3xl lg:rounded-xl border-y-0 border-x-0 lg:border-y lg:border-x" : "rounded-3xl lg:rounded-xl"} border border-gray-600/50 bg-slate-800/90 backdrop-blur-lg hover:backdrop-blur-xl hover:border-lavender-400/20 animate-none ${
         // Collaborative width adjustment - use more conservative sizing
         isCollaborativeGroup && collaborativeGroupSize
           ? collaborativeGroupSize === 2

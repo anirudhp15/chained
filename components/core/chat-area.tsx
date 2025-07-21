@@ -1928,7 +1928,10 @@ export function ChatArea({
     return (
       <div className="h-full overflow-y-auto px-4 flex items-center bg-gray-950">
         <div className="max-w-6xl w-full mx-auto">
-          <WelcomeScreen onLoadPreset={onLoadPreset || (() => {})} />
+          <WelcomeScreen
+            onLoadPreset={onLoadPreset || (() => {})}
+            agents={queuedAgents || []}
+          />
         </div>
       </div>
     );

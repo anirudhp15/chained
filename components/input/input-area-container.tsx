@@ -31,6 +31,8 @@ interface InputAreaContainerProps {
   isLoading?: boolean;
   isStreaming?: boolean;
   queuedAgents?: Agent[];
+  agents: Agent[];
+  setAgents: React.Dispatch<React.SetStateAction<Agent[]>>;
 }
 
 export function InputAreaContainer({
@@ -48,6 +50,8 @@ export function InputAreaContainer({
   isLoading = false,
   isStreaming = false,
   queuedAgents = [],
+  agents,
+  setAgents,
 }: InputAreaContainerProps) {
   // Render the appropriate input component based on mode
   switch (mode) {
@@ -60,6 +64,8 @@ export function InputAreaContainer({
           queuedAgents={queuedAgents}
           presetAgents={presetAgents}
           onClearPresetAgents={onClearPresetAgents}
+          agents={agents}
+          setAgents={setAgents}
         />
       );
 

@@ -57,6 +57,13 @@ function ChatLandingContent() {
   const [queuedAgents, setQueuedAgents] = useState<Agent[]>([]);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const { isCollapsed } = useSidebar();
+  const [inputAgents, setInputAgents] = useState<Agent[]>([
+    {
+      id: "1",
+      model: "",
+      prompt: "",
+    },
+  ]);
 
   // Only show sidebar if there are chats to display
   const shouldShowSidebar = recentChats && recentChats.length > 0;
@@ -65,6 +72,7 @@ function ChatLandingContent() {
     try {
       // Instead of creating a session immediately, just load the preset into the input area
       setPresetAgents(agents);
+      setInputAgents(agents);
     } catch (error) {
       console.error("Failed to load preset:", error);
     }
@@ -129,7 +137,10 @@ function ChatLandingContent() {
           <div className="flex-1 flex items-center justify-center w-full ">
             {/* Beams Background */}
             <BeamsBackground />
-            <WelcomeScreen onLoadPreset={handleLoadPreset} />
+            <WelcomeScreen
+              onLoadPreset={handleLoadPreset}
+              agents={inputAgents}
+            />
           </div>
         )}
 
@@ -142,6 +153,8 @@ function ChatLandingContent() {
           isLoading={isLoading}
           isStreaming={isStreaming}
           queuedAgents={queuedAgents}
+          agents={inputAgents}
+          setAgents={setInputAgents}
         />
       </div>
     </div>

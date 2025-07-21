@@ -28,6 +28,7 @@ import { createPortal } from "react-dom";
 
 interface WelcomeScreenProps {
   onLoadPreset: (agents: Agent[]) => void;
+  agents: Agent[];
 }
 
 interface PresetChain {
@@ -352,7 +353,7 @@ const COLUMN_THEMES: ColumnTheme[] = [
   },
 ];
 
-export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
+export function WelcomeScreen({ onLoadPreset, agents }: WelcomeScreenProps) {
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showPresetInfo, setShowPresetInfo] = useState<string | null>(null);
@@ -428,7 +429,9 @@ export function WelcomeScreen({ onLoadPreset }: WelcomeScreenProps) {
 
             {/* Category Selection Buttons - Show immediately if no category selected */}
             {!selectedCategory && (
-              <div className="mt-6 md:mt-8">
+              <div
+                className={`mt-6 md:mt-8 ${agents.length <= 1 ? "hidden lg:block" : "block"}`}
+              >
                 <div className="grid grid-cols-3 md:flex md:flex-row md:items-center md:justify-center gap-2 md:gap-4 px-2 md:px-0">
                   {COLUMN_THEMES.map((theme, index) => (
                     <button
