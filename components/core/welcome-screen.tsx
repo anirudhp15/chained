@@ -429,9 +429,7 @@ export function WelcomeScreen({ onLoadPreset, agents }: WelcomeScreenProps) {
 
             {/* Category Selection Buttons - Show immediately if no category selected */}
             {!selectedCategory && (
-              <div
-                className={`mt-6 md:mt-8 ${agents.length <= 1 ? "hidden lg:block" : "block"}`}
-              >
+              <div className="mt-6 md:mt-8">
                 <div className="grid grid-cols-3 md:flex md:flex-row md:items-center md:justify-center gap-2 md:gap-4 px-2 md:px-0">
                   {COLUMN_THEMES.map((theme, index) => (
                     <button
