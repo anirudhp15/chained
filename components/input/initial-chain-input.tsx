@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { ChevronUp, BookOpen, Save } from "lucide-react";
-import { AgentInput, type Agent } from "./agent-input";
+import { AgentInput, type Agent } from "../core/agent-input";
 import { v4 as uuidv4 } from "uuid";
 import {
   DEFAULT_AGENT_CONFIG,
@@ -69,7 +69,6 @@ const CONNECTION_TYPES = [
     Icon: GitCompareArrows,
     description: "Agents work together iteratively",
     color: "text-green-400",
-    disabled: true,
   },
 ] satisfies Array<{
   type: EnabledConnectionType;
@@ -190,19 +189,14 @@ const MobileConnectionSelector = ({
                 return (
                   <button
                     key={type.type}
-                    onClick={() =>
-                      !type.disabled && handleConnectionTypeChange(type.type)
-                    }
-                    disabled={type.disabled}
-                    className={`w-full px-3 py-2 text-left hover:bg-gray-700/50 disabled:opacity-50 disabled:cursor-not-allowed first:rounded-t-lg last:rounded-b-lg flex items-center gap-3 transition-colors text-xs relative ${
+                    onClick={() => handleConnectionTypeChange(type.type)}
+                    className={`w-full px-3 py-2 text-left hover:bg-gray-700/50 first:rounded-t-lg last:rounded-b-lg flex items-center gap-3 transition-colors text-xs relative ${
                       isSelected
                         ? "bg-lavender-500/10 text-lavender-400"
                         : "text-white"
-                    } ${type.disabled ? "bg-gray-800/50" : ""}`}
+                    }`}
                   >
-                    <span
-                      className={`${type.color} ${type.iconRotate || ""} ${type.disabled ? "opacity-50" : ""}`}
-                    >
+                    <span className={`${type.color} ${type.iconRotate || ""}`}>
                       <TypeIcon size={14} />
                     </span>
                     <div className="flex-1">
@@ -210,20 +204,13 @@ const MobileConnectionSelector = ({
                         className={`font-medium flex items-center gap-2 ${isSelected ? "text-lavender-400" : ""}`}
                       >
                         {type.label}
-                        {type.disabled && (
-                          <span className="text-xs px-2 py-0.5 bg-gray-700/50 border border-gray-600/30 rounded-full text-gray-400">
-                            Coming Soon
-                          </span>
-                        )}
-                        {isSelected && !type.disabled && (
+                        {isSelected && (
                           <span className="ml-2 text-xs opacity-60">
                             Selected
                           </span>
                         )}
                       </div>
-                      <div
-                        className={`text-gray-400 text-xs ${type.disabled ? "opacity-70" : ""}`}
-                      >
+                      <div className="text-gray-400 text-xs">
                         {type.description}
                       </div>
                     </div>
@@ -383,6 +370,109 @@ export function InitialChainInput({
 
   // Get sidebar state for positioning
   const { sidebarWidth } = useSidebar();
+
+  // Helper function to detect collaborative groups
+  const getCollaborativeGroups = () => {
+    const groups: Array<{
+      startIndex: number;
+      endIndex: number;
+      agents: Agent[];
+    }> = [];
+
+    let currentGroupStart = -1;
+
+    agents.forEach((agent, index) => {
+      const isCollaborative = agent.connection?.type === "collaborative";
+
+      if (isCollaborative && currentGroupStart === -1) {
+        // Start of a new collaborative group (include the previous agent)
+        currentGroupStart = Math.max(0, index - 1);
+      } else if (!isCollaborative && currentGroupStart !== -1) {
+        // End of collaborative group
+        groups.push({
+          startIndex: currentGroupStart,
+          endIndex: index - 1,
+          agents: agents.slice(currentGroupStart, index),
+        });
+        currentGroupStart = -1;
+      }
+    });
+
+    // Handle case where collaborative group extends to the end
+    if (currentGroupStart !== -1) {
+      groups.push({
+        startIndex: currentGroupStart,
+        endIndex: agents.length - 1,
+        agents: agents.slice(currentGroupStart),
+      });
+    }
+
+    return groups;
+  };
+
+  // Helper function to check if an agent is part of a collaborative group
+  const getAgentGroupInfo = (index: number) => {
+    const groups = getCollaborativeGroups();
+    const group = groups.find(
+      (g) => index >= g.startIndex && index <= g.endIndex
+    );
+
+    if (group) {
+      return {
+        isCollaborativeGroup: true,
+        collaborativeAgents: group.agents,
+        collaborativeGroupSize: group.agents.length,
+        isGroupStart: index === group.startIndex,
+        groupIndex: groups.indexOf(group),
+      };
+    }
+
+    return {
+      isCollaborativeGroup: false,
+      collaborativeAgents: undefined,
+      collaborativeGroupSize: undefined,
+      isGroupStart: false,
+      groupIndex: -1,
+    };
+  };
+
+  // Chain settings handler - sets all connections to the specified type
+  const handleSetAllConnections = (type: EnabledConnectionType) => {
+    const updatedAgents = agents.map((agent, index) => {
+      // For parallel type, include first agent to enable parallel-first execution
+      if (index === 0 && type !== "parallel") return agent; // Skip first agent for non-parallel types
+
+      return {
+        ...agent,
+        connection: {
+          type,
+          sourceAgentId: index > 0 ? agents[index - 1]?.id : undefined,
+          condition:
+            type === "conditional"
+              ? agent.connection?.condition || ""
+              : undefined,
+        },
+      };
+    });
+
+    setAgents(updatedAgents);
+  };
+
+  // Auto-convert collaborative agents to direct when only one agent remains
+  useEffect(() => {
+    if (agents.length === 1 && agents[0].connection?.type === "collaborative") {
+      // Convert the single agent from collaborative back to direct
+      setAgents([
+        {
+          ...agents[0],
+          connection: {
+            type: "direct",
+            sourceAgentId: undefined,
+          },
+        },
+      ]);
+    }
+  }, [agents.length]);
 
   // Auto-manage expanded state: always keep the last agent expanded
   useEffect(() => {
@@ -594,6 +684,23 @@ export function InitialChainInput({
   const handleSendChain = () => {
     const validAgents = agents.filter((agent) => agent.prompt.trim() !== "");
     if (validAgents.length > 0) {
+      // Check if any agents are in collaborative mode
+      const hasCollaborativeAgents = validAgents.some(
+        (agent) => agent.connection?.type === "collaborative"
+      );
+
+      if (hasCollaborativeAgents) {
+        // For now, create placeholder collaborative agents with hardcoded responses
+        const collaborativeAgents = validAgents.map((agent) => ({
+          ...agent,
+          // Add a placeholder response for collaborative mode
+          collaborativeResponse: `[Collaborative Mode] This is a placeholder response for ${agent.name || generateSmartAgentName(agent.model || "gpt-4o", agents, agent.id)}. The collaborative functionality is working but streaming is not yet implemented. The agent received: "${agent.prompt}"`,
+        }));
+
+        console.log("Collaborative chain detected:", collaborativeAgents);
+        // You can add UI feedback here to show collaborative mode is active
+      }
+
       onSendChain(validAgents);
       // Clear all prompts and reset to single agent after sending
       const newAgent = {
@@ -621,7 +728,7 @@ export function InitialChainInput({
   // Helper function to get consistent sizing for all agents
   const getAgentContainerClasses = () => {
     if (agents.length === 1) {
-      return "w-full max-w-4xl mx-auto";
+      return "w-full mx-auto";
     } else {
       // For multiple agents, each takes equal space with flex-1
       return "w-full flex-1";
@@ -634,7 +741,7 @@ export function InitialChainInput({
       // Single agent: centered with max-width constraint
       return {
         outerContainer: "w-full flex justify-center",
-        innerContainer: "w-full max-w-4xl",
+        innerContainer: "w-full px-4",
         flexContainer:
           "flex flex-col lg:flex-row lg:items-end lg:justify-center w-full",
         agentWrapper:
@@ -738,106 +845,159 @@ export function InitialChainInput({
                 <div className={layoutClasses.innerContainer}>
                   {/* Mobile: Vertical Stack, Desktop: Horizontal Layout */}
                   <div className={layoutClasses.flexContainer}>
-                    {agents.map((agent, index) => (
-                      <div
-                        key={agent.id}
-                        className={layoutClasses.agentWrapper}
-                      >
-                        {/* Agent Card using AgentInput component */}
+                    {agents.map((agent, index) => {
+                      const groupInfo = getAgentGroupInfo(index);
+
+                      // Skip rendering if this agent is part of a collaborative group but not the group start
+                      if (
+                        groupInfo.isCollaborativeGroup &&
+                        !groupInfo.isGroupStart
+                      ) {
+                        return null;
+                      }
+
+                      return (
                         <div
-                          className={`${getAgentContainerClasses()} ${agents.length > 1 ? "" : ""} ${
-                            queuedAgents.some((qa) => qa.id === agent.id)
-                              ? "border-lavender-400/50"
+                          key={agent.id}
+                          className={`${layoutClasses.agentWrapper} ${
+                            groupInfo.isCollaborativeGroup &&
+                            groupInfo.collaborativeGroupSize
+                              ? groupInfo.collaborativeGroupSize === 2
+                                ? "lg:flex-[2]"
+                                : groupInfo.collaborativeGroupSize === 3
+                                  ? "lg:flex-[3]"
+                                  : "lg:flex-[4]"
                               : ""
-                          } `}
+                          }`}
                         >
+                          {/* Agent Card using AgentInput component */}
                           <div
-                            className={`${
-                              animatingAgentId === agent.id
-                                ? "animate-in slide-in-from-bottom-4 lg:slide-in-from-right-8 fade-in duration-300 ease-out"
+                            className={`${getAgentContainerClasses()} ${agents.length > 1 ? "" : ""} ${
+                              queuedAgents.some((qa) => qa.id === agent.id)
+                                ? "border-lavender-400/50"
                                 : ""
                             }`}
                           >
-                            <NodePill
+                            <div
+                              className={`${
+                                animatingAgentId === agent.id
+                                  ? "animate-in slide-in-from-bottom-4 lg:slide-in-from-right-8 fade-in duration-300 ease-out"
+                                  : ""
+                              }`}
+                            >
+                              <NodePill
+                                agent={agent}
+                                onUpdate={(updatedAgent) =>
+                                  updateAgent(index, updatedAgent)
+                                }
+                                index={index}
+                                canAddAgent={
+                                  agents.length < MAX_AGENTS_PER_CHAIN
+                                }
+                                onAddAgent={
+                                  agents.length < MAX_AGENTS_PER_CHAIN
+                                    ? addAgent
+                                    : undefined
+                                }
+                                isLastAgent={index === agents.length - 1}
+                                onRemove={() => removeAgent(index)}
+                                canRemove={canRemove}
+                                // Mobile-specific props
+                                isExpanded={expandedAgents.has(agent.id)}
+                                onToggleExpansion={() =>
+                                  toggleAgentExpansion(agent.id)
+                                }
+                                onLongPressStart={(e: React.TouchEvent) =>
+                                  handleLongPressStart(agent.id, e)
+                                }
+                                onLongPressEnd={handleLongPressEnd}
+                                onTouchStart={hideTooltip}
+                                // Indicate if this agent can be collapsed (not the last one)
+                                isCollapsible={index !== agents.length - 1}
+                                // Show connection for non-first agents OR first agent if parallel
+                                showConnection={
+                                  (index > 0 ||
+                                    agent.connection?.type === "parallel") &&
+                                  !groupInfo.isCollaborativeGroup
+                                }
+                                // Pass source agent name for connection display
+                                sourceAgentName={
+                                  index > 0
+                                    ? agents[index - 1]?.name ||
+                                      (agents[index - 1]?.model
+                                        ? generateSmartAgentName(
+                                            agents[index - 1].model || "gpt-4o",
+                                            agents, // Pass full agents array to get complete context
+                                            agents[index - 1].id
+                                          )
+                                        : `Node ${index}`)
+                                    : undefined
+                                }
+                                // All agents for smart naming
+                                allAgents={agents}
+                                // Chain settings prop for root LLM
+                                onSetAllConnections={
+                                  index === 0
+                                    ? handleSetAllConnections
+                                    : undefined
+                                }
+                                // Collaborative grouping props
+                                collaborativeAgents={
+                                  groupInfo.collaborativeAgents
+                                }
+                                isCollaborativeGroup={
+                                  groupInfo.isCollaborativeGroup
+                                }
+                                collaborativeGroupSize={
+                                  groupInfo.collaborativeGroupSize
+                                }
+                              />
+                            </div>
+                            <AgentInput
                               agent={agent}
                               onUpdate={(updatedAgent) =>
                                 updateAgent(index, updatedAgent)
                               }
                               index={index}
-                              canAddAgent={agents.length < MAX_AGENTS_PER_CHAIN}
-                              onAddAgent={
-                                agents.length < MAX_AGENTS_PER_CHAIN
-                                  ? addAgent
-                                  : undefined
-                              }
                               isLastAgent={index === agents.length - 1}
-                              onRemove={() => removeAgent(index)}
-                              canRemove={canRemove}
-                              // Mobile-specific props
-                              isExpanded={expandedAgents.has(agent.id)}
-                              onToggleExpansion={() =>
-                                toggleAgentExpansion(agent.id)
-                              }
-                              onLongPressStart={(e: React.TouchEvent) =>
-                                handleLongPressStart(agent.id, e)
-                              }
-                              onLongPressEnd={handleLongPressEnd}
-                              onTouchStart={hideTooltip}
-                              // Indicate if this agent can be collapsed (not the last one)
-                              isCollapsible={index !== agents.length - 1}
-                              // Show connection for non-first agents on both mobile and desktop
-                              showConnection={index > 0}
-                              // Pass source agent name for connection display
-                              sourceAgentName={
-                                index > 0
-                                  ? agents[index - 1]?.name ||
-                                    (agents[index - 1]?.model
-                                      ? generateSmartAgentName(
-                                          agents[index - 1].model || "gpt-4o",
-                                          agents, // Pass full agents array to get complete context
-                                          agents[index - 1].id
-                                        )
-                                      : `Node ${index}`)
+                              onSendChain={
+                                index === agents.length - 1
+                                  ? handleSendChain
                                   : undefined
                               }
+                              canSend={canSend}
+                              isLoading={isLoading || isStreaming}
+                              // Mobile-specific props
+                              isMobileCollapsed={!expandedAgents.has(agent.id)}
                               // All agents for smart naming
                               allAgents={agents}
+                              // Copy functionality
+                              onCopyPrompt={() => handleCopyPrompt(index)}
+                              showCopyButton={
+                                agents.length > 1 && agent.prompt.trim() !== ""
+                              }
+                              // Collaborative grouping props
+                              collaborativeAgents={
+                                groupInfo.collaborativeAgents
+                              }
+                              isCollaborativeGroup={
+                                groupInfo.isCollaborativeGroup
+                              }
+                              collaborativeGroupSize={
+                                groupInfo.collaborativeGroupSize
+                              }
                             />
-                          </div>
-                          <AgentInput
-                            agent={agent}
-                            onUpdate={(updatedAgent) =>
-                              updateAgent(index, updatedAgent)
-                            }
-                            index={index}
-                            isLastAgent={index === agents.length - 1}
-                            onSendChain={
-                              index === agents.length - 1
-                                ? handleSendChain
-                                : undefined
-                            }
-                            canSend={canSend}
-                            isLoading={isLoading || isStreaming}
-                            // Mobile-specific props
-                            isMobileCollapsed={!expandedAgents.has(agent.id)}
-                            // All agents for smart naming
-                            allAgents={agents}
-                            // Copy functionality
-                            onCopyPrompt={() => handleCopyPrompt(index)}
-                            showCopyButton={
-                              agents.length > 1 && agent.prompt.trim() !== ""
-                            }
-                          />
 
-                          {/* Queued Agent Indicator */}
-                          {queuedAgents.some((qa) => qa.id === agent.id) && (
-                            <div className="text-xs text-lavender-400/60 text-center mt-0.5 lg:mt-1">
-                              Queued...
-                            </div>
-                          )}
+                            {/* Queued Agent Indicator */}
+                            {queuedAgents.some((qa) => qa.id === agent.id) && (
+                              <div className="text-xs text-lavender-400/60 text-center mt-0.5 lg:mt-1">
+                                Queued...
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>

@@ -5,6 +5,8 @@ import { SidebarProvider } from "@/lib/sidebar-context";
 import { PostHogProvider } from "./posthog-provider";
 import { MathProvider } from "@/components/math-provider";
 import { CopyTrackingProvider } from "@/lib/copy-tracking-context";
+// Temporarily disabled for debugging
+// import { RouteWarmerInitializer } from "@/components/RouteWarmerInitializer";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -123,6 +125,8 @@ export default function RootLayout({
             <ConvexProvider>
               <SidebarProvider>
                 <CopyTrackingProvider>
+                  {/* Temporarily disabled for debugging */}
+                  {/* <RouteWarmerInitializer /> */}
                   <div className="min-h-screen bg-gray-950">{children}</div>
                 </CopyTrackingProvider>
               </SidebarProvider>

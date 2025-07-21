@@ -1,6 +1,6 @@
 "use client";
 
-import { MarkdownRenderer } from "../../components/chat/markdown-renderer";
+import { MarkdownRenderer } from "../../components/ui/markdown-renderer";
 import { motion } from "framer-motion";
 import Beams from "@/components/Backgrounds/Beams/Beams";
 

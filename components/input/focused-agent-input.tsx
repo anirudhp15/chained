@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { type Agent } from "./agent-input";
-import { ModalityIcons } from "../modality/ModalityIcons";
+import { type Agent } from "../core/agent-input";
+import { ModalityIcons } from "../features/modality/ModalityIcons";
 import { useSidebar } from "@/lib/sidebar-context";
 import { generateSmartAgentName } from "@/lib/utils";
 import { Pencil, ArrowUp, LoaderCircle } from "lucide-react";

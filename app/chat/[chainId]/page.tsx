@@ -12,15 +12,15 @@ import {
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { Sidebar } from "../../../components/chat/sidebar";
+import { Sidebar } from "../../../components/layout/sidebar";
 import { MobileSidebarToggle } from "../../../components/MobileSidebarToggle";
-import { ChatArea } from "../../../components/chat/chat-area";
+import { ChatArea } from "../../../components/core/chat-area";
 import {
   InputAreaContainer,
   type InputMode,
 } from "../../../components/input/input-area-container";
 
-import type { Agent } from "../../../components/input/agent-input";
+import type { Agent } from "../../../components/core/agent-input";
 import { evaluateCondition } from "../../../lib/condition-evaluator";
 import { PerformanceProvider } from "../../../lib/performance-context";
 import Link from "next/link";
@@ -936,22 +936,11 @@ function ChatPageContent() {
       const agent = agents[i];
       const connectionType = agent.connection?.type || "direct";
 
-      // First agent is always sequential
-      if (i === 0) {
-        currentGroup = {
-          type: "sequential",
-          agents: [agent],
-          startIndex: i,
-        };
-        groups.push(currentGroup);
-        continue;
-      }
-
       // If this agent is parallel and the previous group is also parallel, add to existing group
       if (connectionType === "parallel" && currentGroup?.type === "parallel") {
         currentGroup.agents.push(agent);
       }
-      // If this agent is parallel but previous wasn't, start new parallel group
+      // If this agent is parallel but previous wasn't (or this is first agent), start new parallel group
       else if (connectionType === "parallel") {
         currentGroup = {
           type: "parallel",

@@ -8,8 +8,8 @@ import {
   ExternalLink,
   Clock,
 } from "lucide-react";
-import { UploadedImage } from "../modality/ImageUpload";
-import { WebSearchData } from "../modality/WebSearch";
+import { UploadedImage } from "../features/modality/ImageUpload";
+import { WebSearchData } from "../features/modality/WebSearch";
 import { CopyButton } from "./CopyButton";
 
 interface AttachmentDisplayProps {

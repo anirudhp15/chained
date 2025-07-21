@@ -244,8 +244,12 @@ export const isReasoningModel = (model: string): boolean => {
 export const MAX_AGENTS_PER_CHAIN = 4;
 
 // Connection types configuration
-export type EnabledConnectionType = "direct" | "conditional" | "parallel";
-export type AllConnectionType = EnabledConnectionType | "collaborative";
+export type EnabledConnectionType =
+  | "direct"
+  | "conditional"
+  | "parallel"
+  | "collaborative";
+export type AllConnectionType = EnabledConnectionType;
 
 export const CONNECTION_TYPES = [
   {
@@ -277,7 +281,8 @@ export const CONNECTION_TYPES = [
     Icon: GitCompareArrows,
     description: "Agents work together iteratively",
     color: "text-green-400",
-    disabled: true,
+    bgColor: "bg-green-500/10",
+    borderColor: "border-green-500/30",
   },
 ] satisfies Array<{
   type: AllConnectionType;
@@ -287,6 +292,8 @@ export const CONNECTION_TYPES = [
   disabled?: boolean;
   color: string;
   iconRotate?: string;
+  bgColor?: string;
+  borderColor?: string;
 }>;
 
 export const CONDITION_PRESETS = [

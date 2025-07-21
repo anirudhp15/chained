@@ -19,6 +19,8 @@ import {
   Tally4,
   CircleAlert,
   CircleCheck,
+  Settings,
+  Zap,
 } from "lucide-react";
 import { IoGitBranchOutline } from "react-icons/io5";
 import { Agent } from "../input/agent-input";
@@ -26,8 +28,65 @@ import {
   CONDITION_PRESETS,
   MODEL_PROVIDERS,
   getProviderKey,
+  CONNECTION_TYPES,
+  type EnabledConnectionType,
 } from "@/lib/constants";
 import { generateSmartAgentName } from "@/lib/utils";
+
+// Chain Quick Settings Component for Root LLM
+const ChainQuickSettings = ({
+  onSetAllConnections,
+  onClose,
+}: {
+  onSetAllConnections: (type: EnabledConnectionType) => void;
+  onClose: () => void;
+}) => {
+  return (
+    <div className="mb-2 bg-gray-800/90 backdrop-blur-sm border border-gray-600/50 rounded-xl p-4 animate-in slide-in-from-top-2 duration-200">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+          <Settings size={16} className="text-lavender-400" />
+          Chain Settings
+        </h3>
+        <button onClick={onClose} className="p-1 hover:bg-gray-700/50 rounded">
+          <X size={14} className="text-gray-400 hover:text-white" />
+        </button>
+      </div>
+
+      <div>
+        <label className="text-xs text-gray-300 mb-2 block">
+          Set All Connections
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {CONNECTION_TYPES.map((connectionType) => (
+            <button
+              key={connectionType.type}
+              onClick={() =>
+                onSetAllConnections(
+                  connectionType.type as EnabledConnectionType
+                )
+              }
+              className={`flex items-center gap-2 p-3 rounded-lg text-left transition-colors bg-gray-700/30 hover:bg-gray-600/50 hover:${connectionType.bgColor} hover:${connectionType.borderColor} border border-gray-700/30`}
+            >
+              <connectionType.Icon
+                size={16}
+                className={`${connectionType.color} ${connectionType.iconRotate || ""}`}
+              />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-white">
+                  {connectionType.label}
+                </div>
+                <div className="text-xs text-gray-400">
+                  All {connectionType.label.toLowerCase()}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface NodePillProps {
   agent: Agent;
@@ -51,66 +110,13 @@ interface NodePillProps {
   sourceAgentName?: string;
   // All agents in the chain for smart naming
   allAgents?: Agent[];
+  // New prop for chain quick settings
+  onSetAllConnections?: (type: EnabledConnectionType) => void;
+  // Collaborative grouping props
+  collaborativeAgents?: Agent[];
+  isCollaborativeGroup?: boolean;
+  collaborativeGroupSize?: number;
 }
-
-// Connection types configuration for mobile
-type EnabledConnectionType =
-  | "direct"
-  | "conditional"
-  | "parallel"
-  | "collaborative";
-
-const CONNECTION_TYPES = [
-  {
-    type: "direct" as const,
-    label: "Direct",
-    Icon: GitCommitHorizontal,
-    description: "Pass previous agent's output directly",
-    color: "text-blue-400",
-    bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/30",
-  },
-  {
-    type: "conditional" as const,
-    label: "Conditional",
-    Icon: IoGitBranchOutline,
-    description: "Run only if a condition is met",
-    color: "text-amber-400",
-    bgColor: "bg-amber-500/10",
-    borderColor: "border-amber-500/30",
-    iconRotate: "rotate-90",
-  },
-  {
-    type: "parallel" as const,
-    label: "Parallel",
-    Icon: GitFork,
-    description: "Run simultaneously",
-    color: "text-purple-400",
-    bgColor: "bg-purple-500/10",
-    borderColor: "border-purple-500/30",
-    iconRotate: "rotate-90",
-  },
-  {
-    type: "collaborative" as const,
-    label: "Collaborative",
-    Icon: GitCompareArrows,
-    description: "Agents work together iteratively",
-    color: "text-green-400",
-    bgColor: "bg-green-500/10",
-    borderColor: "border-green-500/30",
-    disabled: true,
-  },
-] satisfies Array<{
-  type: EnabledConnectionType;
-  label: string;
-  Icon: React.ComponentType<any>;
-  description: string;
-  color: string;
-  bgColor: string;
-  borderColor: string;
-  iconRotate?: string;
-  disabled?: boolean;
-}>;
 
 // Enhanced model-specific example prompts with categories
 const MODEL_PROMPTS = {
@@ -359,6 +365,10 @@ export function NodePill({
   showConnection = false,
   sourceAgentName,
   allAgents = [],
+  onSetAllConnections,
+  collaborativeAgents,
+  isCollaborativeGroup,
+  collaborativeGroupSize,
 }: NodePillProps) {
   // Generate smart default name based on model and existing agents
   const getDefaultName = () => {
@@ -439,6 +449,7 @@ export function NodePill({
   const [tempName, setTempName] = useState(getDefaultName());
   const [showPromptsModal, setShowPromptsModal] = useState(false);
   const [showConnectionModal, setShowConnectionModal] = useState(false);
+  const [showChainSettings, setShowChainSettings] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const pillRef = useRef<HTMLDivElement>(null);
@@ -473,6 +484,93 @@ export function NodePill({
     setShowPromptsModal(false);
     setSearchTerm("");
     setSelectedCategory(null);
+  };
+
+  // Chain settings handler
+  const handleSetAllConnections = (type: EnabledConnectionType) => {
+    if (onSetAllConnections) {
+      onSetAllConnections(type);
+    }
+    setShowChainSettings(false);
+  };
+
+  // Collaborative group display logic
+  const renderCollaborativeGroup = () => {
+    if (!isCollaborativeGroup || !collaborativeAgents) {
+      return null;
+    }
+
+    return (
+      <div className="flex items-center gap-1">
+        {collaborativeAgents.map((collabAgent, idx) => {
+          const collabProviderDisplay = getProviderDisplayForAgent(collabAgent);
+          const collabTallyNumber = tallyMap.get(`${index + idx}`);
+          const CollabTallyIcon = collabTallyNumber
+            ? getTallyIcon(collabTallyNumber)
+            : null;
+
+          return (
+            <React.Fragment key={collabAgent.id}>
+              {/* Edit button for this collaborative agent */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditing(true);
+                }}
+                className="transition-all duration-75 p-1 hover:bg-gray-700/50 rounded"
+              >
+                <Pencil
+                  size={12}
+                  className="text-gray-400 hover:text-lavender-400"
+                />
+              </button>
+
+              {/* Agent display */}
+              <div className="flex items-center gap-1">
+                {collabProviderDisplay.icon && (
+                  <collabProviderDisplay.icon
+                    size={14}
+                    className={collabProviderDisplay.iconColor}
+                  />
+                )}
+                <span className="text-xs whitespace-nowrap text-white font-medium">
+                  {collabAgent.name ||
+                    generateSmartAgentName(
+                      collabAgent.model || "gpt-4o",
+                      allAgents,
+                      collabAgent.id
+                    )}
+                </span>
+                {CollabTallyIcon && (
+                  <CollabTallyIcon size={14} className="text-white" />
+                )}
+              </div>
+
+              {/* Collaborative connection icon between agents */}
+              {idx < collaborativeAgents.length - 1 && (
+                <div title="Collaborative connection" className="mx-1">
+                  <GitCompareArrows size={12} className="text-green-400" />
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Helper function to get provider display for any agent
+  const getProviderDisplayForAgent = (ag: Agent) => {
+    const effectiveModel = ag.model || "gpt-4o";
+    const providerKey = getProviderKey(effectiveModel);
+    const provider = MODEL_PROVIDERS[providerKey];
+    const simplifiedName = getSimplifiedModelName(effectiveModel);
+
+    return {
+      icon: provider?.icon,
+      iconColor: provider?.iconColor,
+      name: simplifiedName,
+    };
   };
 
   // Connection handling functions
@@ -586,18 +684,35 @@ export function NodePill({
 
   return (
     <>
+      {/* Chain Settings Panel - only for root LLM (index 0) on desktop */}
+      {!isMobile && index === 0 && showChainSettings && onSetAllConnections && (
+        <ChainQuickSettings
+          onSetAllConnections={handleSetAllConnections}
+          onClose={() => setShowChainSettings(false)}
+        />
+      )}
+
       {/* Compact Pill */}
       <div
         ref={pillRef}
         className={`relative ${!isLastAgent || isExpanded ? "mb-2" : "mb-0"} px-2 lg:px-0`}
       >
-        {/* Base Pill */}
+        {/* Base Pill with width adjustment for collaborative groups */}
         <div
-          className={`bg-gray-900/75 backdrop-blur-sm mx-auto lg:border border-gray-600/50 rounded-xl lg:rounded-3xl px-2 lg:px-4 py-2 transition-all duration-200 hover:bg-gray-800/90 hover:border-lavender-400/20 w-full max-w-4xl group shadow-lg shadow-gray-950/50 animate-in fade-in slide-in-from-bottom-4 lg:slide-in-from-bottom-8 ease-out ${isExpanded ? "bg-gray-800/90 border-lavender-400/30" : ""} ${
+          className={`bg-gray-900/75 backdrop-blur-sm mx-auto lg:border border-gray-600/50 rounded-xl lg:rounded-3xl px-2 lg:px-4 py-2 transition-all duration-200 hover:bg-gray-800/90 hover:border-lavender-400/20 group shadow-lg shadow-gray-950/50 animate-in fade-in slide-in-from-bottom-4 lg:slide-in-from-bottom-8 ease-out ${isExpanded ? "bg-gray-800/90 border-lavender-400/30" : ""} ${
             // Add visual indication for non-collapsible (last) agents on mobile
             isMobile && !isCollapsible
               ? "border-green-400/20 bg-slate-800/90"
               : ""
+          } ${
+            // Width adjustment for collaborative groups - use more conservative sizing
+            isCollaborativeGroup && collaborativeGroupSize
+              ? collaborativeGroupSize === 2
+                ? "w-full lg:w-[calc(150%+0.25rem)]"
+                : collaborativeGroupSize === 3
+                  ? "w-full lg:w-[calc(200%+0.5rem)]"
+                  : "w-full lg:w-[calc(250%+0.75rem)]"
+              : "w-full"
           }`}
           onClick={
             // Only enable click-to-expand on mobile (below lg breakpoint) and if collapsible
@@ -615,61 +730,87 @@ export function NodePill({
           onTouchCancel={isMobile && isCollapsible ? onLongPressEnd : undefined}
         >
           <div className="flex items-center justify-between">
-            {/* Left: Node Name */}
+            {/* Left: Node Name(s) */}
             <div className="flex items-center gap-1">
-              {/* Desktop: Pencil icon on hover, Mobile: Always visible */}
-              {!isEditing && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditing(true);
-                    // onToggleExpansion?.();
-                  }}
-                  className="transition-all duration-75 p-1 hover:bg-gray-700/50 rounded"
-                >
-                  <Pencil
-                    size={12}
-                    className="text-gray-400 hover:text-lavender-400"
-                  />
-                </button>
-              )}
-              {isEditing ? (
-                <>
-                  {/* <div className="w-2 h-2 bg-lavender-400/50 rounded-full"></div> */}
-                  <input
-                    type="text"
-                    value={tempName}
-                    onChange={(e) => setTempName(e.target.value)}
-                    onBlur={handleNameSave}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleNameSave();
-                      if (e.key === "Escape") {
-                        setIsEditing(false);
-                        setTempName(nodeName);
-                      }
+              {/* Root LLM Settings Button - only on desktop */}
+              {!isMobile &&
+                index === 0 &&
+                !isEditing &&
+                onSetAllConnections && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowChainSettings(!showChainSettings);
                     }}
-                    className="bg-gray-700/50 whitespace-nowrap border border-gray-500/50 rounded px-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-lavender-400/50"
-                    autoFocus
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </>
+                    className="transition-all duration-75 p-1 hover:bg-gray-700/50 rounded"
+                    title="Chain settings"
+                  >
+                    <Settings
+                      size={12}
+                      className="text-gray-400 hover:text-lavender-400"
+                    />
+                  </button>
+                )}
+
+              {/* Collaborative Group Display */}
+              {isCollaborativeGroup ? (
+                renderCollaborativeGroup()
               ) : (
                 <>
-                  {/* Provider Icon + Simplified Name + Tally */}
-                  <div className="flex items-center gap-1">
-                    {providerDisplay.icon && (
-                      <providerDisplay.icon
-                        size={14}
-                        className={providerDisplay.iconColor}
+                  {/* Single Agent Display */}
+                  {/* Desktop: Pencil icon on hover, Mobile: Always visible */}
+                  {!isEditing && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsEditing(true);
+                      }}
+                      className="transition-all duration-75 p-1 hover:bg-gray-700/50 rounded"
+                    >
+                      <Pencil
+                        size={12}
+                        className="text-gray-400 hover:text-lavender-400"
                       />
-                    )}
-                    <span className="text-xs whitespace-nowrap text-white font-medium">
-                      {agent.name ? nodeName : providerDisplay.name}
-                    </span>
-                    {TallyIcon && (
-                      <TallyIcon size={14} className="text-white" />
-                    )}
-                  </div>
+                    </button>
+                  )}
+                  {isEditing ? (
+                    <>
+                      <input
+                        type="text"
+                        value={tempName}
+                        onChange={(e) => setTempName(e.target.value)}
+                        onBlur={handleNameSave}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleNameSave();
+                          if (e.key === "Escape") {
+                            setIsEditing(false);
+                            setTempName(nodeName);
+                          }
+                        }}
+                        className="bg-gray-700/50 whitespace-nowrap border border-gray-500/50 rounded px-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-lavender-400/50"
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      {/* Provider Icon + Simplified Name + Tally */}
+                      <div className="flex items-center gap-1">
+                        {providerDisplay.icon && (
+                          <providerDisplay.icon
+                            size={14}
+                            className={providerDisplay.iconColor}
+                          />
+                        )}
+                        <span className="text-xs whitespace-nowrap text-white font-medium">
+                          {agent.name ? nodeName : providerDisplay.name}
+                        </span>
+                        {TallyIcon && (
+                          <TallyIcon size={14} className="text-white" />
+                        )}
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 
@@ -677,6 +818,7 @@ export function NodePill({
               {isMobile &&
                 showConnection &&
                 !isEditing &&
+                !isCollaborativeGroup &&
                 (() => {
                   const sourceDisplay = getSourceProviderDisplay();
                   return (
@@ -727,6 +869,7 @@ export function NodePill({
               {!isMobile &&
                 showConnection &&
                 !isEditing &&
+                !isCollaborativeGroup &&
                 (() => {
                   const sourceDisplay = getSourceProviderDisplay();
                   return (
@@ -814,7 +957,6 @@ export function NodePill({
                   className="p-1 hover:bg-red-600/80 text-gray-400 hover:text-white rounded text-xs font-medium transition-colors"
                 >
                   <Trash2 size={12} />
-                  {/* <span className="hidden sm:inline">Remove</span> */}
                 </button>
               )}
 
@@ -878,42 +1020,30 @@ export function NodePill({
                   {CONNECTION_TYPES.map((connectionType) => {
                     const isSelected =
                       currentConnectionType === connectionType.type;
-                    const isDisabled = connectionType.disabled;
 
                     return (
                       <button
                         key={connectionType.type}
                         onClick={() =>
-                          !isDisabled &&
                           handleConnectionTypeChange(connectionType.type)
                         }
-                        disabled={isDisabled}
                         className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition-colors ${
-                          isSelected && !isDisabled
+                          isSelected
                             ? `${connectionType.bgColor} ${connectionType.borderColor} border-2`
-                            : isDisabled
-                              ? "bg-gray-800/30 cursor-not-allowed opacity-60"
-                              : "bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700/30"
+                            : "bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700/30"
                         }`}
                       >
                         <connectionType.Icon
                           size={20}
-                          className={`${isDisabled ? "text-gray-500" : connectionType.color} ${connectionType.iconRotate || ""}`}
+                          className={`${connectionType.color} ${connectionType.iconRotate || ""}`}
                         />
                         <div className="flex-1">
                           <div
-                            className={`text-sm font-medium flex items-center gap-2 ${isSelected && !isDisabled ? connectionType.color : isDisabled ? "text-gray-500" : "text-white"}`}
+                            className={`text-sm font-medium ${isSelected ? connectionType.color : "text-white"}`}
                           >
                             {connectionType.label}
-                            {isDisabled && (
-                              <span className="text-xs px-2 py-0.5 bg-gray-700/50 border border-gray-600/30 rounded-full text-gray-400">
-                                Coming Soon
-                              </span>
-                            )}
                           </div>
-                          <div
-                            className={`text-xs mt-1 ${isDisabled ? "text-gray-500" : "text-gray-400"}`}
-                          >
+                          <div className="text-xs mt-1 text-gray-400">
                             {connectionType.description}
                           </div>
                         </div>

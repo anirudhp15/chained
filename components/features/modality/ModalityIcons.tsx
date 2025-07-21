@@ -6,7 +6,7 @@ import {
   supportsImageUpload,
   validateImageFile,
   compressImage,
-} from "../../lib/modality-utils";
+} from "../../../lib/modality-utils";
 import { UploadedImage } from "./ImageUpload";
 
 interface ModalityIconsProps {

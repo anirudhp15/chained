@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MarkdownRenderer } from "./markdown-renderer";
+import { MarkdownRenderer } from "../ui/markdown-renderer";
 import { CopyButton } from "../ui/CopyButton";
 
 interface MessageBubbleProps {

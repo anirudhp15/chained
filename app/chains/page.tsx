@@ -33,7 +33,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "../../components/chat/sidebar";
+import { Sidebar } from "../../components/layout/sidebar";
 import { MobileSidebarToggle } from "../../components/MobileSidebarToggle";
 import { motion } from "framer-motion";
 import { SavedChainsTab } from "../../components/chains/saved-chains-tab";

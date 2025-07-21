@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import type { Agent } from "../input/agent-input";
-import type { UploadedImage } from "../modality/ImageUpload";
+import type { Agent } from "../core/agent-input";
+import type { UploadedImage } from "../features/modality/ImageUpload";
 import type { Id } from "../../convex/_generated/dataModel";
 
 interface SavedChainsModalProps {

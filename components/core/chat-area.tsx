@@ -26,15 +26,15 @@ import {
 } from "lucide-react";
 import { IoGitBranchOutline } from "react-icons/io5";
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
-import { ModelAvatar } from "./model-avatar";
-import { MarkdownRenderer } from "./markdown-renderer";
+import { ModelAvatar } from "../ui/model-avatar";
+import { MarkdownRenderer } from "../ui/markdown-renderer";
 import { WelcomeScreen } from "./welcome-screen";
-import { ConnectionBadge } from "../input/connection-selector";
+import { ConnectionBadge } from "../features/connections/connection-selector";
 import { AttachmentDisplay } from "../ui/AttachmentDisplay";
 import { CopyButton } from "../ui/CopyButton";
 import { TruncatedText } from "../ui/TruncatedText";
-import { PerformanceMetrics } from "../performance/PerformanceMetrics";
-import { ChainPerformanceSummary } from "../performance/ChainPerformanceSummary";
+import { PerformanceMetrics } from "../features/performance/PerformanceMetrics";
+import { ChainPerformanceSummary } from "../features/performance/ChainPerformanceSummary";
 import { ThinkingDropdown } from "../ui/ThinkingDropdown";
 import { useUser } from "@clerk/nextjs";
 import { usePerformance } from "@/lib/performance-context";
@@ -740,7 +740,7 @@ function MobileAgentCard({
           {/* Error State */}
           {!agent.wasSkipped && agent.error && (
             <div
-              className={`border rounded-lg p-3 ${
+              className={`border rounded-lg p-3 px-0.5 ${
                 agent.error.includes("Rate limit") ||
                 agent.error.includes("rate limit")
                   ? "bg-yellow-500/10 border-yellow-500/30"
@@ -2653,7 +2653,7 @@ export function ChatArea({
                     {/* Error State */}
                     {!agent.wasSkipped && agent.error && (
                       <div
-                        className={`border rounded-lg p-3 ${
+                        className={`border rounded-lg p-3 mx-0.5 ${
                           agent.error.includes("Rate limit") ||
                           agent.error.includes("rate limit")
                             ? "bg-yellow-500/10 border-yellow-500/30"

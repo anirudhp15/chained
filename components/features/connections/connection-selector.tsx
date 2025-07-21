@@ -240,8 +240,10 @@ export function ConnectionSelector({
   const [showConditionInput, setShowConditionInput] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
 
-  if (isFirstAgent) {
-    return null; // First agent doesn't have connections
+  // Allow connection selector for first agent to enable parallel-first execution
+  // Only hide if it's first agent AND not set to parallel
+  if (isFirstAgent && connection?.type !== "parallel") {
+    return null; // First agent doesn't show connections unless parallel
   }
 
   const currentType = connection?.type || "direct";

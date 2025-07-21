@@ -10,6 +10,67 @@ const nextConfig = {
     // your project has type errors.
     ignoreBuildErrors: true,
   },
+
+  // ⚡ PERFORMANCE: Next.js 15 optimizations for LLM applications
+  experimental: {
+    // Optimize package imports to reduce bundle size
+    optimizePackageImports: [
+      "@clerk/nextjs",
+      "lucide-react",
+      "framer-motion",
+      "@radix-ui/react-icons",
+      "react-icons",
+    ],
+  },
+
+  // External packages for server components (moved from experimental)
+  serverExternalPackages: ["convex"],
+
+  onDemandEntries: {
+    // Period (in ms) where the server will keep pages in the buffer
+    maxInactiveAge: 25 * 1000,
+    // Number of pages that should be kept simultaneously without being disposed
+    pagesBufferLength: 2,
+  },
+
+  // Webpack optimizations for faster builds and smaller bundles
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Split chunks more aggressively for better caching
+    if (!isServer && !dev) {
+      config.optimization.splitChunks = {
+        ...config.optimization.splitChunks,
+        chunks: "all",
+        cacheGroups: {
+          ...config.optimization.splitChunks.cacheGroups,
+          // Separate vendor chunks for better caching
+          clerk: {
+            name: "clerk",
+            test: /[\\/]node_modules[\\/]@clerk[\\/]/,
+            priority: 30,
+            chunks: "all",
+          },
+          ui: {
+            name: "ui",
+            test: /[\\/]node_modules[\\/](lucide-react|framer-motion|@radix-ui)[\\/]/,
+            priority: 25,
+            chunks: "all",
+          },
+        },
+      };
+    }
+
+    return config;
+  },
+
+  // Enable compression and optimization
+  compress: true,
+  poweredByHeader: false,
+
+  // Image optimization for better performance
+  images: {
+    formats: ["image/webp", "image/avif"],
+    minimumCacheTTL: 60,
+  },
   // Rewrites to support PostHog
   async rewrites() {
     return [

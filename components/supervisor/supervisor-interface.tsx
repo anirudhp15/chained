@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { MarkdownRenderer } from "../chat/markdown-renderer";
+import { MarkdownRenderer } from "../ui/markdown-renderer";
 import { MessageBubble } from "../chat/message-bubble";
 import { SupervisorConversationContent } from "./supervisor-conversation-content";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,8 +34,8 @@ import { SiOpenai, SiClaude } from "react-icons/si";
 import { MODEL_PROVIDERS, getProviderKey } from "@/lib/constants";
 import { useSidebar } from "@/lib/sidebar-context";
 import { usePerformance } from "@/lib/performance-context";
-import { UploadedImage } from "../modality/ImageUpload";
-import { ModalityIcons } from "../modality/ModalityIcons";
+import { UploadedImage } from "../features/modality/ImageUpload";
+import { ModalityIcons } from "../features/modality/ModalityIcons";
 import { CopyButton } from "../ui/CopyButton";
 import { ReferenceStack } from "../ui/ReferenceStack";
 import { ReferencesModal } from "../ui/references-modal";
@@ -801,7 +801,7 @@ export function SupervisorInterface({
         {/* Supervisor Modal/Indicator with enhanced resize functionality */}
         <motion.div
           className={`
-        relative w-full bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 group rounded-xl mb-2 lg:mb-0 lg:rounded-b-none 
+        relative w-full bg-gray-600/25 border backdrop-blur-2xl border-gray-600/50 group rounded-xl mb-2 lg:mb-0 lg:rounded-b-none 
         shadow-2xl shadow-gray-950/50
         ${isMaximized ? "max-w-full h-full flex flex-col" : "flex flex-col"}
         ${isDragging ? "select-none" : ""}
@@ -990,7 +990,7 @@ export function SupervisorInterface({
         {/* Supervisor Chat Input */}
         <motion.div
           className="
-          relative w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 border-x-0 md:border-x border-b-0 md:border-b rounded-t-3xl lg:rounded-t-none md:rounded-b-3xl
+          relative w-full mx-auto bg-gray-600/25 backdrop-blur-lg border hover:backdrop-blur-xl border-gray-600/50 border-x-0 md:border-x border-b-0 md:border-b rounded-t-3xl lg:rounded-t-none md:rounded-b-xl
           transition-all duration-300 ease-in-out"
           initial={false}
         >

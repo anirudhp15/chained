@@ -22,11 +22,12 @@ import {
   ExternalLink,
   SquareArrowOutUpRight,
   Copy,
+  GitCompareArrows,
 } from "lucide-react";
 import { SiOpenai, SiClaude } from "react-icons/si";
-import { UploadedImage } from "../modality/ImageUpload";
-import { WebSearchData } from "../modality/WebSearch";
-import { ModalityIcons } from "../modality/ModalityIcons";
+import { UploadedImage } from "../features/modality/ImageUpload";
+import { WebSearchData } from "../features/modality/WebSearch";
+import { ModalityIcons } from "../features/modality/ModalityIcons";
 import {
   CONDITION_PRESETS,
   MODEL_PROVIDERS,
@@ -37,6 +38,24 @@ import {
 import { ToolButton } from "../ui/ToolButton";
 import { usePerformance } from "@/lib/performance-context";
 import { generateSmartAgentName } from "@/lib/utils";
+
+// Helper function to get simplified model name
+function getSimplifiedModelName(model: string): string {
+  // Remove version numbers and common suffixes
+  return model
+    .replace(/-\d{4}$/, "") // Remove year suffixes like -2024
+    .replace(/-\d{3}$/, "") // Remove version numbers like -1106
+    .replace(/-\d{2}$/, "") // Remove version numbers like -40
+    .replace(/-\d{1}$/, "") // Remove single digit versions
+    .replace(/^gpt-/, "") // Remove gpt- prefix
+    .replace(/^claude-/, "") // Remove claude- prefix
+    .replace(/^gemini-/, "") // Remove gemini- prefix
+    .replace(/^grok-/, "") // Remove grok- prefix
+    .replace(/^qwen-/, "") // Remove qwen- prefix
+    .replace(/^deepseek-/, "") // Remove deepseek- prefix
+    .replace(/^mistral-/, "") // Remove mistral- prefix
+    .toUpperCase(); // Convert to uppercase
+}
 
 export interface Agent {
   id: string;
@@ -93,6 +112,10 @@ interface AgentInputProps {
   // Copy functionality
   onCopyPrompt?: () => void;
   showCopyButton?: boolean;
+  // Collaborative grouping props
+  collaborativeAgents?: Agent[];
+  isCollaborativeGroup?: boolean;
+  collaborativeGroupSize?: number;
 }
 
 // Modality Icons Component
@@ -153,6 +176,9 @@ export function AgentInput({
   allAgents = [],
   onCopyPrompt,
   showCopyButton,
+  collaborativeAgents,
+  isCollaborativeGroup,
+  collaborativeGroupSize,
 }: AgentInputProps) {
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [isNameEditing, setIsNameEditing] = useState(false);
@@ -444,7 +470,11 @@ export function AgentInput({
               <div className="p-4 md:p-5 border-b border-gray-700/30 bg-gradient-to-b from-gray-800/50 to-transparent">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-base md:text-lg font-semibold text-white">
-                    Select AI Model
+                    {isCollaborativeGroup &&
+                    focusedModelIndex >= 0 &&
+                    collaborativeAgents
+                      ? `Select Model for ${collaborativeAgents[focusedModelIndex]?.name || getSimplifiedModelName(collaborativeAgents[focusedModelIndex]?.model || "gpt-4o")}`
+                      : "Select AI Model"}
                   </h3>
                   <button
                     onClick={() => {
@@ -498,7 +528,11 @@ export function AgentInput({
                         e.preventDefault();
                         const selectedModel = filteredModels[focusedModelIndex];
                         if (selectedModel) {
-                          onUpdate({ ...agent, model: selectedModel.value });
+                          if (isCollaborativeGroup) {
+                            handleCollaborativeModelUpdate(selectedModel.value);
+                          } else {
+                            onUpdate({ ...agent, model: selectedModel.value });
+                          }
                           setIsModelDropdownOpen(false);
                           setIsTextExpanded(false);
                           setSearchQuery("");
@@ -546,7 +580,11 @@ export function AgentInput({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              onUpdate({ ...agent, model: topModel.value });
+                              if (isCollaborativeGroup) {
+                                handleCollaborativeModelUpdate(topModel.value);
+                              } else {
+                                onUpdate({ ...agent, model: topModel.value });
+                              }
                               setIsModelDropdownOpen(false);
                               setIsTextExpanded(false);
                               setSearchQuery("");
@@ -658,7 +696,11 @@ export function AgentInput({
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                onUpdate({ ...agent, model: model.value });
+                                if (isCollaborativeGroup) {
+                                  handleCollaborativeModelUpdate(model.value);
+                                } else {
+                                  onUpdate({ ...agent, model: model.value });
+                                }
                                 setIsModelDropdownOpen(false);
                                 setIsTextExpanded(false);
                                 setSearchQuery("");
@@ -827,20 +869,118 @@ export function AgentInput({
     return null; // Don't render anything when collapsed on mobile
   }
 
+  // Collaborative prompt handler
+  const handleCollaborativePromptUpdate = (prompt: string) => {
+    if (isCollaborativeGroup && collaborativeAgents) {
+      // Update all agents in the collaborative group with the same prompt
+      collaborativeAgents.forEach((collabAgent) => {
+        if (collabAgent.id !== agent.id) {
+          onUpdate({ ...collabAgent, prompt });
+        }
+      });
+    }
+    // Update the current agent
+    onUpdate({ ...agent, prompt });
+  };
+
+  // Collaborative model update handler
+  const handleCollaborativeModelUpdate = (model: string) => {
+    if (isCollaborativeGroup && collaborativeAgents && focusedModelIndex >= 0) {
+      // Update the specific focused agent in the collaborative group
+      const focusedAgent = collaborativeAgents[focusedModelIndex];
+      if (focusedAgent) {
+        onUpdate({ ...focusedAgent, model });
+      }
+    } else if (isCollaborativeGroup && collaborativeAgents) {
+      // Fallback: update all agents in the collaborative group with the same model
+      collaborativeAgents.forEach((collabAgent) => {
+        if (collabAgent.id !== agent.id) {
+          onUpdate({ ...collabAgent, model });
+        }
+      });
+    }
+    // Update the current agent
+    onUpdate({ ...agent, model });
+  };
+
+  // Render collaborative model selectors
+  const renderCollaborativeModelSelectors = () => {
+    if (!isCollaborativeGroup || !collaborativeAgents) {
+      return null;
+    }
+
+    return (
+      <div className="flex items-center gap-1 overflow-x-auto max-w-full">
+        {collaborativeAgents.map((collabAgent, idx) => {
+          const effectiveModel = collabAgent.model || "gpt-4o";
+          const providerKey = getProviderKey(effectiveModel);
+          const provider = MODEL_PROVIDERS[providerKey];
+          const simplifiedName = getSimplifiedModelName(effectiveModel);
+
+          return (
+            <button
+              key={collabAgent.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                setButtonPositions((prev) => ({
+                  ...prev,
+                  model: e.currentTarget.getBoundingClientRect(),
+                }));
+                setIsModelDropdownOpen(true);
+                setFocusedModelIndex(idx);
+              }}
+              className="flex items-center gap-1 lg:gap-1.5 px-1.5 lg:px-2 py-1 lg:py-1.5 bg-gray-700/50 hover:bg-gray-600/50 border border-gray-600/50 hover:border-lavender-400/50 rounded-lg transition-all text-xs flex-shrink-0"
+              title={`Change model for ${collabAgent.name || simplifiedName}`}
+            >
+              {provider?.icon && (
+                <provider.icon
+                  size={10}
+                  className={`${provider.iconColor} lg:w-3 lg:h-3`}
+                />
+              )}
+              <span className="text-white font-medium hidden sm:inline">
+                {collabAgent.name || simplifiedName}
+              </span>
+              <ChevronDown
+                size={8}
+                className="text-gray-400 lg:w-2.5 lg:h-2.5"
+              />
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div
-      className={`relative flex flex-col ${isLastAgent ? "mx-0 mb-0" : "mx-2 mb-2"} lg:mx-0 lg:mb-0 ${isLastAgent ? "rounded-t-3xl lg:rounded-3xl border-y-0 border-x-0 lg:border-y lg:border-x" : "rounded-3xl"} border border-gray-600/50 bg-slate-800/90 backdrop-blur-lg hover:backdrop-blur-xl hover:border-lavender-400/20 animate-none`}
+      className={`relative flex flex-col ${isLastAgent ? "mx-0 mb-0" : "mx-2 mb-2"} lg:mx-0 lg:mb-0 ${isLastAgent ? "rounded-t-3xl lg:rounded-3xl border-y-0 border-x-0 lg:border-y lg:border-x" : "rounded-3xl"} border border-gray-600/50 bg-slate-800/90 backdrop-blur-lg hover:backdrop-blur-xl hover:border-lavender-400/20 animate-none ${
+        // Collaborative width adjustment - use more conservative sizing
+        isCollaborativeGroup && collaborativeGroupSize
+          ? collaborativeGroupSize === 2
+            ? "lg:w-[calc(150%+0.25rem)]"
+            : collaborativeGroupSize === 3
+              ? "lg:w-[calc(200%+0.5rem)]"
+              : "lg:w-[calc(250%+0.75rem)]"
+          : ""
+      }`}
     >
       <textarea
         value={agent.prompt}
         onChange={(e) => {
-          onUpdate({ ...agent, prompt: e.target.value });
+          isCollaborativeGroup
+            ? handleCollaborativePromptUpdate(e.target.value)
+            : onUpdate({ ...agent, prompt: e.target.value });
           // Trigger resize on next frame to ensure the value has been updated
           setTimeout(adjustTextareaHeight, 0);
         }}
         onFocus={() => setIsTextareaFocused(true)}
         onBlur={() => setIsTextareaFocused(false)}
-        placeholder="Ask anything"
+        placeholder={
+          isCollaborativeGroup
+            ? "Ask anything (shared across collaborative agents)"
+            : "Ask anything"
+        }
         className={`w-full p-4 h-auto ${isLastAgent ? "rounded-t-3xl" : "rounded-t-3xl"} min-h-8 max-h-32 lg:max-h-64 bg-transparent text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-0 outline-none resize-none transition-all overflow-y-auto`}
         style={{ fontSize: "16px" }}
         ref={textareaRef}
@@ -853,7 +993,9 @@ export function AgentInput({
         <div className="block lg:hidden">
           {/* Modality Icons */}
           <div className="flex items-center gap-1">
-            {renderModelSelector()}
+            {isCollaborativeGroup
+              ? renderCollaborativeModelSelectors()
+              : renderModelSelector()}
             {/* Tool Button for mobile */}
             {renderEnhancedOptions()}
             {/* Copy Button for mobile */}
@@ -870,7 +1012,9 @@ export function AgentInput({
         </div>
         {/* Left side controls */}
         <div className="hidden lg:flex items-center gap-1 flex-wrap">
-          {renderModelSelector()}
+          {isCollaborativeGroup
+            ? renderCollaborativeModelSelectors()
+            : renderModelSelector()}
           {/* Tool Button */}
           {renderEnhancedOptions()}
           {/* Copy Button */}

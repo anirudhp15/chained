@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, Brain } from "lucide-react";
-import { MarkdownRenderer } from "../chat/markdown-renderer";
+import { MarkdownRenderer } from "./markdown-renderer";
 
 interface ThinkingDropdownProps {
   thinking?: string;

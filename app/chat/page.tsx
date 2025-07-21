@@ -11,14 +11,14 @@ import {
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { api } from "../../convex/_generated/api";
-import { Sidebar } from "../../components/chat/sidebar";
+import { Sidebar } from "../../components/layout/sidebar";
 import { MobileSidebarToggle } from "../../components/MobileSidebarToggle";
-import { WelcomeScreen } from "../../components/chat/welcome-screen";
+import { WelcomeScreen } from "../../components/core/welcome-screen";
 import { InputAreaContainer } from "@/components/input/input-area-container";
 import { PerformanceProvider } from "../../lib/performance-context";
 import { useSidebar } from "../../lib/sidebar-context";
 import Beams from "@/components/Backgrounds/Beams/Beams";
-import type { Agent } from "../../components/input/agent-input";
+import type { Agent } from "../../components/core/agent-input";
 
 // Beams Background Component
 const BeamsBackground = () => {
